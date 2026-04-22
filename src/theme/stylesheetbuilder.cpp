@@ -1,4 +1,4 @@
-﻿/*
+/*
  * SPDX-FileCopyrightText: 2020-2023 Megan Conkle <megan.conkle@kdemail.net>
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
@@ -22,7 +22,7 @@
 #include "stylesheetbuilder.h"
 #include "theme/svgicontheme.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 /*
  * Returns the font family name of the given font with bracketed text removed.
@@ -35,6 +35,7 @@ static QString sanitizeFontFamily(const QFont &font)
 }
 
 QString StyleSheetBuilder::m_statIndicatorArrowIconPath = QString();
+QString StyleSheetBuilder::m_tabCloseIconPath = QString();
 
 StyleSheetBuilder::StyleSheetBuilder(const ChromeColors &colors,
                                      const SvgIconTheme *iconTheme,
@@ -107,6 +108,18 @@ StyleSheetBuilder::StyleSheetBuilder(const ChromeColors &colors,
 
         m_styleSheetVariables["$status-indicator-icon-path"] = m_statIndicatorArrowIconPath;
     }
+
+    m_styleSheetVariables["$tab-close-icon-path"] = QStringLiteral(":/icons/tab-close.svg");
+
+    QTemporaryFile tabCloseTemp(QDir::tempPath() + "/XXXXXX-gw-tabclose.png");
+    tabCloseTemp.setAutoRemove(false);
+
+    if (tabCloseTemp.open()) {
+        m_tabCloseIconPath = tabCloseTemp.fileName();
+        iconTheme->icon(QStringLiteral("tab-close")).pixmap(16, 16).save(&tabCloseTemp, "PNG");
+        tabCloseTemp.close();
+        m_styleSheetVariables["$tab-close-icon-path"] = m_tabCloseIconPath;
+    }
 }
 
 StyleSheetBuilder::~StyleSheetBuilder()
@@ -119,6 +132,14 @@ void StyleSheetBuilder::clearCache()
     // Remove previous cache/temporary file of statistics indicator drop-down arrow icon.
     if (!m_statIndicatorArrowIconPath.isNull() && !m_statIndicatorArrowIconPath.isEmpty()) {
         QFile iconFile(m_statIndicatorArrowIconPath);
+
+        if (iconFile.exists()) {
+            iconFile.remove();
+        }
+    }
+
+    if (!m_tabCloseIconPath.isNull() && !m_tabCloseIconPath.isEmpty()) {
+        QFile iconFile(m_tabCloseIconPath);
 
         if (iconFile.exists()) {
             iconFile.remove();
@@ -242,4 +263,4 @@ void StyleSheetBuilder::addColor(const ChromeColors &colors, const QString &vari
     }
 }
 
-} // namespace ghostwriter
+} // namespace ghostwriterpp

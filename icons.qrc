@@ -7,6 +7,7 @@
         <file>icons/cheat-sheet.svg</file>
         <file>icons/checkbox-checked.svg</file>
         <file>icons/checkbox-unchecked.svg</file>
+        <file>icons/add-tab.svg</file>
         <file>icons/clear.svg</file>
         <file>icons/close.svg</file>
         <file>icons/code-block.svg</file>
@@ -34,6 +35,8 @@
         <file>icons/indent.svg</file>
         <file>icons/insert-image.svg</file>
         <file>icons/language.svg</file>
+        <file>icons/layout-editor-only.svg</file>
+        <file>icons/layout-preview-only.svg</file>
         <file>icons/live-preview.svg</file>
         <file>icons/match-case.svg</file>
         <file>icons/new-file.svg</file>
@@ -57,12 +60,14 @@
         <file>icons/status-bar-menu-arrow.svg</file>
         <file>icons/strikethrough.svg</file>
         <file>icons/strong.svg</file>
+        <file>icons/tab-close.svg</file>
         <file>icons/task-complete.svg</file>
         <file>icons/task-list.svg</file>
         <file>icons/theme.svg</file>
         <file>icons/undo.svg</file>
         <file>icons/unindent.svg</file>
         <file>icons/unordered-list.svg</file>
+        <file>icons/view-layout.svg</file>
         <file>icons/whats-this.svg</file>
         <file>icons/whole-word.svg</file>
         <file>icons/zoom-in.svg</file>

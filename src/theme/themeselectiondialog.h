@@ -12,7 +12,7 @@
 
 #include "theme.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 
 /**
@@ -50,6 +50,6 @@ public:
 private:
     QScopedPointer<ThemeSelectionDialogPrivate> d_ptr;
 };
-} // namespace ghostwriter
+} // namespace ghostwriterpp
 
 #endif // THEMESELECTIONDIALOG_H

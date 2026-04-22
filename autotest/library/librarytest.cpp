@@ -14,7 +14,7 @@
 
 #include "../../src/library.h"
 
-using namespace ghostwriter;
+using namespace ghostwriterpp;
 
 class BookmarkInputData
 {
@@ -111,8 +111,8 @@ void LibraryTest::populateLastOpened(const BookmarkInputData &input)
 
 void LibraryTest::initTestCase()
 {
-    QCoreApplication::setOrganizationName("ghostwriter");
-    QCoreApplication::setApplicationName("ghostwriter");
+    QCoreApplication::setOrganizationName("ghostwriterpp");
+    QCoreApplication::setApplicationName("ghostwriterpp");
 
     QSettings::setDefaultFormat(QSettings::IniFormat);
     QSettings::setPath

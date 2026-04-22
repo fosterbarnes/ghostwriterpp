@@ -19,7 +19,7 @@
 
 #include "theme/svgicontheme.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 class AppActionsPrivate;
 
@@ -59,6 +59,9 @@ public:
         RenameFile,
         Reload,
         Export,
+        CloseTab,
+        NextTab,
+        PrevTab,
         Quit,
         // Edit Menu
         Undo,
@@ -95,7 +98,9 @@ public:
         // View Menu
         FullScreen,
         DistractionFreeMode,
-        Preview,
+        LayoutSplit,
+        LayoutEditorOnly,
+        LayoutPreviewOnly,
         HemingwayMode,
         DarkMode,
         ShowMenubar,
@@ -231,6 +236,6 @@ public:
 private:
     QScopedPointer<AppActionsPrivate> d;
 };
-} // namespace ghostwriter
+} // namespace ghostwriterpp
 
 #endif // APPACTIONS_H

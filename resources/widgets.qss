@@ -8,31 +8,41 @@
 /*  Scrollbars                                                                */
 /******************************************************************************/
 
-ghostwriter--MarkdownEditor QAbstractScrollArea::corner,
-ghostwriter--HtmlPreview QAbstractScrollArea::corner,
-ghostwriter--Sidebar QAbstractScrollArea::corner {
+ghostwriterpp--HtmlPreview {
+    border: none;
+    outline: none;
+}
+
+ghostwriterpp--HtmlPreview:focus {
+    border: none;
+    outline: none;
+}
+
+ghostwriterpp--MarkdownEditor QAbstractScrollArea::corner,
+ghostwriterpp--HtmlPreview QAbstractScrollArea::corner,
+ghostwriterpp--Sidebar QAbstractScrollArea::corner {
     background: transparent;
 }
 
-ghostwriter--MarkdownEditor QAbstractScrollArea,
-ghostwriter--HtmlPreview QAbstractScrollArea,
-ghostwriter--Sidebar QAbstractScrollArea {
+ghostwriterpp--MarkdownEditor QAbstractScrollArea,
+ghostwriterpp--HtmlPreview QAbstractScrollArea,
+ghostwriterpp--Sidebar QAbstractScrollArea {
     padding: 3px 3px 0px 3px;
     margin: 0
 }
 
-ghostwriter--Sidebar MarkdownEditor::horizontal,
-ghostwriter--Sidebar HtmlPreview::horizontal,
-ghostwriter--Sidebar QScrollBar::horizontal {
+ghostwriterpp--Sidebar MarkdownEditor::horizontal,
+ghostwriterpp--Sidebar HtmlPreview::horizontal,
+ghostwriterpp--Sidebar QScrollBar::horizontal {
     height: 16px;
     margin: 5px;
     border: 0;
     background: transparent;
 }
 
-ghostwriter--MarkdownEditor QScrollBar::vertical,
-ghostwriter--HtmlPreview QScrollBar::vertical,
-ghostwriter--Sidebar QScrollBar::vertical {
+ghostwriterpp--MarkdownEditor QScrollBar::vertical,
+ghostwriterpp--HtmlPreview QScrollBar::vertical,
+ghostwriterpp--Sidebar QScrollBar::vertical {
     width: 16px;
     margin: 5px;
     border: 0;
@@ -40,23 +50,23 @@ ghostwriter--Sidebar QScrollBar::vertical {
 }
 
 
-ghostwriter--MarkdownEditor QScrollBar::horizontal:hover,
-ghostwriter--HtmlPreview QScrollBar::horizontal:hover,
-ghostwriter--Sidebar QScrollBar::horizontal:hover {
+ghostwriterpp--MarkdownEditor QScrollBar::horizontal:hover,
+ghostwriterpp--HtmlPreview QScrollBar::horizontal:hover,
+ghostwriterpp--Sidebar QScrollBar::horizontal:hover {
     background-color: $tertiary-fill-color;
     border-radius: $scrollbar-border-radius;
 }
 
-ghostwriter--MarkdownEditor QScrollBar::vertical:hover,
-ghostwriter--HtmlPreview QScrollBar::vertical:hover,
-ghostwriter--Sidebar QScrollBar::vertical:hover {
+ghostwriterpp--MarkdownEditor QScrollBar::vertical:hover,
+ghostwriterpp--HtmlPreview QScrollBar::vertical:hover,
+ghostwriterpp--Sidebar QScrollBar::vertical:hover {
     background-color: $tertiary-fill-color;
     border-radius: $scrollbar-border-radius;
 }
 
-ghostwriter--MarkdownEditor QScrollBar::handle:horizontal,
-ghostwriter--HtmlPreview QScrollBar::handle:horizontal,
-ghostwriter--Sidebar QScrollBar::handle:horizontal {
+ghostwriterpp--MarkdownEditor QScrollBar::handle:horizontal,
+ghostwriterpp--HtmlPreview QScrollBar::handle:horizontal,
+ghostwriterpp--Sidebar QScrollBar::handle:horizontal {
     min-width: 50px;
     border: 0;
     background: $secondary-fill-color;
@@ -64,54 +74,54 @@ ghostwriter--Sidebar QScrollBar::handle:horizontal {
 
 }
 
-ghostwriter--MarkdownEditor QScrollBar::handle:horizontal,
-ghostwriter--HtmlPreview QScrollBar::handle:horizontal,
-ghostwriter--Sidebar QScrollBar::handle:horizontal {
+ghostwriterpp--MarkdownEditor QScrollBar::handle:horizontal,
+ghostwriterpp--HtmlPreview QScrollBar::handle:horizontal,
+ghostwriterpp--Sidebar QScrollBar::handle:horizontal {
     min-width: 50px;
     border: 0;
     background: $secondary-fill-color;
     border-radius: $scrollbar-border-radius;
 }
 
-ghostwriter--MarkdownEditor QScrollBar::handle:vertical,
-ghostwriter--HtmlPreview QScrollBar::handle:vertical,
-ghostwriter--Sidebar QScrollBar::handle:vertical {
+ghostwriterpp--MarkdownEditor QScrollBar::handle:vertical,
+ghostwriterpp--HtmlPreview QScrollBar::handle:vertical,
+ghostwriterpp--Sidebar QScrollBar::handle:vertical {
     min-height: 50px;
     border: 0;
     background: $secondary-fill-color;
     border-radius: $scrollbar-border-radius;
 }
 
-ghostwriter--MarkdownEditor QScrollBar::handle:horizontal:hover,
-ghostwriter--HtmlPreview QScrollBar::handle:horizontal:hover,
-ghostwriter--Sidebar QScrollBar::handle:horizontal:hover {
+ghostwriterpp--MarkdownEditor QScrollBar::handle:horizontal:hover,
+ghostwriterpp--HtmlPreview QScrollBar::handle:horizontal:hover,
+ghostwriterpp--Sidebar QScrollBar::handle:horizontal:hover {
     background: $accent-color;
 }
 
-ghostwriter--MarkdownEditor QScrollBar::handle:vertical:hover,
-ghostwriter--HtmlPreview QScrollBar::handle:vertical:hover,
-ghostwriter--Sidebar QScrollBar::handle:vertical:hover {
+ghostwriterpp--MarkdownEditor QScrollBar::handle:vertical:hover,
+ghostwriterpp--HtmlPreview QScrollBar::handle:vertical:hover,
+ghostwriterpp--Sidebar QScrollBar::handle:vertical:hover {
     background: $accent-color;
 }
 
-ghostwriter--MarkdownEditor QScrollBar::add-line,
-ghostwriter--HtmlPreview QScrollBar::add-line,
-ghostwriter--Sidebar QScrollBar::add-line,
-ghostwriter--MarkdownEditor QScrollBar::sub-line,
-ghostwriter--HtmlPreview QScrollBar::sub-line,
-ghostwriter--Sidebar QScrollBar::sub-line,
-ghostwriter--MarkdownEditor QScrollBar::add-page,
-ghostwriter--HtmlPreview QScrollBar::add-page,
-ghostwriter--Sidebar QScrollBar::add-page,
-ghostwriter--MarkdownEditor QScrollBar::sub-page,
-ghostwriter--HtmlPreview QScrollBar::sub-page,
-ghostwriter--Sidebar QScrollBar::sub-page,
-ghostwriter--MarkdownEditor QScrollBar::down-arrow,
-ghostwriter--HtmlPreview QScrollBar::down-arrow,
-ghostwriter--Sidebar QScrollBar::down-arrow,
-ghostwriter--MarkdownEditor QScrollBar::right-arrow,
-ghostwriter--HtmlPreview QScrollBar::right-arrow,
-ghostwriter--Sidebar QScrollBar::right-arrow {
+ghostwriterpp--MarkdownEditor QScrollBar::add-line,
+ghostwriterpp--HtmlPreview QScrollBar::add-line,
+ghostwriterpp--Sidebar QScrollBar::add-line,
+ghostwriterpp--MarkdownEditor QScrollBar::sub-line,
+ghostwriterpp--HtmlPreview QScrollBar::sub-line,
+ghostwriterpp--Sidebar QScrollBar::sub-line,
+ghostwriterpp--MarkdownEditor QScrollBar::add-page,
+ghostwriterpp--HtmlPreview QScrollBar::add-page,
+ghostwriterpp--Sidebar QScrollBar::add-page,
+ghostwriterpp--MarkdownEditor QScrollBar::sub-page,
+ghostwriterpp--HtmlPreview QScrollBar::sub-page,
+ghostwriterpp--Sidebar QScrollBar::sub-page,
+ghostwriterpp--MarkdownEditor QScrollBar::down-arrow,
+ghostwriterpp--HtmlPreview QScrollBar::down-arrow,
+ghostwriterpp--Sidebar QScrollBar::down-arrow,
+ghostwriterpp--MarkdownEditor QScrollBar::right-arrow,
+ghostwriterpp--HtmlPreview QScrollBar::right-arrow,
+ghostwriterpp--Sidebar QScrollBar::right-arrow {
     background: transparent;
     border: 0
 }
@@ -149,6 +159,87 @@ QMainWindow QMenuBar::item:hover {
 
 QMainWindow QMenuBar::item:pressed {
     background-color: $fill-color-pressed;
+}
+
+/******************************************************************************/
+/*  Document Tab Bar                                                          */
+/******************************************************************************/
+
+QMainWindow QWidget#tabBarContainer {
+    background-color: $background-color;
+    border: 0px;
+    border-bottom: 1px solid $secondary-separator-color;
+}
+
+QMainWindow QTabBar#documentTabBar {
+    background-color: $background-color;
+    border: 0px;
+    border-bottom: 1px solid $secondary-separator-color;
+    qproperty-drawBase: 0;
+    padding: 0px;
+    margin: 0px;
+}
+
+QMainWindow QTabBar#documentTabBar::tab {
+    background-color: $background-color;
+    color: $secondary-label-color;
+    padding: 2px 12px 2px 12px;
+    margin: 0px;
+    border: 0px;
+    border-right: 1px solid $secondary-separator-color;
+    min-width: 80px;
+    max-width: 240px;
+}
+
+QMainWindow QTabBar#documentTabBar::tab:hover {
+    background-color: $fill-color-hover;
+    color: $label-color;
+}
+
+QMainWindow QTabBar#documentTabBar::tab:selected {
+    background-color: $secondary-background-color;
+    color: $label-color;
+    border-bottom: 2px solid $accent-color;
+}
+
+QMainWindow QTabBar#documentTabBar::close-button {
+    image: url($tab-close-icon-path);
+    width: 16px;
+    height: 16px;
+    background-color: transparent;
+    border: 0px;
+    padding: 0px;
+    margin: 0px 2px 0px 2px;
+    subcontrol-origin: padding;
+    subcontrol-position: right;
+}
+
+QMainWindow QTabBar#documentTabBar::close-button:hover {
+    background-color: $fill-color-pressed;
+    border-radius: 3px;
+}
+
+QMainWindow QToolButton#newTabButton {
+    background-color: $background-color;
+    color: $secondary-label-color;
+    border: 0px;
+    border-bottom: 1px solid $secondary-separator-color;
+    padding: 0px;
+    margin: 0px;
+}
+
+QMainWindow QToolButton#newTabButton:hover {
+    background-color: $fill-color-hover;
+    color: $label-color;
+}
+
+QMainWindow QToolButton#newTabButton:pressed {
+    background-color: $fill-color-pressed;
+}
+
+QMainWindow QWidget#emptyEditorPane,
+QMainWindow QWidget#emptyPreviewPane {
+    background-color: $background-color;
 }
 
 /******************************************************************************/
@@ -258,15 +349,15 @@ QMainWindow QSplitter::handle:horizontal {
 /******************************************************************************/
 
 /* Sidebar */
-QMainWindow ghostwriter--Sidebar,
-QSplitter ghostwriter--Sidebar {
+QMainWindow ghostwriterpp--Sidebar,
+QSplitter ghostwriterpp--Sidebar {
     border: 0;
     margin: 0;
     padding: 0;
     background-color: $background-color;
 }
 
-ghostwriter--Sidebar QStackedWidget {
+ghostwriterpp--Sidebar QStackedWidget {
     border: 0;
     padding: 1;
     margin: 0;
@@ -275,7 +366,7 @@ ghostwriter--Sidebar QStackedWidget {
 }
 
 /* Activity bar tabs */
-ghostwriter--Sidebar QPushButton[checkable="true"] {
+ghostwriterpp--Sidebar QPushButton[checkable="true"] {
     icon-size: 22px;
     min-width: 40px;
     max-width: 40px;
@@ -293,24 +384,24 @@ ghostwriter--Sidebar QPushButton[checkable="true"] {
     border-radius: 0px;
 }
 
-ghostwriter--Sidebar QPushButton:checked {
+ghostwriterpp--Sidebar QPushButton:checked {
     border-color: $accent-color;
     color: $label-color;
     background-color: $tertiary-fill-color;
 }
 
-ghostwriter--Sidebar QPushButton:hover {
+ghostwriterpp--Sidebar QPushButton:hover {
     background-color: $tertiary-fill-color;
 }
 
-ghostwriter--Sidebar QPushButton:checked:hover {
+ghostwriterpp--Sidebar QPushButton:checked:hover {
     border-color: $accent-color;
     color: $label-color;
     background-color: $tertiary-fill-color;
 }
 
 /* Activity bar buttons */
-ghostwriter--Sidebar QPushButton[checkable="false"] {
+ghostwriterpp--Sidebar QPushButton[checkable="false"] {
     icon-size: 22px;
     padding: 0;
     margin: 0;
@@ -322,19 +413,19 @@ ghostwriter--Sidebar QPushButton[checkable="false"] {
     height: 40px;
 }
 
-ghostwriter--Sidebar QPushButton[checkable="false"]:hover {
+ghostwriterpp--Sidebar QPushButton[checkable="false"]:hover {
     color: $label-color;
     background-color: $tertiary-fill-color;
 }
 
-ghostwriter--Sidebar QPushButton[checkable="false"]:pressed {
+ghostwriterpp--Sidebar QPushButton[checkable="false"]:pressed {
     color: $label-color;
     background-color: transparent;
 }
 
 /* Stacked widgets inside sidebar pane */
 
-ghostwriter--Sidebar QListWidget {
+ghostwriterpp--Sidebar QListWidget {
     outline: none;
     border: 0;
     padding: 1;
@@ -344,7 +435,7 @@ ghostwriter--Sidebar QListWidget {
     font-weight: normal
 }
 
-ghostwriter--Sidebar QListWidget::item {
+ghostwriterpp--Sidebar QListWidget::item {
     border: 0;
     padding: 1 0 1 0;
     margin: 0;
@@ -353,13 +444,49 @@ ghostwriter--Sidebar QListWidget::item {
     font-weight: normal
 }
 
-ghostwriter--Sidebar QListWidget::item:selected {
+ghostwriterpp--Sidebar QListWidget::item:selected {
     border-radius: 0px;
     color: $selected-text-fg-color;
     background-color: $selected-text-bg-color;
 }
 
-ghostwriter--Sidebar QLabel {
+ghostwriterpp--Sidebar QTreeView {
+    outline: none;
+    border: 0;
+    padding: 1;
+    background-color: $background-color;
+    color: $label-color;
+    font-size: 11pt;
+    font-weight: normal;
+    alternate-background-color: $secondary-background-color;
+    selection-background-color: $selected-text-bg-color;
+    selection-color: $selected-text-fg-color;
+    show-decoration-selected: 1;
+}
+
+ghostwriterpp--Sidebar QTreeView::item {
+    border: 0;
+    padding: 1 0 1 0;
+    margin: 0;
+    background-color: $background-color;
+    color: $label-color;
+}
+
+ghostwriterpp--Sidebar QTreeView::item:selected {
+    border-radius: 0px;
+    color: $selected-text-fg-color;
+    background-color: $selected-text-bg-color;
+}
+
+ghostwriterpp--Sidebar QTreeView::item:hover {
+    background-color: $fill-color-hover;
+}
+
+ghostwriterpp--Sidebar QTreeView::branch {
+    background-color: $background-color;
+}
+
+ghostwriterpp--Sidebar QLabel {
     border: 0;
     padding: 0;
     margin: 0;
@@ -486,7 +613,7 @@ QStatusBar #rightStatusBarWidget {
 /* Find and Replace Pane                                                      */
 /******************************************************************************/
 
-ghostwriter--FindReplace QLabel {
+ghostwriterpp--FindReplace QLabel {
     font-size: 11pt;
     margin: 0px;
     padding: 5px;
@@ -495,7 +622,7 @@ ghostwriter--FindReplace QLabel {
     color: $secondary-label-color;
 }
 
-ghostwriter--FindReplace QPushButton {
+ghostwriterpp--FindReplace QPushButton {
     font-size: 16px;
     padding: 5 5 5 5;
     margin: 0;
@@ -506,91 +633,91 @@ ghostwriter--FindReplace QPushButton {
     min-width: 16px;
 }
 
-ghostwriter--FindReplace QPushButton:pressed {
+ghostwriterpp--FindReplace QPushButton:pressed {
     color: $label-color-pressed;
     background-color: transparent;
 }
 
-ghostwriter--FindReplace QPushButton:hover {
+ghostwriterpp--FindReplace QPushButton:hover {
     color: $label-color-hover;
     background-color: transparent;
 }
 
-ghostwriter--FindReplace QPushButton:disabled {
+ghostwriterpp--FindReplace QPushButton:disabled {
     color: $secondary-label-color-disabled;
     background-color: transparent;
 }
 
-ghostwriter--FindReplace QPushButton[checkable="true"] {
+ghostwriterpp--FindReplace QPushButton[checkable="true"] {
     color: $secondary-label-color;
     background-color: transparent;
     min-width: 32px;
     height: 16px;
 }
 
-ghostwriter--FindReplace QPushButton[checkable="true"]:disabled,
-ghostwriter--FindReplace QPushButton:flat:disabled {
+ghostwriterpp--FindReplace QPushButton[checkable="true"]:disabled,
+ghostwriterpp--FindReplace QPushButton:flat:disabled {
     color: $secondary-label-color-disabled;
     background-color: $fill-color-disabled;
 }
 
-ghostwriter--FindReplace QPushButton[checkable="true"]:hover,
-ghostwriter--FindReplace QPushButton:checked:hover {
+ghostwriterpp--FindReplace QPushButton[checkable="true"]:hover,
+ghostwriterpp--FindReplace QPushButton:checked:hover {
     background-color: $secondary-label-color-hover;
     background-color: $fill-color-hover;
 }
 
-ghostwriter--FindReplace QPushButton[checkable="true"]:pressed,
-ghostwriter--FindReplace QPushButton:checked:pressed {
+ghostwriterpp--FindReplace QPushButton[checkable="true"]:pressed,
+ghostwriterpp--FindReplace QPushButton:checked:pressed {
     color: $secondary-label-color-pressed;
     background-color: $fill-color-pressed;
 }
 
-ghostwriter--FindReplace QPushButton:checked {
+ghostwriterpp--FindReplace QPushButton:checked {
     background-color: $fill-color;
 }
 
-ghostwriter--FindReplace QPushButton:flat {
+ghostwriterpp--FindReplace QPushButton:flat {
     color: $secondary-label-color;
     background-color: $fill-color;
     font-weight: bold;
 }
 
-ghostwriter--FindReplace QPushButton:flat:hover {
+ghostwriterpp--FindReplace QPushButton:flat:hover {
     color: $secondary-label-color-hover;
     background-color: $fill-color-hover;
 }
 
-ghostwriter--FindReplace QPushButton:flat:pressed {
+ghostwriterpp--FindReplace QPushButton:flat:pressed {
     color: $secondary-label-color-pressed;
     background-color: $fill-color-pressed;
 }
 
-ghostwriter--FindReplace QPushButton:flat:disabled {
+ghostwriterpp--FindReplace QPushButton:flat:disabled {
     color: $secondary-label-color-disabled;
     background-color: $fill-color-disabled;
 }
 
-ghostwriter--FindReplace QPushButton#matchCaseButton,
-ghostwriter--FindReplace QPushButton#regexButton {
+ghostwriterpp--FindReplace QPushButton#matchCaseButton,
+ghostwriterpp--FindReplace QPushButton#regexButton {
     font-size: 16px;
     font-family: default;
     font-weight: bold;
 } 
 
-ghostwriter--FindReplace QPushButton#replaceButton,
-ghostwriter--FindReplace QPushButton#replaceAllButton {
+ghostwriterpp--FindReplace QPushButton#replaceButton,
+ghostwriterpp--FindReplace QPushButton#replaceAllButton {
     font-size: 11pt;
     font-family: default;
 }
 
-ghostwriter--FindReplace QPushButton#findReplaceCloseButton {
+ghostwriterpp--FindReplace QPushButton#findReplaceCloseButton {
     padding: 0;
     margin: 0;
     icon-size: 16px;
 }
 
-ghostwriter--FindReplace QLineEdit {
+ghostwriterpp--FindReplace QLineEdit {
     color: $text-color;
     background-color: $tertiary-fill-color;
     border: 0px;
@@ -599,6 +726,6 @@ ghostwriter--FindReplace QLineEdit {
     selection-background-color: $selected-text-bg-color;
 }
 
-ghostwriter--FindReplace QLineEdit:focus {
+ghostwriterpp--FindReplace QLineEdit:focus {
     border: 1px solid $tertiary-fill-color-active;
 }

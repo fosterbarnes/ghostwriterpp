@@ -1,10 +1,11 @@
-﻿/*
+/*
  * SPDX-FileCopyrightText: 2014-2026 Megan Conkle <megan.conkle@kdemail.net>
  * SPDX-FileCopyrightText: 2009-2014 Graeme Gott <graeme@gottcode.org>
  * SPDX-FileCopyrightText: 2026 Nate Peterson
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
+#include <QActionGroup>
 #include <QApplication>
 #include <QClipboard>
 #include <QDesktopServices>
@@ -14,6 +15,7 @@
 #include <QFont>
 #include <QFontDialog>
 #include <QGridLayout>
+#include <QGuiApplication>
 #include <QIODevice>
 #include <QIcon>
 #include <QImageReader>
@@ -24,13 +26,18 @@
 #include <QMimeDatabase>
 #include <QMimeType>
 #include <QPushButton>
+#include <QHash>
 #include <QScrollBar>
+#include <QSet>
 #include <QSettings>
+#include <QShowEvent>
 #include <QSizePolicy>
+#include <QTextCursor>
 #include <QStatusBar>
 #include <QStyleFactory>
 #include <QTextDocumentFragment>
 #include <QToolButton>
+#include <QVBoxLayout>
 #include <QWhatsThis>
 
 #include <KAboutData>
@@ -40,29 +47,40 @@
 
 #include "export/exporter.h"
 #include "export/exporterfactory.h"
+#include "settings/fontsettingsdialog.h"
 #include "settings/localedialog.h"
 #include "settings/preferencesdialog.h"
 #include "settings/previewoptionsdialog.h"
-#include "settings/simplefontdialog.h"
 #include "theme/stylesheetbuilder.h"
 #include "theme/themeselectiondialog.h"
 #include "spelling/spellcheckdecorator.h"
 #include "spelling/spellcheckdialog.h"
 
+#include "documenttabbar.h"
 #include "findreplace.h"
 #include "library.h"
 #include "mainwindow.h"
 #include "messageboxhelper.h"
+#include "windowframechrome.h"
 
 #define GW_MAIN_WINDOW_GEOMETRY_KEY "Window/mainWindowGeometry"
 #define GW_MAIN_WINDOW_STATE_KEY "Window/mainWindowState"
 #define GW_SPLITTER_GEOMETRY_KEY "Window/splitterGeometry"
+#define GW_SESSION_OPEN_TABS_KEY "Session/openTabs"
+#define GW_SESSION_ACTIVE_TAB_KEY "Session/activeTab"
+#define GW_SESSION_TAB_PATH_KEY "filePath"
+#define GW_SESSION_TAB_CURSOR_KEY "cursor"
 
 #define MAX_RECENT_FILES (AppActions::OpenLeastRecent - AppActions::OpenMostRecent + 1)
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 using namespace std::placeholders;
+
+static QString absoluteFileKey(const QString &path)
+{
+    return QFileInfo(path).absoluteFilePath();
+}
 
 enum SidebarTabIndex {
     FirstSidebarTab,
@@ -75,11 +93,19 @@ enum SidebarTabIndex {
 };
 
 MainWindow::MainWindow(const QString &filePath, QWidget *parent)
-    : QMainWindow(parent)
+    : QMainWindow(parent),
+      tabBar(nullptr),
+      editorStack(nullptr),
+      previewStack(nullptr),
+      activeTabIndex(-1),
+      newTabButton(nullptr),
+      layoutActionGroup(nullptr)
 {
     Bookmark fileToOpen(filePath);
 
     focusModeEnabled = false;
+    hemingwayModeEnabled = false;
+    sidebarHiddenForResize = false;
     appSettings = AppSettings::instance();
 
     loadTheme();
@@ -89,32 +115,19 @@ MainWindow::MainWindow(const QString &filePath, QWidget *parent)
     setupGui();
     setupActions();
 
-    setWindowTitle(documentManager->document()->displayName() + "[*] - " + qAppName());
+    // Tab bar height should match the menu bar row.
+    adjustTabBarHeight();
 
-    // If the file specified as a command line argument does not exist, then
-    // create it.
     if (!fileToOpen.isValid() && !fileToOpen.isNull()) {
         QFile file(fileToOpen.filePath());
         if (!file.open(QIODevice::WriteOnly)) {
-            // Trigger opening an untitled, new document instead.
             fileToOpen = Bookmark();
             MessageBoxHelper::critical(this, tr("Could not create file: %1").arg(filePath), file.errorString());
         } else {
             file.close();
         }
-    } else if (appSettings->restoreSessionEnabled()) {
-        if (!fileToOpen.isValid()) {
-            Bookmark lastOpened = Library().lastOpened();
-
-            if (lastOpened.isValid()) {
-                fileToOpen = lastOpened;
-            }
-        }
     }
 
-    connect(appSettings, &AppSettings::autoSaveChanged, documentManager, &DocumentManager::setAutoSaveEnabled);
-    connect(appSettings, &AppSettings::backupFileChanged, documentManager, &DocumentManager::setFileBackupEnabled);
-    connect(appSettings, &AppSettings::backupLocationChanged, documentManager, &DocumentManager::setBackupLocation);
     connect(appSettings, &AppSettings::focusModeChanged, this, &MainWindow::changeFocusMode);
     connect(appSettings, &AppSettings::hideMenuBarInFullScreenChanged, this, &MainWindow::toggleHideMenuBarInFullScreen);
     connect(appSettings, &AppSettings::fileHistoryChanged, this, &MainWindow::toggleFileHistoryEnabled);
@@ -122,22 +135,23 @@ MainWindow::MainWindow(const QString &filePath, QWidget *parent)
     connect(appSettings, &AppSettings::displayTimeInFullScreenChanged, this, &MainWindow::toggleDisplayTimeInFullScreen);
     connect(appSettings, &AppSettings::editorWidthChanged, this, &MainWindow::changeEditorWidth);
     connect(appSettings, &AppSettings::interfaceStyleChanged, this, &MainWindow::changeInterfaceStyle);
+    connect(appSettings, &AppSettings::editorFontChanged, this, [this](const QFont &font) {
+        for (auto *tab : tabs) {
+            if (tab->editor()) {
+                tab->editor()->setFont(font.family(), font.pointSize());
+            }
+        }
+    });
+    connect(appSettings, &AppSettings::editorFontChanged, this, &MainWindow::applyTheme);
     connect(appSettings, &AppSettings::previewTextFontChanged, this, &MainWindow::applyTheme);
     connect(appSettings, &AppSettings::previewCodeFontChanged, this, &MainWindow::applyTheme);
-
-    connect(documentManager, &DocumentManager::documentLoaded, documentManager, [this]() {
-        sessionStats->startNewSession(documentStats->wordCount());
-        refreshRecentFiles();
-
-        folderViewWidget->reloadFolderViewFromPath(documentManager->document()->filePath(), appSettings->folderViewShowAllFilesEnabled());
+    connect(appSettings, &AppSettings::focusViewChanged, this, [this](FocusView view) {
+        applyFocusView(view);
+        syncFocusViewActions(view);
     });
 
-    connect(documentManager, &DocumentManager::documentClosed, documentManager, [this]() {
-        sessionStats->startNewSession(0);
-    });
-
-    connect(folderViewWidget, &FolderViewWidget::fileSelected, documentManager, [this](const QString &filePath) {
-        documentManager->openFileAt(Bookmark(filePath), true);
+    connect(folderViewWidget, &FolderViewWidget::fileSelected, this, [this](const QString &filePath) {
+        addDocumentTab(Bookmark(filePath));
     });
 
     qApp->installEventFilter(this);
@@ -145,34 +159,66 @@ MainWindow::MainWindow(const QString &filePath, QWidget *parent)
     toggleHideMenuBarInFullScreen(appSettings->hideMenuBarInFullScreenEnabled());
     menuBarMenuActivated = false;
 
-    // Need this call for GTK / Gnome 42 segmentation fault workaround.
     qApp->processEvents();
 
     show();
 
-    // Apply the theme only after show() is called on all the widgets,
-    // since the Outline scrollbars can end up transparent in Windows if
-    // the theme is applied before show().  We cannot call show() and
-    // then apply the theme in the constructor due to a bug with
-    // Wayland + GTK that causes a segmentation fault.
-    //
     applyTheme();
     adjustEditor();
+    adjustTabBarHeight();
 
-    // Show the theme right away before loading any files.
     qApp->processEvents();
 
-    // Load file from command line or last session if valid, otherwise create
-    // an untitled document.
+    // Restore persisted multi-tab session (if enabled), then layer any CLI
+    // file on top. Always end up with at least one active tab.
+    int savedActiveIndex = -1;
+    BookmarkList persisted;
+
+    if (appSettings->restoreSessionEnabled()) {
+        persisted = loadPersistedTabs(&savedActiveIndex);
+    }
+
+    for (const Bookmark &bm : std::as_const(persisted)) {
+        addDocumentTab(bm, /*activate=*/ false);
+    }
+
     if (fileToOpen.isValid()) {
-        documentManager->openFileAt(fileToOpen);
+        addDocumentTab(fileToOpen, /*activate=*/ true);
+    } else if (!tabs.isEmpty()) {
+        int idx = savedActiveIndex;
+        if (idx < 0 || idx >= tabs.size()) {
+            idx = 0;
+        }
+        if (tabBar->currentIndex() != idx) {
+            tabBar->setCurrentIndex(idx);
+        } else {
+            activateTab(idx);
+        }
+    }
+
+    if (tabs.isEmpty()) {
+        auto *seed = addDocumentTab(Bookmark(), /*activate=*/ true);
+        if (seed && seed->documentManager()) {
+            seed->documentManager()->createUntitled();
+        }
+    }
+
+    applyFocusView(appSettings->focusView());
+    syncFocusViewActions(appSettings->focusView());
+
+    QString previewSheet = htmlPreviewStyleSheetForCurrentTheme();
+    if (previewSheet.isNull()) {
+        qCritical() << "Invalid HTML preview style sheet provided.";
     } else {
-        documentManager->createUntitled();
+        applyHtmlPreviewStyleSheetToAllTabs(previewSheet);
     }
 }
 
 MainWindow::~MainWindow()
 {
+    qDeleteAll(tabs);
+    tabs.clear();
+
     if (primaryIconTheme) {
         delete primaryIconTheme;
         primaryIconTheme = nullptr;
@@ -239,7 +285,7 @@ void MainWindow::keyPressEvent(QKeyEvent *e)
             findReplace->keyPressEvent(e);
             return;
         }
-        else if (!this->editor->hasFocus()) {
+        else if (currentEditor() && !currentEditor()->hasFocus()) {
             QMainWindow::keyPressEvent(e);
         }
         break;
@@ -253,8 +299,8 @@ void MainWindow::keyPressEvent(QKeyEvent *e)
 bool MainWindow::eventFilter(QObject *obj, QEvent *event)
 {
     if (this->isFullScreen() && appSettings->hideMenuBarInFullScreenEnabled()) {
-        if ((this->menuBar() == obj) 
-                && (QEvent::Leave == event->type()) 
+        if ((this->menuBar() == obj)
+                && (QEvent::Leave == event->type())
                 && !menuBarMenuActivated) {
             this->menuBar()->hide();
         } else if (QEvent::MouseMove == event->type()) {
@@ -263,8 +309,8 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
             if ((mouseEvent->globalPosition().y() <= 0) && !this->menuBar()->isVisible()) {
                 this->menuBar()->show();
             }
-        } else if ((this == obj) 
-                && (((QEvent::Leave == event->type()) && !menuBarMenuActivated) 
+        } else if ((this == obj)
+                && (((QEvent::Leave == event->type()) && !menuBarMenuActivated)
                     || (QEvent::WindowDeactivate == event->type()))) {
             this->menuBar()->hide();
         }
@@ -275,32 +321,66 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
-    if (documentManager->close()) {
-        this->quitApplication();
-    } else {
-        event->ignore();
+    // Save prompts only — do not call DocumentManager::close(), which clears
+    // each tab; persistOpenTabs() must still see file paths on quit.
+    for (int i = tabs.size() - 1; i >= 0; --i) {
+        if (!tabs[i]->documentManager()->prepareApplicationQuit()) {
+            event->ignore();
+            return;
+        }
+    }
+
+    event->accept();
+    this->quitApplication();
+}
+
+void MainWindow::showEvent(QShowEvent *event)
+{
+    QMainWindow::showEvent(event);
+    applyDarkModeToWindowFrame(this, appSettings->darkModeEnabled());
+}
+
+void MainWindow::changeEvent(QEvent *event)
+{
+    QMainWindow::changeEvent(event);
+    if (event->type() == QEvent::WindowStateChange) {
+        applyDarkModeToWindowFrame(this, appSettings->darkModeEnabled());
     }
 }
 
 void MainWindow::quitApplication()
 {
-    if (documentManager->close()) {
-        appSettings->store();
+    persistOpenTabs();
+    appSettings->store();
 
-        QSettings windowSettings;
+    QSettings windowSettings;
 
-        windowSettings.setValue(GW_MAIN_WINDOW_GEOMETRY_KEY, saveGeometry());
-        windowSettings.setValue(GW_MAIN_WINDOW_STATE_KEY, saveState());
-        windowSettings.setValue(GW_SPLITTER_GEOMETRY_KEY, splitter->saveState());
-        windowSettings.sync();
+    windowSettings.setValue(GW_MAIN_WINDOW_GEOMETRY_KEY, saveGeometry());
+    windowSettings.setValue(GW_MAIN_WINDOW_STATE_KEY, saveState());
+    windowSettings.setValue(GW_SPLITTER_GEOMETRY_KEY, splitter->saveState());
+    windowSettings.sync();
 
-        this->editor->document()->disconnect();
-        this->editor->disconnect();
-        this->htmlPreview->disconnect();
-        StyleSheetBuilder::clearCache();
-
-        qApp->quit();
+    for (auto *tab : tabs) {
+        if (tab->editor()) {
+            tab->editor()->document()->disconnect();
+            tab->editor()->disconnect();
+        }
+        if (tab->htmlPreview()) {
+            tab->htmlPreview()->disconnect();
+        }
     }
+
+    for (auto *tab : tabs) {
+        HtmlPreview *preview = tab->htmlPreview();
+        if (preview) {
+            previewStack->removeWidget(preview);
+            tab->releaseHtmlPreview();
+        }
+    }
+
+    StyleSheetBuilder::clearCache();
+
+    qApp->quit();
 }
 
 void MainWindow::changeTheme()
@@ -324,21 +404,14 @@ void MainWindow::openPreferencesDialog()
     preferencesDialog->show();
 }
 
-void MainWindow::toggleHtmlPreview(bool checked)
-{
-    htmlPreview->setVisible(checked);
-    htmlPreview->updatePreview();
-    appSettings->setHtmlPreviewVisible(checked);
-    this->update();
-    adjustEditor();
-}
-
 void MainWindow::toggleHemingwayMode(bool checked)
 {
-    if (checked) {
-        editor->setHemingWayModeEnabled(true);
-    } else {
-        editor->setHemingWayModeEnabled(false);
+    hemingwayModeEnabled = checked;
+
+    for (auto *tab : tabs) {
+        if (tab->editor()) {
+            tab->editor()->setHemingWayModeEnabled(checked);
+        }
     }
 }
 
@@ -346,17 +419,20 @@ void MainWindow::toggleFocusMode(bool checked)
 {
     this->focusModeEnabled = checked;
 
+    const FocusMode mode = checked ? appSettings->focusMode() : FocusModeDisabled;
+
+    for (auto *tab : tabs) {
+        if (tab->editor()) {
+            tab->editor()->setFocusMode(mode);
+        }
+    }
+
     if (checked) {
-        editor->setFocusMode(appSettings->focusMode());
         sidebar->setVisible(false);
         sidebar->setAutoHideEnabled(true);
-    } else {
-        editor->setFocusMode(FocusModeDisabled);
-
-        if (!this->sidebarHiddenForResize && this->appSettings->sidebarVisible()) {
-            sidebar->setAutoHideEnabled(false);
-            sidebar->setVisible(true);
-        }
+    } else if (!this->sidebarHiddenForResize && this->appSettings->sidebarVisible()) {
+        sidebar->setAutoHideEnabled(false);
+        sidebar->setVisible(true);
     }
 }
 
@@ -369,16 +445,9 @@ void MainWindow::toggleFullScreen(bool checked)
             timeIndicator->hide();
         }
 
-        // If the window had been maximized prior to entering
-        // full screen mode, then put the window back to
-        // to maximized.  Don't call showNormal(), as that
-        // doesn't restore the window to maximized.
-        //
         if (lastStateWasMaximized) {
             showMaximized();
-        }
-        // Put the window back to normal (not maximized).
-        else {
+        } else {
             showNormal();
         }
 
@@ -390,11 +459,7 @@ void MainWindow::toggleFullScreen(bool checked)
             timeIndicator->show();
         }
 
-        if (this->isMaximized()) {
-            lastStateWasMaximized = true;
-        } else {
-            lastStateWasMaximized = false;
-        }
+        lastStateWasMaximized = this->isMaximized();
 
         showFullScreen();
 
@@ -421,7 +486,9 @@ void MainWindow::toggleFileHistoryEnabled(bool checked)
         this->clearRecentFileHistory();
     }
 
-    documentManager->setFileHistoryEnabled(checked);
+    for (auto *tab : tabs) {
+        tab->documentManager()->setFileHistoryEnabled(checked);
+    }
 }
 
 void MainWindow::toggleFolderViewShowAllFilesEnabled(bool checked)
@@ -444,7 +511,12 @@ void MainWindow::toggleDisplayTimeInFullScreen(bool checked)
 
 void MainWindow::changeEditorWidth(EditorWidth editorWidth)
 {
-    editor->setEditorWidth(editorWidth);
+    for (auto *tab : tabs) {
+        if (tab->editor()) {
+            tab->editor()->setEditorWidth(editorWidth);
+        }
+    }
+
     adjustEditor();
 }
 
@@ -467,8 +539,10 @@ void MainWindow::showWikiPage()
 
 void MainWindow::changeFocusMode(FocusMode focusMode)
 {
-    if (FocusModeDisabled != editor->focusMode()) {
-        editor->setFocusMode(focusMode);
+    for (auto *tab : tabs) {
+        if (tab->editor() && tab->editor()->focusMode() != FocusModeDisabled) {
+            tab->editor()->setFocusMode(focusMode);
+        }
     }
 }
 
@@ -513,12 +587,27 @@ void MainWindow::clearRecentFileHistory()
 
 void MainWindow::changeDocumentDisplayName(const QString &displayName)
 {
-    setWindowTitle(displayName + QString("[*] - ") + qAppName());
+    const QString appCaption = []()
+    {
+        const QString d = QGuiApplication::applicationDisplayName();
+        return d.isEmpty() ? QStringLiteral("ghostwriter++") : d;
+    }();
 
-    if (documentManager->document()->isModified()) {
+    if (displayName.isEmpty()) {
+        setWindowTitle(appCaption);
+    } else {
+        setWindowTitle(displayName + QStringLiteral("[*] - ") + appCaption);
+    }
+
+    auto *dm = currentDocumentManager();
+    if (dm && dm->document()->isModified()) {
         setWindowModified(!appSettings->autoSaveEnabled());
     } else {
         setWindowModified(false);
+    }
+
+    if (activeTabIndex >= 0) {
+        updateTabLabel(activeTabIndex);
     }
 }
 
@@ -545,20 +634,17 @@ void MainWindow::onOperationFinished()
 
 void MainWindow::changeFont()
 {
-    bool success;
-
-    QFont font =
-        SimpleFontDialog::font(&success, editor->font(), this);
-
-    if (success) {
-        editor->setFont(font.family(), font.pointSize());
-        appSettings->setEditorFont(font);
-    }
+    FontSettingsDialog dialog(this);
+    dialog.exec();
 }
 
 void MainWindow::onFontSizeChanged(int size)
 {
-    QFont font = editor->font();
+    if (!currentEditor()) {
+        return;
+    }
+
+    QFont font = appSettings->editorFont();
     font.setPointSize(size);
     appSettings->setEditorFont(font);
 }
@@ -573,24 +659,21 @@ void MainWindow::onSetLocale()
 void MainWindow::copyHtml()
 {
     Exporter *htmlExporter = appSettings->currentHtmlExporter();
+    auto *editor = currentEditor();
 
-    if (nullptr != htmlExporter) {
+    if (nullptr != htmlExporter && nullptr != editor) {
         QTextCursor c = editor->textCursor();
         QString markdownText;
         QString html;
 
         if (c.hasSelection()) {
-            // Get only selected text from the document.
             markdownText = c.selection().toPlainText();
         } else {
-            // Get all text from the document.
             markdownText = editor->toPlainText();
         }
 
-        // Convert Markdown to HTML.
         htmlExporter->exportToHtml(markdownText, html);
 
-        // Insert HTML into clipboard.
         QClipboard *clipboard = QApplication::clipboard();
         clipboard->setText(html);
     }
@@ -629,8 +712,8 @@ void MainWindow::onAboutToShowMenuBarMenu()
 
 void MainWindow::onSidebarVisibilityChanged(bool visible)
 {
-    if (!visible) {
-        editor->setFocus();
+    if (!visible && currentEditor()) {
+        currentEditor()->setFocus();
     }
 
     this->adjustEditor();
@@ -673,11 +756,493 @@ QAction *MainWindow::appAction(AppActions::ActionType actionType) const
 {
     auto action = m_actions->get(actionType);
 
-    if (nullptr) {
+    if (nullptr == action) {
         qCritical() << "Unknown action type:" << actionType;
     }
 
     return action;
+}
+
+DocumentTab *MainWindow::currentTab() const
+{
+    if (activeTabIndex < 0 || activeTabIndex >= tabs.size()) {
+        return nullptr;
+    }
+    return tabs[activeTabIndex];
+}
+
+MarkdownEditor *MainWindow::currentEditor() const
+{
+    return currentTab() ? currentTab()->editor() : nullptr;
+}
+
+MarkdownDocument *MainWindow::currentDocument() const
+{
+    return currentTab() ? currentTab()->document() : nullptr;
+}
+
+DocumentManager *MainWindow::currentDocumentManager() const
+{
+    return currentTab() ? currentTab()->documentManager() : nullptr;
+}
+
+HtmlPreview *MainWindow::currentHtmlPreview() const
+{
+    return currentTab() ? currentTab()->htmlPreview() : nullptr;
+}
+
+DocumentStatistics *MainWindow::currentDocumentStats() const
+{
+    return currentTab() ? currentTab()->documentStats() : nullptr;
+}
+
+DocumentTab *MainWindow::addDocumentTab(const Bookmark &location, bool activate)
+{
+    if (location.isValid()) {
+        const QString absPath = absoluteFileKey(location.filePath());
+        for (int i = 0; i < tabs.size(); ++i) {
+            MarkdownDocument *doc = tabs[i]->document();
+            if (!doc || doc->isNew()) {
+                continue;
+            }
+            if (absoluteFileKey(doc->filePath()) != absPath) {
+                continue;
+            }
+
+            if (MarkdownEditor *ed = tabs[i]->editor()) {
+                if (location.cursorPosition() >= 0) {
+                    QTextDocument *qdoc = ed->document();
+                    int maxPos = qMax(0, qdoc->characterCount() - 1);
+                    int pos = qBound(0, location.cursorPosition(), maxPos);
+                    QTextCursor cur = ed->textCursor();
+                    cur.setPosition(pos);
+                    ed->setTextCursor(cur);
+                }
+            }
+            if (activate) {
+                tabBar->setCurrentIndex(i);
+            }
+            return tabs[i];
+        }
+    }
+
+    ColorScheme colorScheme = appSettings->darkModeEnabled()
+        ? theme.darkColorScheme()
+        : theme.lightColorScheme();
+
+    auto *tab = new DocumentTab(colorScheme, this);
+    tabs.append(tab);
+
+    auto *editor = tab->editor();
+    editor->setMinimumWidth(0.1 * qApp->primaryScreen()->size().width());
+    editor->setEditorWidth((EditorWidth)appSettings->editorWidth());
+    editor->setEditorCorners((InterfaceStyle)appSettings->interfaceStyle());
+    editor->setHemingWayModeEnabled(hemingwayModeEnabled);
+
+    if (focusModeEnabled) {
+        editor->setFocusMode(appSettings->focusMode());
+    }
+
+    auto *preview = tab->htmlPreview();
+    preview->setMinimumWidth(0.1 * qApp->primaryScreen()->size().width());
+
+    editorStack->addWidget(editor);
+    previewStack->addWidget(preview);
+
+    int tabIndex = tabBar->addTab(tab->document()->displayName());
+    tabBar->setTabToolTip(tabIndex, tab->document()->displayName());
+
+    connect(editor, &MarkdownEditor::fontSizeChanged, this, &MainWindow::onFontSizeChanged);
+    connect(tab->documentManager(), &DocumentManager::documentDisplayNameChanged, this, [this, tab](const QString &) {
+        int idx = tabs.indexOf(tab);
+        if (idx >= 0) {
+            updateTabLabel(idx);
+        }
+    });
+    connect(tab->documentManager(), &DocumentManager::documentModifiedChanged, this, [this, tab](bool) {
+        int idx = tabs.indexOf(tab);
+        if (idx >= 0) {
+            updateTabLabel(idx);
+        }
+    });
+
+    if (activate) {
+        tabBar->setCurrentIndex(tabIndex);
+    }
+
+    if (location.isValid()) {
+        tab->documentManager()->openFileAt(location);
+    }
+
+    QString previewSheet = htmlPreviewStyleSheetForCurrentTheme();
+    if (previewSheet.isNull()) {
+        qCritical() << "Invalid HTML preview style sheet provided.";
+    } else {
+        preview->setStyleSheet(previewSheet);
+    }
+
+    tab->setPreviewInPlaceEditingEnabled(appSettings->focusView() != FocusViewEditorOnly);
+
+    return tab;
+}
+
+void MainWindow::activateTab(int index)
+{
+    if (index < 0 || index >= tabs.size()) {
+        return;
+    }
+
+    activeTabIndex = index;
+    auto *tab = tabs[index];
+
+    editorStack->setCurrentWidget(tab->editor());
+    previewStack->setCurrentWidget(tab->htmlPreview());
+
+    wireActiveTab();
+
+    if (tab->editor()) {
+        setFocusProxy(tab->editor());
+        tab->editor()->setFocus();
+    }
+
+    adjustEditor();
+}
+
+bool MainWindow::closeTabAt(int index)
+{
+    if (index < 0 || index >= tabs.size()) {
+        return false;
+    }
+
+    auto *tab = tabs[index];
+    bool wasActive = (index == activeTabIndex);
+
+    if (!tab->documentManager()->confirmTabRemoval(wasActive)) {
+        return false;
+    }
+
+    // Never-tabless policy: if this is the last tab, spawn a fresh untitled
+    // replacement BEFORE tearing down, so the stacks never go empty and we
+    // do not trip the wireActiveTab(nullptr) path. Activating the new tab
+    // makes the old one non-active, so the rest of the teardown is a plain
+    // non-active removal.
+    if (tabs.size() == 1) {
+        auto *replacement = addDocumentTab(Bookmark(), /*activate=*/ true);
+        if (replacement && replacement->documentManager()) {
+            replacement->documentManager()->createUntitled();
+        }
+        wasActive = false; // the new replacement is active now, not the old tab
+    }
+
+    detachActiveTab(index, wasActive);
+    removeTabWidgets(tab, index);
+    tab->deleteLater();
+
+    if (tabs.isEmpty()) {
+        // Defensive - never-tabless policy should prevent this, but keep the
+        // stacks showing empty panes if something odd happens.
+        activeTabIndex = -1;
+        editorStack->setCurrentWidget(editorEmptyPane);
+        previewStack->setCurrentWidget(previewEmptyPane);
+        adjustEditor();
+        return true;
+    }
+
+    int newIndex = qBound(0,
+                          wasActive ? qMin(index, tabs.size() - 1) : activeTabIndex,
+                          tabs.size() - 1);
+
+    if (tabBar->currentIndex() != newIndex) {
+        tabBar->setCurrentIndex(newIndex);
+    } else if (activeTabIndex != newIndex) {
+        activateTab(newIndex);
+    }
+
+    return true;
+}
+
+void MainWindow::detachActiveTab(int index, bool wasActive)
+{
+    if (!wasActive) {
+        return;
+    }
+
+    for (const auto &c : std::as_const(perTabConnections)) {
+        QObject::disconnect(c);
+    }
+    perTabConnections.clear();
+
+    setFocusProxy(nullptr);
+
+    if (outlineWidget) {
+        outlineWidget->setEditor(nullptr);
+    }
+    if (findReplace) {
+        findReplace->setEditor(nullptr);
+    }
+    if (statisticsIndicator) {
+        statisticsIndicator->setDocumentStats(nullptr);
+    }
+
+    activeTabIndex = -1;
+    Q_UNUSED(index);
+}
+
+void MainWindow::removeTabWidgets(DocumentTab *tab, int index)
+{
+    if (!tab) {
+        return;
+    }
+
+    tabs.removeAt(index);
+
+    if (tab->editor()) {
+        editorStack->removeWidget(tab->editor());
+    }
+    if (tab->htmlPreview()) {
+        previewStack->removeWidget(tab->htmlPreview());
+    }
+
+    tabBar->blockSignals(true);
+    tabBar->removeTab(index);
+    tabBar->blockSignals(false);
+
+    if (activeTabIndex >= 0 && index < activeTabIndex) {
+        activeTabIndex--;
+    }
+}
+
+void MainWindow::wireActiveTab()
+{
+    for (const auto &c : std::as_const(perTabConnections)) {
+        QObject::disconnect(c);
+    }
+    perTabConnections.clear();
+
+    auto *tab = currentTab();
+
+    if (!tab) {
+        outlineWidget->setEditor(nullptr);
+        findReplace->setEditor(nullptr);
+        setFocusProxy(nullptr);
+        changeDocumentDisplayName(QString());
+        setWindowModified(false);
+        if (statisticsIndicator) {
+            statisticsIndicator->setDocumentStats(nullptr);
+        }
+        documentStatsWidget->setWordCount(0);
+        documentStatsWidget->setCharacterCount(0);
+        documentStatsWidget->setSentenceCount(0);
+        documentStatsWidget->setParagraphCount(0);
+        documentStatsWidget->setPageCount(0);
+        documentStatsWidget->setReadingTime(0);
+        documentStatsWidget->setComplexWords(0);
+        documentStatsWidget->setLixReadingEase(0);
+        documentStatsWidget->setReadabilityIndex(0);
+        sessionStats->startNewSession(0);
+        return;
+    }
+
+    auto *editor = tab->editor();
+    auto *dm = tab->documentManager();
+    auto *stats = tab->documentStats();
+    auto *preview = tab->htmlPreview();
+
+    perTabConnections << connect(dm, &DocumentManager::documentDisplayNameChanged, this, &MainWindow::changeDocumentDisplayName);
+    perTabConnections << connect(dm, &DocumentManager::documentModifiedChanged, this, &MainWindow::setWindowModified);
+    perTabConnections << connect(dm, &DocumentManager::operationStarted, this, &MainWindow::onOperationStarted);
+    perTabConnections << connect(dm, &DocumentManager::operationUpdate, this, &MainWindow::onOperationStarted);
+    perTabConnections << connect(dm, &DocumentManager::operationFinished, this, &MainWindow::onOperationFinished);
+    perTabConnections << connect(dm, &DocumentManager::sessionHistoryChanged, this, &MainWindow::refreshRecentFiles);
+
+    perTabConnections << connect(dm, &DocumentManager::documentLoaded, this, [this]() {
+        if (auto *st = currentDocumentStats()) {
+            sessionStats->startNewSession(st->wordCount());
+        }
+        refreshRecentFiles();
+        if (folderViewWidget && currentDocument()) {
+            folderViewWidget->reloadFolderViewFromPath(currentDocument()->filePath(), appSettings->folderViewShowAllFilesEnabled());
+        }
+    });
+
+    perTabConnections << connect(dm, &DocumentManager::documentClosed, this, [this]() {
+        sessionStats->startNewSession(0);
+    });
+
+    perTabConnections << connect(stats, &DocumentStatistics::wordCountChanged, documentStatsWidget, &DocumentStatisticsWidget::setWordCount);
+    perTabConnections << connect(stats, &DocumentStatistics::characterCountChanged, documentStatsWidget, &DocumentStatisticsWidget::setCharacterCount);
+    perTabConnections << connect(stats, &DocumentStatistics::sentenceCountChanged, documentStatsWidget, &DocumentStatisticsWidget::setSentenceCount);
+    perTabConnections << connect(stats, &DocumentStatistics::paragraphCountChanged, documentStatsWidget, &DocumentStatisticsWidget::setParagraphCount);
+    perTabConnections << connect(stats, &DocumentStatistics::pageCountChanged, documentStatsWidget, &DocumentStatisticsWidget::setPageCount);
+    perTabConnections << connect(stats, &DocumentStatistics::complexWordsChanged, documentStatsWidget, &DocumentStatisticsWidget::setComplexWords);
+    perTabConnections << connect(stats, &DocumentStatistics::readingTimeChanged, documentStatsWidget, &DocumentStatisticsWidget::setReadingTime);
+    perTabConnections << connect(stats, &DocumentStatistics::lixReadingEaseChanged, documentStatsWidget, &DocumentStatisticsWidget::setLixReadingEase);
+    perTabConnections << connect(stats, &DocumentStatistics::readabilityIndexChanged, documentStatsWidget, &DocumentStatisticsWidget::setReadabilityIndex);
+
+    // Seed the sidebar stats widget with the new tab's current values.
+    documentStatsWidget->setWordCount(stats->wordCount());
+    documentStatsWidget->setCharacterCount(stats->characterCount());
+    documentStatsWidget->setSentenceCount(stats->sentenceCount());
+    documentStatsWidget->setParagraphCount(stats->paragraphCount());
+    documentStatsWidget->setPageCount(stats->pageCount());
+    documentStatsWidget->setReadingTime(stats->readingTime());
+
+    perTabConnections << connect(stats, &DocumentStatistics::totalWordCountChanged, sessionStats, &SessionStatistics::onDocumentWordCountChanged);
+    perTabConnections << connect(editor, &MarkdownEditor::typingPaused, sessionStats, &SessionStatistics::onTypingPaused);
+    perTabConnections << connect(editor, &MarkdownEditor::typingResumed, sessionStats, &SessionStatistics::onTypingResumed);
+
+    outlineWidget->setEditor(editor);
+    perTabConnections << connect(outlineWidget, &OutlineWidget::headingNumberNavigated, preview, &HtmlPreview::navigateToHeading);
+
+    findReplace->setEditor(editor);
+
+    // Push current title/modified state into the window chrome.
+    changeDocumentDisplayName(tab->document()->displayName());
+    setWindowModified(tab->document()->isModified() && !appSettings->autoSaveEnabled());
+
+    if (statisticsIndicator) {
+        statisticsIndicator->setDocumentStats(stats);
+    }
+
+    sessionStats->startNewSession(stats->wordCount());
+}
+
+void MainWindow::persistOpenTabs()
+{
+    if (!appSettings->restoreSessionEnabled()) {
+        return;
+    }
+
+    QSettings s;
+    s.remove(GW_SESSION_OPEN_TABS_KEY);
+
+    s.beginWriteArray(GW_SESSION_OPEN_TABS_KEY);
+    int written = 0;
+    int activeOut = -1;
+    QHash<QString, int> pathToWrittenIndex;
+
+    for (int i = 0; i < tabs.size(); ++i) {
+        auto *tab = tabs[i];
+        if (!tab) continue;
+
+        auto *doc = tab->document();
+        auto *editor = tab->editor();
+        if (!doc || !editor) continue;
+        if (doc->isNew() || doc->filePath().isEmpty()) continue;
+
+        const QString absPath = absoluteFileKey(doc->filePath());
+        if (pathToWrittenIndex.contains(absPath)) {
+            if (i == activeTabIndex) {
+                activeOut = pathToWrittenIndex.value(absPath);
+            }
+            continue;
+        }
+
+        s.setArrayIndex(written);
+        s.setValue(GW_SESSION_TAB_PATH_KEY, doc->filePath());
+        s.setValue(GW_SESSION_TAB_CURSOR_KEY, editor->textCursor().position());
+
+        pathToWrittenIndex.insert(absPath, written);
+        if (i == activeTabIndex) {
+            activeOut = written;
+        }
+
+        ++written;
+    }
+
+    s.endArray();
+    s.setValue(GW_SESSION_ACTIVE_TAB_KEY, activeOut);
+}
+
+BookmarkList MainWindow::loadPersistedTabs(int *activeOut) const
+{
+    BookmarkList result;
+    if (activeOut) {
+        *activeOut = -1;
+    }
+
+    QSettings s;
+    int count = s.beginReadArray(GW_SESSION_OPEN_TABS_KEY);
+    QSet<QString> seenPaths;
+
+    for (int i = 0; i < count; ++i) {
+        s.setArrayIndex(i);
+        QString path = s.value(GW_SESSION_TAB_PATH_KEY).toString();
+        int cursor = s.value(GW_SESSION_TAB_CURSOR_KEY, 0).toInt();
+        if (path.isEmpty()) continue;
+
+        Bookmark bm(path, cursor);
+        if (!bm.isValid()) continue;
+
+        const QString absPath = bm.filePath();
+        if (seenPaths.contains(absPath)) {
+            continue;
+        }
+        seenPaths.insert(absPath);
+
+        result.append(bm);
+    }
+
+    s.endArray();
+
+    if (activeOut) {
+        *activeOut = s.value(GW_SESSION_ACTIVE_TAB_KEY, -1).toInt();
+    }
+
+    return result;
+}
+
+void MainWindow::updateTabLabel(int index)
+{
+    if (index < 0 || index >= tabs.size() || !tabBar) {
+        return;
+    }
+
+    auto *tab = tabs[index];
+    QString name = tab->document()->displayName();
+
+    if (tab->document()->isModified()) {
+        name = "• " + name;
+    }
+
+    tabBar->setTabText(index, name);
+    tabBar->setTabToolTip(index, tab->document()->filePath().isEmpty() ? name : tab->document()->filePath());
+}
+
+void MainWindow::applyFocusView(FocusView view)
+{
+    const bool showEditor = (view != FocusViewPreviewOnly);
+    const bool showPreview = (view != FocusViewEditorOnly);
+
+    if (editorStack) {
+        editorStack->setVisible(showEditor);
+    }
+    if (previewStack) {
+        previewStack->setVisible(showPreview);
+    }
+
+    // Keep legacy htmlPreviewVisible in sync so older code paths stay happy.
+    appSettings->setHtmlPreviewVisible(showPreview);
+
+    const bool previewTyping = (view != FocusViewEditorOnly);
+    for (DocumentTab *tab : std::as_const(tabs)) {
+        if (tab) {
+            tab->setPreviewInPlaceEditingEnabled(previewTyping);
+        }
+    }
+
+    adjustEditor();
+}
+
+void MainWindow::syncFocusViewActions(FocusView view)
+{
+    QAction *split = appAction(AppActions::LayoutSplit);
+    QAction *editorOnly = appAction(AppActions::LayoutEditorOnly);
+    QAction *previewOnly = appAction(AppActions::LayoutPreviewOnly);
+
+    if (split) split->setChecked(view == FocusViewSplit);
+    if (editorOnly) editorOnly->setChecked(view == FocusViewEditorOnly);
+    if (previewOnly) previewOnly->setChecked(view == FocusViewPreviewOnly);
 }
 
 void MainWindow::loadTheme()
@@ -719,12 +1284,24 @@ void MainWindow::setupActions()
 {
     // File Menu Actions
 
-    m_actions->connect(AppActions::New, documentManager, &DocumentManager::createUntitled);
-    m_actions->connect(AppActions::Open, documentManager, &DocumentManager::open);
+    m_actions->connect(AppActions::New, this, [this]() {
+        addDocumentTab();
+    });
+    m_actions->connect(AppActions::Open, this, [this]() {
+        QString startPath = currentDocument() ? currentDocument()->filePath() : QString();
+        QFileInfo info(startPath);
+        QString startDir = info.exists() ? info.absolutePath() : QString();
+
+        QString filePath = QFileDialog::getOpenFileName(this, tr("Open File"), startDir,
+            tr("Markdown files (*.md *.markdown *.mdown *.mkd *.mkdn *.txt);;All files (*)"));
+
+        if (!filePath.isEmpty()) {
+            addDocumentTab(Bookmark(filePath));
+        }
+    });
 
     auto reopenLastAction = appAction(AppActions::ReopenLastClosed);
 
-    // Get open recent files actions.
     for (int i = AppActions::OpenMostRecent; i <= AppActions::OpenLeastRecent; i++) {
         int index = i - AppActions::OpenMostRecent;
         bool enableReopenLast = false;
@@ -750,11 +1327,6 @@ void MainWindow::setupActions()
             Q_UNUSED(checked)
 
             if (action->data().isValid()) {
-                // Use the action's data for access to the actual file
-                // path, since KDE Plasma will add a keyboard
-                // accelerator to the action's text by inserting an
-                // ampersand (&) into it.
-                //
                 Library library;
                 Bookmark location = library.lookup(action->data().toString());
 
@@ -762,32 +1334,66 @@ void MainWindow::setupActions()
                     location = Bookmark(action->data().toString());
                 }
 
-                documentManager->openFileAt(location);
+                addDocumentTab(location);
                 refreshRecentFiles();
             }
         });
     }
 
     m_actions->connect(AppActions::ClearRecentFilesList, this, &MainWindow::clearRecentFileHistory);
-    m_actions->connect(AppActions::Save, documentManager, &DocumentManager::saveFile);
-    m_actions->connect(AppActions::SaveAs, documentManager, &DocumentManager::saveAs);
-    m_actions->connect(AppActions::RenameFile, documentManager, &DocumentManager::rename);
-    m_actions->connect(AppActions::Reload, documentManager, &DocumentManager::reload);
-    m_actions->connect(AppActions::Export, documentManager, &DocumentManager::exportFile);
-    m_actions->connect(AppActions::Quit, this, &MainWindow::quitApplication);
+    m_actions->connect(AppActions::Save, this, [this]() {
+        if (auto *dm = currentDocumentManager()) dm->saveFile();
+    });
+    m_actions->connect(AppActions::SaveAs, this, [this]() {
+        if (auto *dm = currentDocumentManager()) dm->saveAs();
+    });
+    m_actions->connect(AppActions::RenameFile, this, [this]() {
+        if (auto *dm = currentDocumentManager()) dm->rename();
+    });
+    m_actions->connect(AppActions::Reload, this, [this]() {
+        if (auto *dm = currentDocumentManager()) dm->reload();
+    });
+    m_actions->connect(AppActions::Export, this, [this]() {
+        if (auto *dm = currentDocumentManager()) dm->exportFile();
+    });
 
-    // Edit Menu Actions
+    m_actions->connect(AppActions::CloseTab, this, [this]() {
+        if (activeTabIndex >= 0) {
+            closeTabAt(activeTabIndex);
+        }
+    });
+    m_actions->connect(AppActions::NextTab, this, [this]() {
+        if (tabs.size() < 2) return;
+        int next = (activeTabIndex + 1) % tabs.size();
+        tabBar->setCurrentIndex(next);
+    });
+    m_actions->connect(AppActions::PrevTab, this, [this]() {
+        if (tabs.size() < 2) return;
+        int prev = (activeTabIndex - 1 + tabs.size()) % tabs.size();
+        tabBar->setCurrentIndex(prev);
+    });
 
-    m_actions->connect(AppActions::Undo, editor, &MarkdownEditor::undo);
-    m_actions->connect(AppActions::Redo, editor, &MarkdownEditor::redo);
-    m_actions->connect(AppActions::Cut, editor, &MarkdownEditor::cut);
-    m_actions->connect(AppActions::Copy, editor, &MarkdownEditor::copy);
-    m_actions->connect(AppActions::Paste, editor, &MarkdownEditor::paste);
+    m_actions->connect(AppActions::Quit, this, [this]() {
+        close();
+    });
+
+    // Edit Menu Actions - delegated to current tab's editor via lambdas.
+
+    auto editorAction = [this]<typename Ret>(Ret (MarkdownEditor::*method)()) {
+        return [this, method]() {
+            if (auto *ed = currentEditor()) (ed->*method)();
+        };
+    };
+
+    m_actions->connect(AppActions::Undo, this, editorAction(&MarkdownEditor::undo));
+    m_actions->connect(AppActions::Redo, this, editorAction(&MarkdownEditor::redo));
+    m_actions->connect(AppActions::Cut, this, editorAction(&MarkdownEditor::cut));
+    m_actions->connect(AppActions::Copy, this, editorAction(&MarkdownEditor::copy));
+    m_actions->connect(AppActions::Paste, this, editorAction(&MarkdownEditor::paste));
     m_actions->connect(AppActions::CopyHTML, this, &MainWindow::copyHtml);
-    m_actions->connect(AppActions::SelectAll, editor, &MarkdownEditor::selectAll);
-    m_actions->connect(AppActions::Deselect, editor, &MarkdownEditor::deselectText);
-    m_actions->connect(AppActions::InsertImage, editor, &MarkdownEditor::insertImage);
-    // TODO: add Deselect method to editor.
+    m_actions->connect(AppActions::SelectAll, this, editorAction(&MarkdownEditor::selectAll));
+    m_actions->connect(AppActions::Deselect, this, editorAction(&MarkdownEditor::deselectText));
+    m_actions->connect(AppActions::InsertImage, this, editorAction(&MarkdownEditor::insertImage));
     m_actions->connect(AppActions::Find, findReplace, &FindReplace::showFindView);
     m_actions->connect(AppActions::Replace, findReplace, &FindReplace::showReplaceView);
     m_actions->connect(AppActions::FindNext, findReplace, &FindReplace::findNext);
@@ -796,22 +1402,22 @@ void MainWindow::setupActions()
 
     // Format Menu Actions
 
-    m_actions->connect(AppActions::Strong, editor, &MarkdownEditor::bold);
-    m_actions->connect(AppActions::Emphasis, editor, &MarkdownEditor::italic);
-    m_actions->connect(AppActions::Strikethrough, editor, &MarkdownEditor::strikethrough);
-    m_actions->connect(AppActions::InsertHTMLComment, editor, &MarkdownEditor::insertComment);
-    m_actions->connect(AppActions::IndentText, editor, &MarkdownEditor::indentText);
-    m_actions->connect(AppActions::UnindentText, editor, &MarkdownEditor::unindentText);
-    m_actions->connect(AppActions::CodeFences, editor, &MarkdownEditor::insertCodeFences);
-    m_actions->connect(AppActions::BlockQuote, editor, &MarkdownEditor::createBlockquote);
-    m_actions->connect(AppActions::StripBlockQuote, editor, &MarkdownEditor::removeBlockquote);
-    m_actions->connect(AppActions::BulletListAsterisk, editor, &MarkdownEditor::createBulletListWithAsteriskMarker);
-    m_actions->connect(AppActions::BulletListMinus, editor, &MarkdownEditor::createBulletListWithMinusMarker);
-    m_actions->connect(AppActions::BulletListPlus, editor, &MarkdownEditor::createBulletListWithPlusMarker);
-    m_actions->connect(AppActions::NumberedListPeriod, editor, &MarkdownEditor::createNumberedListWithPeriodMarker);
-    m_actions->connect(AppActions::NumberedListParenthesis, editor, &MarkdownEditor::createNumberedListWithParenthesisMarker);
-    m_actions->connect(AppActions::TaskList, editor, &MarkdownEditor::createTaskList);
-    m_actions->connect(AppActions::TaskComplete, editor, &MarkdownEditor::toggleTaskComplete);
+    m_actions->connect(AppActions::Strong, this, editorAction(&MarkdownEditor::bold));
+    m_actions->connect(AppActions::Emphasis, this, editorAction(&MarkdownEditor::italic));
+    m_actions->connect(AppActions::Strikethrough, this, editorAction(&MarkdownEditor::strikethrough));
+    m_actions->connect(AppActions::InsertHTMLComment, this, editorAction(&MarkdownEditor::insertComment));
+    m_actions->connect(AppActions::IndentText, this, editorAction(&MarkdownEditor::indentText));
+    m_actions->connect(AppActions::UnindentText, this, editorAction(&MarkdownEditor::unindentText));
+    m_actions->connect(AppActions::CodeFences, this, editorAction(&MarkdownEditor::insertCodeFences));
+    m_actions->connect(AppActions::BlockQuote, this, editorAction(&MarkdownEditor::createBlockquote));
+    m_actions->connect(AppActions::StripBlockQuote, this, editorAction(&MarkdownEditor::removeBlockquote));
+    m_actions->connect(AppActions::BulletListAsterisk, this, editorAction(&MarkdownEditor::createBulletListWithAsteriskMarker));
+    m_actions->connect(AppActions::BulletListMinus, this, editorAction(&MarkdownEditor::createBulletListWithMinusMarker));
+    m_actions->connect(AppActions::BulletListPlus, this, editorAction(&MarkdownEditor::createBulletListWithPlusMarker));
+    m_actions->connect(AppActions::NumberedListPeriod, this, editorAction(&MarkdownEditor::createNumberedListWithPeriodMarker));
+    m_actions->connect(AppActions::NumberedListParenthesis, this, editorAction(&MarkdownEditor::createNumberedListWithParenthesisMarker));
+    m_actions->connect(AppActions::TaskList, this, editorAction(&MarkdownEditor::createTaskList));
+    m_actions->connect(AppActions::TaskComplete, this, editorAction(&MarkdownEditor::toggleTaskComplete));
 
     // View Menu Actions
 
@@ -819,8 +1425,24 @@ void MainWindow::setupActions()
     m_actions->connect(AppActions::FullScreen, this, &MainWindow::toggleFullScreen);
     appAction(AppActions::DistractionFreeMode)->setChecked(false);
     m_actions->connect(AppActions::DistractionFreeMode, this, &MainWindow::toggleFocusMode);
-    appAction(AppActions::Preview)->setChecked(appSettings->htmlPreviewVisible());
-    m_actions->connect(AppActions::Preview, this, &MainWindow::toggleHtmlPreview);
+
+    // Layout actions - exclusive group driving the focus view.
+    layoutActionGroup = new QActionGroup(this);
+    layoutActionGroup->setExclusive(true);
+    layoutActionGroup->addAction(appAction(AppActions::LayoutSplit));
+    layoutActionGroup->addAction(appAction(AppActions::LayoutEditorOnly));
+    layoutActionGroup->addAction(appAction(AppActions::LayoutPreviewOnly));
+
+    m_actions->connect(AppActions::LayoutSplit, this, [this]() {
+        appSettings->setFocusView(FocusViewSplit);
+    });
+    m_actions->connect(AppActions::LayoutEditorOnly, this, [this]() {
+        appSettings->setFocusView(FocusViewEditorOnly);
+    });
+    m_actions->connect(AppActions::LayoutPreviewOnly, this, [this]() {
+        appSettings->setFocusView(FocusViewPreviewOnly);
+    });
+
     m_actions->connect(AppActions::HemingwayMode, this, &MainWindow::toggleHemingwayMode);
     appAction(AppActions::DarkMode)->setChecked(appSettings->darkModeEnabled());
     m_actions->connect(AppActions::DarkMode, this, [this](bool enabled) {
@@ -845,8 +1467,8 @@ void MainWindow::setupActions()
         sidebar->setVisible(true);
         sidebar->setCurrentTabIndex(CheatSheetSidebarTab);
     });
-    m_actions->connect(AppActions::ZoomIn, editor, &MarkdownEditor::increaseFontSize);
-    m_actions->connect(AppActions::ZoomOut, editor, &MarkdownEditor::decreaseFontSize);
+    m_actions->connect(AppActions::ZoomIn, this, editorAction(&MarkdownEditor::increaseFontSize));
+    m_actions->connect(AppActions::ZoomOut, this, editorAction(&MarkdownEditor::decreaseFontSize));
 
     // Settings Menu Actions
 
@@ -872,63 +1494,7 @@ void MainWindow::setupGui()
     setObjectName("mainWindow");
     setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
 
-    MarkdownDocument *document = new MarkdownDocument();
-
-    editor = new MarkdownEditor(document, theme.lightColorScheme(), this);
-    editor->setMinimumWidth(0.1 * qApp->primaryScreen()->size().width());
-    editor->setFont(appSettings->editorFont().family(), appSettings->editorFont().pointSize());
-    editor->setUseUnderlineForEmphasis(appSettings->useUnderlineForEmphasis());
-    editor->setEnableLargeHeadingSizes(appSettings->largeHeadingSizesEnabled());
-    editor->setAutoMatchEnabled(appSettings->autoMatchEnabled());
-    editor->setBulletPointCyclingEnabled(appSettings->bulletPointCyclingEnabled());
-    editor->setPlainText("");
-    editor->setEditorWidth((EditorWidth)appSettings->editorWidth());
-    editor->setEditorCorners((InterfaceStyle)appSettings->interfaceStyle());
-    editor->setItalicizeBlockquotes(appSettings->italicizeBlockquotes());
-    editor->setTabulationWidth(appSettings->tabWidth());
-    editor->setInsertSpacesForTabs(appSettings->insertSpacesForTabsEnabled());
-    editor->setShowUnbreakableSpaces(appSettings->showUnbreakableSpaceEnabled());
-
-    editor->setAutoMatchEnabled('\"', appSettings->autoMatchCharEnabled('\"'));
-    editor->setAutoMatchEnabled('\'', appSettings->autoMatchCharEnabled('\''));
-    editor->setAutoMatchEnabled('(', appSettings->autoMatchCharEnabled('('));
-    editor->setAutoMatchEnabled('[', appSettings->autoMatchCharEnabled('['));
-    editor->setAutoMatchEnabled('{', appSettings->autoMatchCharEnabled('{'));
-    editor->setAutoMatchEnabled('*', appSettings->autoMatchCharEnabled('*'));
-    editor->setAutoMatchEnabled('_', appSettings->autoMatchCharEnabled('_'));
-    editor->setAutoMatchEnabled('`', appSettings->autoMatchCharEnabled('`'));
-    editor->setAutoMatchEnabled('<', appSettings->autoMatchCharEnabled('<'));
-    connect(appSettings, &AppSettings::tabWidthChanged, editor, &MarkdownEditor::setTabulationWidth);
-    connect(appSettings, &AppSettings::insertSpacesForTabsChanged, editor, &MarkdownEditor::setInsertSpacesForTabs);
-    connect(appSettings, &AppSettings::showUnbreakableSpaceEnabledChanged, editor, &MarkdownEditor::setShowUnbreakableSpaces);
-    connect(appSettings, &AppSettings::useUnderlineForEmphasisChanged, editor, &MarkdownEditor::setUseUnderlineForEmphasis);
-    connect(appSettings, &AppSettings::italicizeBlockquotesChanged, editor, &MarkdownEditor::setItalicizeBlockquotes);
-    connect(appSettings, &AppSettings::largeHeadingSizesChanged, editor, &MarkdownEditor::setEnableLargeHeadingSizes);
-    connect(appSettings, &AppSettings::autoMatchChanged, editor, QOverload<bool>::of(&MarkdownEditor::setAutoMatchEnabled));
-    connect(appSettings, &AppSettings::autoMatchCharChanged, editor, QOverload<QChar, bool>::of(&MarkdownEditor::setAutoMatchEnabled));
-    connect(appSettings, &AppSettings::bulletPointCyclingChanged, editor, &MarkdownEditor::setBulletPointCyclingEnabled);
-
-    connect(editor, &MarkdownEditor::fontSizeChanged, this, &MainWindow::onFontSizeChanged);
-    setFocusProxy(editor);
-
-    documentManager = new DocumentManager(editor, this);
-    documentManager->setAutoSaveEnabled(appSettings->autoSaveEnabled());
-    documentManager->setFileBackupEnabled(appSettings->backupFileEnabled());
-    documentManager->setDraftLocation(appSettings->draftLocation());
-    documentManager->setBackupLocation(appSettings->backupLocation());
-    documentManager->setFileHistoryEnabled(appSettings->fileHistoryEnabled());
-    documentManager->setRestoreSessionEnabled(appSettings->restoreSessionEnabled());
-    connect(documentManager, &DocumentManager::documentDisplayNameChanged, this, &MainWindow::changeDocumentDisplayName);
-    connect(documentManager, &DocumentManager::documentModifiedChanged, this, &MainWindow::setWindowModified);
-    connect(documentManager, &DocumentManager::operationStarted, this, &MainWindow::onOperationStarted);
-    connect(documentManager, &DocumentManager::operationUpdate, this, &MainWindow::onOperationStarted);
-    connect(documentManager, &DocumentManager::operationFinished, this, &MainWindow::onOperationFinished);
-    connect(documentManager, &DocumentManager::sessionHistoryChanged, this, &MainWindow::refreshRecentFiles);
-
-    spelling = new SpellCheckDecorator(editor);
-    connect(appSettings, &AppSettings::spellCheckSettingsChanged, spelling, &SpellCheckDecorator::settingsChanged);
-
-    findReplace = new FindReplace(editor, this);
+    findReplace = new FindReplace(nullptr, this);
     statusBarWidgets.append(findReplace);
     findReplace->setVisible(false);
     findReplace->setMatchCaseIcon(primaryIconTheme->icon("match-case"));
@@ -942,29 +1508,68 @@ void MainWindow::setupGui()
     setupSidebar();
     setupMenuBar();
     setupStatusBar();
+    setupTabBar();
 
-    // Note that the parent widget for this new window must be NULL, so that
-    // it will hide beneath other windows when it is deactivated.
-    //
-    htmlPreview = new HtmlPreview(documentManager->document(), appSettings->currentHtmlExporter(), this);
+    editorStack = new QStackedWidget(this);
+    previewStack = new QStackedWidget(this);
+    editorStack->setMinimumWidth(0.1 * qApp->primaryScreen()->size().width());
+    previewStack->setMinimumWidth(0.1 * qApp->primaryScreen()->size().width());
+    editorStack->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    previewStack->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
-    connect(editor, &MarkdownEditor::typingPausedScaled, htmlPreview, &HtmlPreview::updatePreview);
+    editorEmptyPane = new QWidget(this);
+    previewEmptyPane = new QWidget(this);
+    editorEmptyPane->setObjectName(QStringLiteral("emptyEditorPane"));
+    previewEmptyPane->setObjectName(QStringLiteral("emptyPreviewPane"));
+    editorStack->addWidget(editorEmptyPane);
+    previewStack->addWidget(previewEmptyPane);
 
-    connect(documentManager, &DocumentManager::documentLoaded, htmlPreview, &HtmlPreview::updatePreview);
+    splitter = new QSplitter(this);
+    splitter->addWidget(sidebar);
+    splitter->addWidget(editorStack);
+    splitter->addWidget(previewStack);
+    splitter->setChildrenCollapsible(false);
+    splitter->setStretchFactor(0, 0);
+    splitter->setStretchFactor(1, 2);
+    splitter->setStretchFactor(2, 1);
+    splitter->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
-    connect(documentManager, &DocumentManager::documentClosed, htmlPreview, &HtmlPreview::updatePreview);
+    connect(splitter, &QSplitter::splitterMoved, splitter, [this](int pos, int index) {
+        Q_UNUSED(pos)
+        Q_UNUSED(index)
+        adjustEditor();
+    });
 
-    connect(outlineWidget, &OutlineWidget::headingNumberNavigated, htmlPreview, &HtmlPreview::navigateToHeading);
-    connect(appSettings, &AppSettings::currentHtmlExporterChanged, htmlPreview, &HtmlPreview::setHtmlExporter);
+    // Wrap the splitter with a vertical container so the tab bar sits right
+    // below the menu bar, sharing the same height as the menu bar row.
+    QWidget *container = new QWidget(this);
+    container->setObjectName("centralContainer");
+    container->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
-    htmlPreview->setMinimumWidth(0.1 * qApp->primaryScreen()->size().width());
-    htmlPreview->setObjectName("htmlpreview");
-    htmlPreview->setVisible(appSettings->htmlPreviewVisible());
+    QWidget *tabBarContainer = new QWidget(container);
+    tabBarContainer->setObjectName("tabBarContainer");
+    tabBarContainer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    // Ensure QSS background-color actually paints on this plain QWidget.
+    tabBarContainer->setAttribute(Qt::WA_StyledBackground, true);
 
-    // Set dimensions for the main window.  This is best done before
-    // building the status bar, so that we can determine whether the full
-    // screen button should be checked.
-    //
+    QHBoxLayout *tabRow = new QHBoxLayout(tabBarContainer);
+    tabRow->setContentsMargins(0, 0, 0, 0);
+    tabRow->setSpacing(0);
+    tabRow->addWidget(tabBar, 0);
+    tabRow->addWidget(newTabButton, 0, Qt::AlignVCenter);
+    tabRow->addStretch(1);
+
+    QVBoxLayout *vbox = new QVBoxLayout(container);
+    vbox->setContentsMargins(0, 0, 0, 0);
+    vbox->setSpacing(0);
+    vbox->addWidget(tabBarContainer, 0);
+    vbox->addWidget(splitter, 1);
+
+    setCentralWidget(container);
+
+    // Geometry / state restore must happen AFTER all dock widgets, toolbars,
+    // and the central widget are in place, otherwise QMainWindow can't place
+    // them correctly and leaves phantom gaps.
     QSettings windowSettings;
 
     if (windowSettings.contains(GW_MAIN_WINDOW_GEOMETRY_KEY)) {
@@ -974,16 +1579,6 @@ void MainWindow::setupGui()
         adjustSize();
     }
 
-    splitter = new QSplitter(this);
-    splitter->addWidget(sidebar);
-    splitter->addWidget(editor);
-    splitter->addWidget(htmlPreview);
-    splitter->setChildrenCollapsible(false);
-    splitter->setStretchFactor(0, 0);
-    splitter->setStretchFactor(1, 2);
-    splitter->setStretchFactor(2, 1);
-
-    // Set default sizes for splitter.
     QList<int> sizes;
     int sidebarWidth = width() * 0.2;
     int otherWidth = (width() - sidebarWidth) / 2;
@@ -993,18 +1588,66 @@ void MainWindow::setupGui()
 
     splitter->setSizes(sizes);
 
-    // If previous splitter geometry was stored, load it.
     if (windowSettings.contains(GW_SPLITTER_GEOMETRY_KEY)) {
         splitter->restoreState(windowSettings.value(GW_SPLITTER_GEOMETRY_KEY).toByteArray());
     }
 
-    connect(splitter, &QSplitter::splitterMoved, splitter, [this](int pos, int index) {
-        Q_UNUSED(pos)
-        Q_UNUSED(index)
-        adjustEditor();
+    // Tab seeding (session restore + CLI file + fallback untitled) is driven
+    // by the MainWindow ctor after setupGui() returns.
+}
+
+void MainWindow::setupTabBar()
+{
+    tabBar = new DocumentTabBar(this);
+    tabBar->setObjectName("documentTabBar");
+    tabBar->setTabsClosable(true);
+    tabBar->setMovable(true);
+    tabBar->setExpanding(false);
+    tabBar->setDocumentMode(true);
+    tabBar->setUsesScrollButtons(true);
+    tabBar->setElideMode(Qt::ElideRight);
+    tabBar->setDrawBase(false);
+    // Hug content width so the new-tab button sits right after the last tab,
+    // but still allow shrinking when the row is narrower than the tabs need
+    // (QTabBar then shows its scroll arrows).
+    tabBar->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
+
+    newTabButton = new QToolButton(this);
+    newTabButton->setObjectName("newTabButton");
+    newTabButton->setAutoRaise(true);
+    newTabButton->setFocusPolicy(Qt::NoFocus);
+    newTabButton->setToolTip(tr("New Tab"));
+    newTabButton->setToolButtonStyle(Qt::ToolButtonIconOnly);
+    newTabButton->setIcon(primaryIconTheme->icon(QStringLiteral("add-tab")));
+
+    connect(newTabButton, &QToolButton::clicked, this, [this]() {
+        addDocumentTab();
     });
 
-    setCentralWidget(splitter);
+    connect(tabBar, &QTabBar::currentChanged, this, [this](int index) {
+        if (index >= 0 && index < tabs.size()) {
+            activateTab(index);
+        }
+    });
+
+    connect(tabBar, &QTabBar::tabCloseRequested, this, [this](int index) {
+        closeTabAt(index);
+    });
+
+    connect(tabBar, &QTabBar::tabMoved, this, [this](int from, int to) {
+        if (from == to) return;
+        if (from < 0 || from >= tabs.size() || to < 0 || to >= tabs.size()) return;
+
+        DocumentTab *activeBeforeMove = (activeTabIndex >= 0 && activeTabIndex < tabs.size())
+            ? tabs[activeTabIndex] : nullptr;
+
+        auto *tab = tabs.takeAt(from);
+        tabs.insert(to, tab);
+
+        if (activeBeforeMove) {
+            activeTabIndex = tabs.indexOf(activeBeforeMove);
+        }
+    });
 }
 
 void MainWindow::setupMenuBar()
@@ -1038,6 +1681,10 @@ void MainWindow::setupMenuBar()
     menu->addAction(appAction(AppActions::Reload));
     menu->addSeparator();
     menu->addAction(appAction(AppActions::Export));
+    menu->addSeparator();
+    menu->addAction(appAction(AppActions::CloseTab));
+    menu->addAction(appAction(AppActions::NextTab));
+    menu->addAction(appAction(AppActions::PrevTab));
     menu->addSeparator();
     menu->addAction(appAction(AppActions::Quit));
 
@@ -1095,7 +1742,14 @@ void MainWindow::setupMenuBar()
     menu = addMenuBarMenu(tr("&View"));
     menu->addAction(appAction(AppActions::FullScreen));
     menu->addAction(appAction(AppActions::DistractionFreeMode));
-    menu->addAction(appAction(AppActions::Preview));
+
+    QMenu *layoutMenu = menu->addMenu(primaryIconTheme->icon(QStringLiteral("view-layout")), tr("Layout"));
+    connect(layoutMenu, &QMenu::aboutToShow, this, &MainWindow::onAboutToShowMenuBarMenu);
+    connect(layoutMenu, &QMenu::aboutToHide, this, &MainWindow::onAboutToHideMenuBarMenu);
+    layoutMenu->addAction(appAction(AppActions::LayoutSplit));
+    layoutMenu->addAction(appAction(AppActions::LayoutEditorOnly));
+    layoutMenu->addAction(appAction(AppActions::LayoutPreviewOnly));
+
     menu->addAction(appAction(AppActions::HemingwayMode));
     menu->addAction(appAction(AppActions::DarkMode));
     menu->addSeparator();
@@ -1130,12 +1784,10 @@ void MainWindow::setupMenuBar()
     menu->addAction(appAction(AppActions::AboutApp));
     menu->addAction(appAction(AppActions::AboutKDE));
 
-    // Refresh the recent files list with the latest and greatest.
     if (appSettings->fileHistoryEnabled()) {
         refreshRecentFiles();
     }
 
-    // Hide menu bar in full screen mode if enabled to do so.
     if (isFullScreen() && appSettings->hideMenuBarInFullScreenEnabled()) {
         menuBar()->hide();
     }
@@ -1149,7 +1801,6 @@ void MainWindow::setupStatusBar()
 
     statusBarLayout->addWidget(findReplace, 0, 0, 1, 3);
 
-    // Divide the status bar into thirds for placing widgets.
     QFrame *leftWidget = new QFrame(statusBar());
     leftWidget->setObjectName("leftStatusBarWidget");
     QFrame *midWidget = new QFrame(statusBar());
@@ -1167,7 +1818,6 @@ void MainWindow::setupStatusBar()
     rightWidget->setLayout(rightLayout);
     rightLayout->setContentsMargins(0,0,0,0);
 
-    // Add left-most widgets to status bar.
     QToolButton *button = new QToolButton();
     button->setDefaultAction(appAction(AppActions::ShowSidebar));
     button->setIcon(primaryIconTheme->icon("show-sidebar"));
@@ -1188,12 +1838,14 @@ void MainWindow::setupStatusBar()
 
     statusBarLayout->addWidget(leftWidget, 1, 0, 1, 1, Qt::AlignLeft);
 
-    // Add middle widgets to status bar.
     statusIndicator = new QLabel();
     midLayout->addWidget(statusIndicator, 0, Qt::AlignCenter);
     statusIndicator->hide();
 
-    statisticsIndicator = new StatisticsIndicator(this->documentStats, this->sessionStats, this);
+    // Start the statistics indicator without a document stats source - it
+    // will be retargeted to the active tab's DocumentStatistics via
+    // wireActiveTab().
+    statisticsIndicator = new StatisticsIndicator(nullptr, this->sessionStats, this);
 
     if ((appSettings->favoriteStatistic() >= 0)
             && (appSettings->favoriteStatistic() < statisticsIndicator->count())) {
@@ -1210,7 +1862,6 @@ void MainWindow::setupStatusBar()
     statusBarLayout->addWidget(midWidget, 1, 1, 1, 1, Qt::AlignCenter);
     statusBarWidgets.append(statisticsIndicator);
 
-    // Add right-most widgets to status bar.
     button = new QToolButton();
     button->setDefaultAction(appAction(AppActions::DarkMode));
     button->setIcon(secondaryIconTheme->icon("dark-mode"));
@@ -1220,8 +1871,24 @@ void MainWindow::setupStatusBar()
     statusBarWidgets.append(button);
 
     button = new QToolButton();
-    button->setDefaultAction(appAction(AppActions::Preview));
-    button->setIcon(secondaryIconTheme->icon("live-preview"));
+    button->setDefaultAction(appAction(AppActions::LayoutEditorOnly));
+    button->setIcon(secondaryIconTheme->icon(QStringLiteral("layout-editor-only")));
+    button->setIconSize(QSize(16, 16));
+    button->setFocusPolicy(Qt::NoFocus);
+    rightLayout->addWidget(button, 0, Qt::AlignRight);
+    statusBarWidgets.append(button);
+
+    button = new QToolButton();
+    button->setDefaultAction(appAction(AppActions::LayoutSplit));
+    button->setIcon(secondaryIconTheme->icon(QStringLiteral("view-layout")));
+    button->setIconSize(QSize(16, 16));
+    button->setFocusPolicy(Qt::NoFocus);
+    rightLayout->addWidget(button, 0, Qt::AlignRight);
+    statusBarWidgets.append(button);
+
+    button = new QToolButton();
+    button->setDefaultAction(appAction(AppActions::LayoutPreviewOnly));
+    button->setIcon(secondaryIconTheme->icon(QStringLiteral("layout-preview-only")));
     button->setIconSize(QSize(16, 16));
     button->setFocusPolicy(Qt::NoFocus);
     rightLayout->addWidget(button, 0, Qt::AlignRight);
@@ -1251,7 +1918,7 @@ void MainWindow::setupStatusBar()
 
     rightWidget->setContentsMargins(0, 0, 0, 0);
     statusBarLayout->addWidget(rightWidget, 1, 2, 1, 1, Qt::AlignRight);
-    
+
     QWidget *container = new QWidget(this);
     container->setObjectName("statusBarWidgetContainer");
     container->setLayout(statusBarLayout);
@@ -1298,40 +1965,15 @@ void MainWindow::setupSidebar()
     sessionStatsWidget->setSelectionMode(QAbstractItemView::NoSelection);
     sessionStatsWidget->setAlternatingRowColors(false);
 
-    outlineWidget = new OutlineWidget(editor, this);
+    outlineWidget = new OutlineWidget(nullptr, this);
     outlineWidget->setAlternatingRowColors(false);
 
-    documentStats = new DocumentStatistics((MarkdownDocument *) editor->document(), this);
-    connect(documentStats, &DocumentStatistics::wordCountChanged,
-            documentStatsWidget, &DocumentStatisticsWidget::setWordCount);
-    connect(documentStats, &DocumentStatistics::characterCountChanged,
-            documentStatsWidget, &DocumentStatisticsWidget::setCharacterCount);
-    connect(documentStats, &DocumentStatistics::sentenceCountChanged,
-            documentStatsWidget, &DocumentStatisticsWidget::setSentenceCount);
-    connect(documentStats, &DocumentStatistics::paragraphCountChanged,
-            documentStatsWidget, &DocumentStatisticsWidget::setParagraphCount);
-    connect(documentStats, &DocumentStatistics::pageCountChanged,
-            documentStatsWidget, &DocumentStatisticsWidget::setPageCount);
-    connect(documentStats, &DocumentStatistics::complexWordsChanged,
-            documentStatsWidget, &DocumentStatisticsWidget::setComplexWords);
-    connect(documentStats, &DocumentStatistics::readingTimeChanged,
-            documentStatsWidget, &DocumentStatisticsWidget::setReadingTime);
-    connect(documentStats, &DocumentStatistics::lixReadingEaseChanged,
-            documentStatsWidget, &DocumentStatisticsWidget::setLixReadingEase);
-    connect(documentStats, &DocumentStatistics::readabilityIndexChanged,
-            documentStatsWidget, &DocumentStatisticsWidget::setReadabilityIndex);
-    connect(editor, &MarkdownEditor::textSelected, documentStats, &DocumentStatistics::onTextSelected);
-    connect(editor, &MarkdownEditor::textDeselected, documentStats, &DocumentStatistics::onTextDeselected);
-
     sessionStats = new SessionStatistics(this);
-    connect(documentStats, &DocumentStatistics::totalWordCountChanged, sessionStats, &SessionStatistics::onDocumentWordCountChanged);
     connect(sessionStats, &SessionStatistics::wordCountChanged, sessionStatsWidget, &SessionStatisticsWidget::setWordCount);
     connect(sessionStats, &SessionStatistics::pageCountChanged, sessionStatsWidget, &SessionStatisticsWidget::setPageCount);
     connect(sessionStats, &SessionStatistics::wordsPerMinuteChanged, sessionStatsWidget, &SessionStatisticsWidget::setWordsPerMinute);
     connect(sessionStats, &SessionStatistics::writingTimeChanged, sessionStatsWidget, &SessionStatisticsWidget::setWritingTime);
     connect(sessionStats, &SessionStatistics::idleTimePercentageChanged, sessionStatsWidget, &SessionStatisticsWidget::setIdleTime);
-    connect(editor, &MarkdownEditor::typingPaused, sessionStats, &SessionStatistics::onTypingPaused);
-    connect(editor, &MarkdownEditor::typingResumed, sessionStats, &SessionStatistics::onTypingResumed);
 
     sidebar = new Sidebar(this);
     sidebar->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
@@ -1384,27 +2026,77 @@ void MainWindow::setupSidebar()
 
 void MainWindow::adjustEditor()
 {
-    // Make sure editor size is updated.
     qApp->processEvents();
 
     int width = this->width();
     int sidebarWidth = 0;
 
-    // Make sure live preview does not crowd out editor.
-    // It should not take up more than 50% of the window space
-    // left after the sidebar is accounted for.
-    //
-    if (sidebar->isVisible()) {
+    if (sidebar && sidebar->isVisible()) {
         sidebarWidth = sidebar->width();
     }
 
-    htmlPreview->setMaximumWidth((width - sidebarWidth) / 2);
+    if (previewStack && previewStack->isVisible() && editorStack && editorStack->isVisible()) {
+        previewStack->setMaximumWidth((width - sidebarWidth) / 2);
+    } else if (previewStack) {
+        previewStack->setMaximumWidth(QWIDGETSIZE_MAX);
+    }
 
-    // Resize the editor's margins.
-    editor->setupPaperMargins();
+    if (auto *ed = currentEditor()) {
+        ed->setupPaperMargins();
+        ed->centerCursor();
+    }
+}
 
-    // Scroll to cursor position.
-    editor->centerCursor();
+void MainWindow::adjustTabBarHeight()
+{
+    if (!tabBar || !menuBar()) {
+        return;
+    }
+
+    int h = menuBar()->sizeHint().height();
+    if (h <= 0) {
+        return;
+    }
+
+    tabBar->setFixedHeight(h);
+    if (newTabButton) {
+        newTabButton->setFixedHeight(h);
+        newTabButton->setFixedWidth(h);
+        const int iconPx = qMax(8, (h * 11) / 20);
+        newTabButton->setIconSize(QSize(iconPx, iconPx));
+    }
+}
+
+QString MainWindow::htmlPreviewStyleSheetForCurrentTheme() const
+{
+    ColorScheme colorScheme = theme.lightColorScheme();
+
+    if (appSettings->darkModeEnabled()) {
+        colorScheme = theme.darkColorScheme();
+    }
+
+    ChromeColors chromeColors(colorScheme);
+    StyleSheetBuilder styler(chromeColors,
+                             secondaryIconTheme,
+                             (InterfaceStyleRounded == appSettings->interfaceStyle()),
+                             appSettings->editorFont(),
+                             appSettings->previewTextFont(),
+                             appSettings->previewCodeFont());
+
+    return styler.htmlPreviewStyleSheet();
+}
+
+void MainWindow::applyHtmlPreviewStyleSheetToAllTabs(const QString &css)
+{
+    if (css.isNull()) {
+        return;
+    }
+
+    for (auto *tab : tabs) {
+        if (tab->htmlPreview()) {
+            tab->htmlPreview()->setStyleSheet(css);
+        }
+    }
 }
 
 void MainWindow::applyTheme()
@@ -1438,13 +2130,13 @@ void MainWindow::applyTheme()
                              appSettings->previewTextFont(),
                              appSettings->previewCodeFont());
 
-    editor->setColorScheme(colorScheme);
-    spelling->setErrorColor(colorScheme.error);
+    for (auto *tab : tabs) {
+        tab->applyColorScheme(colorScheme);
+        if (tab->spelling()) {
+            tab->spelling()->setErrorColor(colorScheme.error);
+        }
+    }
 
-    // Do not call MainWindow::setStyleSheet().  Calling it more than once
-    // (i.e., when changing a theme) causes a crash in Qt 5.11.  Instead,
-    // change the main window's style sheet via qApp.
-    //
     QString styleSheet = styler.widgetStyleSheet();
 
     if (styleSheet.isNull()) {
@@ -1457,23 +2149,33 @@ void MainWindow::applyTheme()
         qApp->style()->polish(this);
     }
 
-    styleSheet = styler.htmlPreviewStyleSheet();
+    QString previewSheet = styler.htmlPreviewStyleSheet();
 
-    if (styleSheet.isNull()) {
+    if (previewSheet.isNull()) {
         qCritical() << "Invalid HTML preview style sheet provided.";
     } else {
-        htmlPreview->setStyleSheet(styler.htmlPreviewStyleSheet());
+        applyHtmlPreviewStyleSheetToAllTabs(previewSheet);
     }
 
+    adjustTabBarHeight();
     adjustEditor();
+
+    applyDarkModeToWindowFrame(this, appSettings->darkModeEnabled());
 }
 
 void MainWindow::runSpellCheck()
 {
+    auto *editor = currentEditor();
+    auto *tab = currentTab();
+
+    if (!editor || !tab) {
+        return;
+    }
+
     SpellCheckDialog *dialog = new SpellCheckDialog(editor);
-    connect(dialog, &SpellCheckDialog::finished, spelling, &SpellCheckDecorator::rehighlight);
+    connect(dialog, &SpellCheckDialog::finished, tab->spelling(), &SpellCheckDecorator::rehighlight);
 
     dialog->show();
 }
 
-} // namespace ghostwriter
+} // namespace ghostwriterpp

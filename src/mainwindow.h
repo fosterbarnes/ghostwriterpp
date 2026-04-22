@@ -1,4 +1,4 @@
-﻿/*
+/*
  * SPDX-FileCopyrightText: 2014-2026 Megan Conkle <megan.conkle@kdemail.net>
  * SPDX-FileCopyrightText: 2026 Nate Peterson
  *
@@ -9,13 +9,18 @@
 #define MAIN_WINDOW_H
 
 #include <QAction>
+#include <QEvent>
 #include <QLabel>
+#include <QList>
 #include <QMainWindow>
 #include <QMap>
+#include <QMetaObject>
 #include <QPushButton>
 #include <QSettings>
 #include <QSplitter>
+#include <QStackedWidget>
 #include <QStringLiteral>
+#include <QTabBar>
 #include <QToolButton>
 
 #include <KActionCollection>
@@ -37,13 +42,16 @@
 #include "appactions.h"
 #include "bookmark.h"
 #include "documentmanager.h"
+#include "documenttab.h"
 #include "findreplace.h"
 #include "folderviewwidget.h"
 #include "outlinewidget.h"
 #include "sidebar.h"
 #include "timelabel.h"
 
-namespace ghostwriter
+class QShowEvent;
+
+namespace ghostwriterpp
 {
 /**
  * Main window for the application.
@@ -62,12 +70,13 @@ protected:
     void keyPressEvent(QKeyEvent *e) override;
     bool eventFilter(QObject *obj, QEvent *event) override;
     void closeEvent(QCloseEvent *event) override;
+    void showEvent(QShowEvent *event) override;
+    void changeEvent(QEvent *event) override;
 
 private slots:
     void quitApplication();
     void changeTheme();
     void openPreferencesDialog();
-    void toggleHtmlPreview(bool checked);
     void toggleHemingwayMode(bool checked);
     void toggleFocusMode(bool checked);
     void toggleFullScreen(bool checked);
@@ -98,12 +107,18 @@ private slots:
     void runSpellCheck();
 
 private:
-    MarkdownEditor *editor;
-    SpellCheckDecorator *spelling;
+    // Per-tab storage and chrome.
+    QTabBar *tabBar;
+    QStackedWidget *editorStack;
+    QStackedWidget *previewStack;
+    QWidget *editorEmptyPane = nullptr;
+    QWidget *previewEmptyPane = nullptr;
+    QList<DocumentTab *> tabs;
+    int activeTabIndex;
+    QToolButton *newTabButton;
+
     FindReplace* findReplace;
-    QSplitter *previewSplitter;
     QSplitter *splitter;
-    DocumentManager *documentManager;
     ThemeRepository *themeRepo;
     Theme theme;
     QString language;
@@ -111,10 +126,8 @@ private:
     StatisticsIndicator *statisticsIndicator;
     QLabel *statusIndicator;
     TimeLabel *timeIndicator;
-    HtmlPreview *htmlPreview;
     FolderViewWidget *folderViewWidget = nullptr;
     OutlineWidget *outlineWidget;
-    DocumentStatistics *documentStats;
     DocumentStatisticsWidget *documentStatsWidget;
     SessionStatistics *sessionStats;
     SessionStatisticsWidget *sessionStatsWidget;
@@ -122,12 +135,14 @@ private:
     bool menuBarMenuActivated;
     bool sidebarHiddenForResize;
     bool focusModeEnabled;
+    bool hemingwayModeEnabled;
     SvgIconTheme *primaryIconTheme;
     SvgIconTheme *secondaryIconTheme;
 
     QList<QAction *> recentFilesActions;
-
     QList<QWidget *> statusBarWidgets;
+    QList<QMetaObject::Connection> perTabConnections;
+    QActionGroup *layoutActionGroup;
 
     AppSettings *appSettings;
 
@@ -142,16 +157,45 @@ private:
 
     QAction *appAction(AppActions::ActionType actionType) const;
 
+    // Per-tab accessors.
+    DocumentTab *currentTab() const;
+    MarkdownEditor *currentEditor() const;
+    MarkdownDocument *currentDocument() const;
+    DocumentManager *currentDocumentManager() const;
+    HtmlPreview *currentHtmlPreview() const;
+    DocumentStatistics *currentDocumentStats() const;
+
+    // Tab management.
+    DocumentTab *addDocumentTab(const Bookmark &location = Bookmark(), bool activate = true);
+    void activateTab(int index);
+    bool closeTabAt(int index);
+    void wireActiveTab();
+    void updateTabLabel(int index);
+    void detachActiveTab(int index, bool wasActive);
+    void removeTabWidgets(DocumentTab *tab, int index);
+
+    // Multi-tab session persistence.
+    void persistOpenTabs();
+    BookmarkList loadPersistedTabs(int *activeOut) const;
+
+    // Focus view.
+    void applyFocusView(FocusView view);
+    void syncFocusViewActions(FocusView view);
+
     void loadTheme();
+    QString htmlPreviewStyleSheetForCurrentTheme() const;
+    void applyHtmlPreviewStyleSheetToAllTabs(const QString &css);
     void setupActions();
     void setupRecentFileActions(const BookmarkList &recentFiles);
     void setupGui();
     void setupMenuBar();
     void setupStatusBar();
     void setupSidebar();
+    void setupTabBar();
 
     void adjustEditor();
+    void adjustTabBarHeight();
 };
-} // namespace ghostwriter
+} // namespace ghostwriterpp
 
 #endif

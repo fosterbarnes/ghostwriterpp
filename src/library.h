@@ -15,7 +15,7 @@
 
 #include "bookmark.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 /**
  * This class stores and retrieves the application's active (i.e., currently
@@ -123,6 +123,6 @@ public:
 private:
     QScopedPointer<LibraryPrivate> d;
 };
-} // namespace ghostwriter
+} // namespace ghostwriterpp
 
 #endif // LIBRARY_H

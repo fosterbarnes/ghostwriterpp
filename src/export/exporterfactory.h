@@ -11,7 +11,7 @@
 
 #include "exporter.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 /**
  * Creates Exporters for use with HTML live preview and exporting to disk.
@@ -57,6 +57,6 @@ private:
     */
     ExporterFactory();
 };
-} // namespace ghostwriter
+} // namespace ghostwriterpp
 
 #endif // EXPORTERFACTORY_H

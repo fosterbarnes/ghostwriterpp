@@ -9,7 +9,7 @@
 
 #include "exporter.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 /**
  * Exports Markdown text to HTML via the built-in cmark-gfm processor.

@@ -26,7 +26,7 @@
 #include "themerepository.h"
 
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 class ThemeRepositoryPrivate
 {
@@ -501,4 +501,4 @@ void ThemeRepositoryPrivate::insertColorsIntoJsonObject(QJsonObject &colorsObj, 
     colorsObj.insert("link", colors.link.name());
     colorsObj.insert("error", colors.error.name());
 }
-} // namespace ghostwriter
+} // namespace ghostwriterpp

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * SPDX-FileCopyrightText: 2020-2024 Megan Conkle <megan.conkle@kdemail.net>
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
@@ -11,7 +11,7 @@
 
 #include "markdownnode.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 MarkdownNode::MarkdownNode() :
     m_type(Invalid),
@@ -439,4 +439,4 @@ QString MarkdownNode::toString(NodeType nodeType) const
         return QString("Unknown (%1)").arg(int(nodeType));
     }
 }
-} // namespace ghostwriter
+} // namespace ghostwriterpp

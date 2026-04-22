@@ -1,4 +1,4 @@
-﻿/*
+/*
  * SPDX-FileCopyrightText: 2014-2023 Megan Conkle <megan.conkle@kdemail.net>
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
@@ -29,7 +29,7 @@
 #define GW_LIST_WIDGET_ICON_WIDTH 300
 #define GW_LIST_WIDGET_ICON_HEIGHT 175
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 class ThemeSelectionDialogPrivate
 {
@@ -495,4 +495,4 @@ void ThemeSelectionDialogPrivate::updateTheme(const Theme &theme)
 
     currentThemeIsNew = false;
 }
-} // namespace ghostwriter
+} // namespace ghostwriterpp

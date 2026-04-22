@@ -67,17 +67,38 @@ if (IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/poqm")
     ecm_install_po_files_as_qm(poqm)
 endif()
 
-find_package(KF${KF_MAJOR_VERSION}DocTools ${KF_MIN_VERSION})
-set_package_properties(KF${KF_MAJOR_VERSION}DocTools PROPERTIES DESCRIPTION
-    "Tools to generate documentation"
-    TYPE OPTIONAL
-)
+if(WIN32)
+    option(GHOSTWRITER_BUILD_MAN_PAGES "Generate man pages (KDocTools; needs xmllint on PATH for every compile step)" OFF)
+else()
+    option(GHOSTWRITER_BUILD_MAN_PAGES "Generate man pages (KDocTools)" ON)
+endif()
+
+if(GHOSTWRITER_BUILD_MAN_PAGES)
+    find_package(KF${KF_MAJOR_VERSION}DocTools ${KF_MIN_VERSION})
+    set_package_properties(KF${KF_MAJOR_VERSION}DocTools PROPERTIES DESCRIPTION
+        "Tools to generate documentation"
+        TYPE OPTIONAL
+    )
+    find_program(KDOCTOOLS_XMLLINT_EXECUTABLE NAMES xmllint)
+    if(KF${KF_MAJOR_VERSION}DocTools_FOUND AND NOT KDOCTOOLS_XMLLINT_EXECUTABLE)
+        set(KF${KF_MAJOR_VERSION}DocTools_FOUND FALSE)
+        message(STATUS "KF${KF_MAJOR_VERSION}DocTools: xmllint not found; skipping man/handbook generation")
+    endif()
+endif()
 
 set(CMARK_TESTS OFF)
+# With Clang (not MSVC) on Windows, cmark-gfm uses OUTPUT_NAME "cmark-gfm" for the
+# static library while the DLL import library has the same name, so Ninja fails with
+# "multiple rules generate ... cmark-gfm.lib". src/CMakeLists.txt links the static
+# cmark targets whenever not MSVC; avoid building the shared libraries in that case.
+if(WIN32 AND NOT MSVC)
+    set(CMARK_SHARED OFF CACHE BOOL "" FORCE)
+    set(CMARK_STATIC ON CACHE BOOL "" FORCE)
+endif()
 add_subdirectory(3rdparty/cmark-gfm EXCLUDE_FROM_ALL)
 add_subdirectory(src)
 
-if(KF${QT_MAJOR_VERSION}DocTools_FOUND)
+if(KF${KF_MAJOR_VERSION}DocTools_FOUND)
     kdoctools_install(po)
     add_subdirectory(doc)
 endif()
@@ -96,7 +117,7 @@ set(ICON_FILES
 )
 
 ecm_add_app_icon(ICONS_SOURCES ICONS ${ICON_FILES})
-target_sources(ghostwriter PRIVATE ${ICONS_SOURCES})
+target_sources(ghostwriterpp PRIVATE ${ICONS_SOURCES})
 
 if(BUILD_TESTING)
    add_subdirectory(autotest)
@@ -108,23 +129,22 @@ if(APPLE)
     string(TIMESTAMP CURRENT_YEAR "%Y")
 
     set_property(
-        TARGET ghostwriter
+        TARGET ghostwriterpp
         PROPERTY MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/resources/mac/MacOSBundleInfo.plist.in
     )
 
     # These are substituted by CMake into MacOSBundleInfo.plist.in.
-    set(MACOSX_BUNDLE_DISPLAY_NAME "ghostwriter")
-    set(MACOSX_BUNDLE_GUI_IDENTIFIER "org.kde.ghostwriter")
-    set(MACOSX_BUNDLE_BUNDLE_NAME "ghostwriter")
-    set(MACOSX_BUNDLE_DISPLAY_NAME "ghostwriter")
-    set(MACOSX_BUNDLE_INFO_STRING "ghostwriter - A Markdown Editor")
-    set(MACOSX_BUNDLE_LONG_VERSION_STRING "ghostwriter ${RELEASE_SERVICE_VERSION}")
+    set(MACOSX_BUNDLE_DISPLAY_NAME "ghostwriter++")
+    set(MACOSX_BUNDLE_GUI_IDENTIFIER "org.kde.ghostwriterpp")
+    set(MACOSX_BUNDLE_BUNDLE_NAME "ghostwriter++")
+    set(MACOSX_BUNDLE_INFO_STRING "ghostwriter++ - A Markdown Editor")
+    set(MACOSX_BUNDLE_LONG_VERSION_STRING "ghostwriter++ ${RELEASE_SERVICE_VERSION}")
     set(MACOSX_BUNDLE_SHORT_VERSION_STRING "${RELEASE_SERVICE_VERSION_MAJOR}.${RELEASE_SERVICE_VERSION_MINOR}")
     set(MACOSX_BUNDLE_BUNDLE_VERSION "${RELEASE_SERVICE_VERSION}")
-    set(MACOSX_BUNDLE_COPYRIGHT "2014-${CURRENT_YEAR} the ghostwriter authors")
+    set(MACOSX_BUNDLE_COPYRIGHT "2014-${CURRENT_YEAR} the ghostwriter++ authors")
 endif()
 
-install(TARGETS ghostwriter ${KDE_INSTALL_TARGETS_DEFAULT_ARGS})
+install(TARGETS ghostwriterpp ${KDE_INSTALL_TARGETS_DEFAULT_ARGS})
 
 ecm_install_icons(
     ICONS ${ICON_FILES}
@@ -133,12 +153,12 @@ ecm_install_icons(
 )
 
 install(
-    PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/resources/linux/org.kde.ghostwriter.desktop
+    PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/resources/linux/org.kde.ghostwriterpp.desktop
     DESTINATION ${KDE_INSTALL_APPDIR}
 )
 
 install(
-    FILES ${CMAKE_CURRENT_SOURCE_DIR}/resources/linux/org.kde.ghostwriter.metainfo.xml
+    FILES ${CMAKE_CURRENT_SOURCE_DIR}/resources/linux/org.kde.ghostwriterpp.metainfo.xml
     DESTINATION ${KDE_INSTALL_METAINFODIR}
 )
 
@@ -146,4 +166,7 @@ feature_summary(WHAT ALL INCLUDE_QUIET_PACKAGES FATAL_ON_MISSING_REQUIRED_PACKAG
 
 file(GLOB_RECURSE ALL_CLANG_FORMAT_SOURCE_FILES src/**/*.cpp src/**/*.h)
 kde_clang_format(${ALL_CLANG_FORMAT_SOURCE_FILES})
-kde_configure_git_pre_commit_hook(CHECKS CLANG_FORMAT)
+# Pre-commit hook is a bash script; skip on Windows where hooks often have no bash in PATH
+if (NOT WIN32)
+    kde_configure_git_pre_commit_hook(CHECKS CLANG_FORMAT)
+endif()

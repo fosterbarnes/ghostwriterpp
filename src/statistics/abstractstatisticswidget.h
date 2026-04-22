@@ -10,7 +10,7 @@
 #include <QListWidget>
 #include <QLabel>
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 /**
  * Abstract class to layout statistics data into a QListWidget.

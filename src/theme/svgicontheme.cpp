@@ -1,4 +1,4 @@
-﻿/**
+/**
  * SPDX-FileCopyrightText: 2024 Megan Conkle <megan.conkle@kdemail.net>
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
@@ -14,7 +14,7 @@
 
 #include "svgicontheme.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 class SvgIconThemeEngine : public QIconEngine
 {
@@ -250,4 +250,4 @@ QString SvgIconThemePrivate::fullIconPath(const QString &name) const
     return fullPath;
 }
 
-} // namespace ghostwriter
+} // namespace ghostwriterpp

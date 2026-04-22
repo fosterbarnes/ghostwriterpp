@@ -10,7 +10,7 @@
 #include <QDialog>
 #include <QScopedPointer>
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 /**
  * Displays a dialog with supported languages for the applications
@@ -38,6 +38,6 @@ private:
     QScopedPointer<LocaleDialogPrivate> d;
 
 };
-} // namespace ghostwriter
+} // namespace ghostwriterpp
 
 #endif // LOCALEDIALOG_H

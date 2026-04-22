@@ -32,6 +32,27 @@ SPDX-License-Identifier: GPL-3.0-or-later
         <div id="livepreviewplaceholder"><p></p></div>
         <script language='Javascript' type='text/javascript'>
 
+            window.__gwPreviewPlain = function() {
+                var el = document.getElementById('livepreviewplaceholder');
+                return el ? el.innerText : '';
+            };
+
+            window.__gwSetPreviewEditingEnabled = function(on) {
+                var el = document.getElementById('livepreviewplaceholder');
+                if (!el) {
+                    return;
+                }
+                el.setAttribute('contenteditable', on ? 'true' : 'false');
+                if (on && !el.__gwPreviewInputHooked) {
+                    el.__gwPreviewInputHooked = true;
+                    el.addEventListener('input', function() {
+                        if (window.__gwPreviewProxy && window.__gwPreviewProxy.notifyPreviewEdited) {
+                            window.__gwPreviewProxy.notifyPreviewEdited();
+                        }
+                    });
+                }
+            };
+
             class LivePreview extends React.Component {
                 constructor(props) {
                     super(props);
@@ -41,6 +62,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
                     this.updateLivePreview = this.updateLivePreview.bind(this);
                     this.setMathEnabled = this.setMathEnabled.bind(this);
                     this.scrollToChange = this.scrollToChange.bind(this);
+                    this.pushPlainBaseline = this.pushPlainBaseline.bind(this);
 
                     this.mutationObserver = new MutationObserver(
                         this.scrollToChange
@@ -72,6 +94,8 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
                 initializeWebChannel(channel) {
                     var proxy = channel.objects.previewProxy;
+                    this.previewProxy = proxy;
+                    window.__gwPreviewProxy = proxy;
 
                     this.loadStyleSheet(proxy.styleSheet);
                     proxy.styleSheetChanged.connect(this.loadStyleSheet);
@@ -100,13 +124,30 @@ SPDX-License-Identifier: GPL-3.0-or-later
                 }
 
                 updateLivePreview(html) {
-                    this.setState({ livePreviewHTML: html });
+                    var self = this;
+                    this.setState({ livePreviewHTML: html }, function() {
+                        var finish = function() {
+                            requestAnimationFrame(function() {
+                                self.pushPlainBaseline();
+                            });
+                        };
+                        if ((typeof window.MathJax !== 'undefined')
+                                && (self.state.mathEnabled)) {
+                            if (typeof window.MathJax.typesetPromise === 'function') {
+                                window.MathJax.typesetPromise().then(finish).catch(finish);
+                            } else {
+                                window.MathJax.typeset();
+                                finish();
+                            }
+                        } else {
+                            finish();
+                        }
+                    });
+                }
 
-                    // Call MathJax to update document, if the library is
-                    // available and the math feature is enabled.
-                    if ((typeof window.MathJax !== 'undefined')
-                            && (this.state.mathEnabled)) {
-                        window.MathJax.typeset();
+                pushPlainBaseline() {
+                    if (this.previewProxy && window.__gwPreviewPlain) {
+                        this.previewProxy.setPreviewPlainBaseline(window.__gwPreviewPlain());
                     }
                 }
 

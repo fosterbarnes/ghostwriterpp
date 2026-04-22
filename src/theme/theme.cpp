@@ -6,7 +6,7 @@
 
 #include "theme.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 class ThemePrivate
 {
@@ -139,4 +139,4 @@ const ChromeColors Theme::darkChromeColors() const
     return ChromeColors(d->darkColors);
 }
 
-} // namespace ghostwriter
+} // namespace ghostwriterpp

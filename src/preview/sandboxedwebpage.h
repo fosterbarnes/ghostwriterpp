@@ -9,7 +9,7 @@
 
 #include <QWebEnginePage>
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 /**
  * Web page for use with QWebEngineView that is "sandboxed" such that
@@ -40,6 +40,6 @@ public:
     ) override;
 
 };
-} // namespace ghostwriter
+} // namespace ghostwriterpp
 
 #endif // SANDBOXEDWEBPAGE_H

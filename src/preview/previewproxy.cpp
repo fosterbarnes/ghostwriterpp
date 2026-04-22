@@ -6,7 +6,7 @@
 
 #include "previewproxy.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 PreviewProxy::PreviewProxy(QObject *parent)
     : QObject(parent),
@@ -56,4 +56,14 @@ bool PreviewProxy::mathEnabled() const
 {
     return m_mathEnabled;
 }
-} // namespace ghostwriter
+
+void PreviewProxy::setPreviewPlainBaseline(const QString &plain)
+{
+    emit previewPlainBaselineChanged(plain);
+}
+
+void PreviewProxy::notifyPreviewEdited()
+{
+    emit previewEdited();
+}
+} // namespace ghostwriterpp

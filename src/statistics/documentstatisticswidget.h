@@ -11,7 +11,7 @@
 
 #include "abstractstatisticswidget.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 /**
  * Widget to display document statistics
@@ -82,6 +82,6 @@ public slots:
 private:
     QScopedPointer<DocumentStatisticsWidgetPrivate> d_ptr;
 };
-} // namespace ghostwriter
+} // namespace ghostwriterpp
 
 #endif // DOCUMENTSTATISTICSDISPLAY_H

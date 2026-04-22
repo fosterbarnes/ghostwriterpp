@@ -12,7 +12,7 @@
 
 #include "theme.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 /**
  * Theme editor dialog which allows the user modify a theme for the
@@ -47,6 +47,6 @@ private slots:
 private:
     QScopedPointer<ThemeEditorDialogPrivate> d_ptr;
 };
-} // namespace ghostwriter
+} // namespace ghostwriterpp
 
 #endif // THEMEEDITORDIALOG_H

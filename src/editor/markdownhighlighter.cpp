@@ -1,4 +1,4 @@
-﻿/*
+/*
  * SPDX-FileCopyrightText: 2014-2024 Megan Conkle <megan.conkle@kdemail.net>
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
@@ -28,7 +28,7 @@
 #include "markdownstates.h"
 #include "textblockdata.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 class MarkdownHighlighterPrivate
 {
@@ -690,4 +690,4 @@ bool MarkdownHighlighterPrivate::isSetextHeadingState(const int state)
         return false;
     }
 }
-} // namespace ghostwriter
+} // namespace ghostwriterpp

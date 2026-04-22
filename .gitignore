@@ -73,3 +73,6 @@ Makefile*
 .DS_Store
 
 
+# pp additions
+*.code-workspace
+*s.md

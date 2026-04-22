@@ -11,7 +11,7 @@
 
 #include "markdownast.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 /**
  * This class wraps the cmark-gfm API to make it thread-safe.

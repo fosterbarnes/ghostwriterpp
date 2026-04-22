@@ -12,7 +12,7 @@
 
 #include "exporter.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 /**
  * Executes commands for a command line tool that can export text to another

@@ -11,7 +11,7 @@
 
 #include "commandlineexporter.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 class CommandLineExporterPrivate
 {

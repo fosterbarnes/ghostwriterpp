@@ -11,7 +11,7 @@
 
 #include "exporter.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 Exporter::Exporter(const QString &name)
     : m_smartTypographyEnabled(false), 
@@ -69,5 +69,5 @@ void Exporter::exportToHtml(const QString &text, QString &html)
            QObject::tr("Export to HTML is not supported with this processor.") +
            QString("</b></center>)");
 }
-} // namespace ghostwriter
+} // namespace ghostwriterpp
 

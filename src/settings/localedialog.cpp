@@ -5,6 +5,7 @@
  */
 
 #include <QApplication>
+#include <QGuiApplication>
 #include <QDialogButtonBox>
 #include <QDir>
 #include <QVBoxLayout>
@@ -15,7 +16,7 @@
 #include "appsettings.h"
 #include "../messageboxhelper.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 
 class LocaleDialogPrivate
@@ -134,7 +135,7 @@ LocaleDialog::LocaleDialog
             } else {
                 QMessageBox::information(
                     this,
-                    QApplication::applicationName(),
+                    QGuiApplication::applicationDisplayName(),
                     tr("Please restart the application for changes to take effect.")
                 );
             }
@@ -149,4 +150,4 @@ LocaleDialog::~LocaleDialog()
     ;
 }
 
-} // namespace ghostwriter
+} // namespace ghostwriterpp

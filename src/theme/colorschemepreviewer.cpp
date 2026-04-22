@@ -1,4 +1,4 @@
-﻿/*
+/*
  * SPDX-FileCopyrightText: 2020-2023 Megan Conkle <megan.conkle@kdemail.net>
  * SPDX-FileCopyrightText: 2009-2014 Graeme Gott <graeme@gottcode.org>
  *
@@ -14,7 +14,7 @@
 
 #include "colorschemepreviewer.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 
 class ColorSchemePreviewerPrivate
@@ -141,4 +141,4 @@ QIcon ColorSchemePreviewer::icon()
     
     return d->thumbnailPreviewIcon;
 }
-} // namespace ghostwriter
+} // namespace ghostwriterpp

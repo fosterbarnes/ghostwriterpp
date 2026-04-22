@@ -9,7 +9,7 @@
 
 #include "memoryarena.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 template<class T>
 MemoryArena<T>::MemoryArena() :
@@ -57,6 +57,6 @@ void MemoryArena<T>::freeAll()
 
     slotIndex = 0;
 }
-} // namespace ghostwriter
+} // namespace ghostwriterpp
 
 #endif  // MEMORY_ARENA_CPP

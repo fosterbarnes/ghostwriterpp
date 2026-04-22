@@ -1,4 +1,4 @@
-﻿/*
+/*
  * SPDX-FileCopyrightText: 2014-2024 Megan Conkle <megan.conkle@kdemail.net>
  * SPDX-FileCopyrightText: 2009-2014 Graeme Gott <graeme@gottcode.org>
  * SPDX-FileCopyrightText: 2012 Dmitry Shachnev
@@ -18,6 +18,7 @@
 #include <QFileInfo>
 #include <QFontMetricsF>
 #include <QGridLayout>
+#include <QGuiApplication>
 #include <QImageReader>
 #include <QImageWriter>
 #include <QLayout>
@@ -47,7 +48,7 @@
 #include "markdownhighlighter.h"
 #include "markdownstates.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 
 namespace
@@ -925,7 +926,7 @@ void MarkdownEditor::insertFromMimeData(const QMimeData *source)
 
             if (!writer.write(image)) {
                 QMessageBox::critical(this,
-                    qApp->applicationName(),
+                    QGuiApplication::applicationDisplayName(),
                     writer.errorString());
                 QPlainTextEdit::insertFromMimeData(source);
                 return;
@@ -2459,4 +2460,4 @@ QString MarkdownEditorPrivate::buildImageFilters(
     return filters.join(";;");
 }
 
-} // namespace ghostwriter
+} // namespace ghostwriterpp

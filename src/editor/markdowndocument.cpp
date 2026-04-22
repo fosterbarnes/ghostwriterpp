@@ -1,4 +1,4 @@
-﻿/*
+/*
  * SPDX-FileCopyrightText: 2014-2023 Megan Conkle <megan.conkle@kdemail.net>
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
@@ -11,7 +11,7 @@
 
 #include "markdowndocument.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 class MarkdownDocumentPrivate
 {
@@ -169,4 +169,4 @@ void MarkdownDocumentPrivate::initializeUntitledDocument()
     this->timestamp = QDateTime::currentDateTime();
     this->ast = nullptr;
 }
-} // namespace ghostwriter
+} // namespace ghostwriterpp

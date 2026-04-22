@@ -16,7 +16,7 @@ class QComboBox;
 class QCheckBox;
 class QLineEdit;
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 /**
  * A custom file dialog for exporting a document to a number of formats.  Export
@@ -78,6 +78,6 @@ private:
     QLineEdit *paramsLineEdit;
     MarkdownDocument *document;
 };
-} // namespace ghostwriter
+} // namespace ghostwriterpp
 
 #endif // EXPORTDIALOG_H

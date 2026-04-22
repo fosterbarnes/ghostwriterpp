@@ -18,7 +18,7 @@
 #define FOLDER_PATH_KEY "folderPath"
 #define CURSOR_POSITION_KEY "cursorPosition"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 
 class LibraryPrivate
@@ -239,4 +239,4 @@ void Library::sync()
     }
 }
 
-} // namespace ghostwriter
+} // namespace ghostwriterpp

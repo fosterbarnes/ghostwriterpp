@@ -6,7 +6,7 @@
 
 #include "exportformat.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 class ExportFormatPrivate
 {
@@ -180,4 +180,4 @@ void ExportFormatPrivate::createNamedFilter()
         namedFilter += fileFilter;
     }
 }
-} // namespace ghostwriter
+} // namespace ghostwriterpp

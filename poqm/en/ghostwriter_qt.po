@@ -8,49 +8,49 @@ msgstr ""
 "X-Qt-Contexts: true\n"
 
 #: ../src/findreplace.cpp:441
-msgctxt "ghostwriter::FindReplace|"
+msgctxt "ghostwriterpp::FindReplace|"
 msgid "%Ln replacement(s)"
 msgid_plural "%Ln replacement(s)"
 msgstr[0] "%Ln replacement"
 msgstr[1] "%Ln replacements"
 
 #: ../src/statistics/statisticsindicator.cpp:15
-msgctxt "ghostwriter::StatisticsIndicator|"
+msgctxt "ghostwriterpp::StatisticsIndicator|"
 msgid "%Ln word(s)"
 msgid_plural "%Ln word(s)"
 msgstr[0] "%Ln word"
 msgstr[1] "%Ln words"
 
 #: ../src/statistics/statisticsindicator.cpp:19
-msgctxt "ghostwriter::StatisticsIndicator|"
+msgctxt "ghostwriterpp::StatisticsIndicator|"
 msgid "%Ln character(s)"
 msgid_plural "%Ln character(s)"
 msgstr[0] "%Ln character"
 msgstr[1] "%Ln characters"
 
 #: ../src/statistics/statisticsindicator.cpp:23
-msgctxt "ghostwriter::StatisticsIndicator|"
+msgctxt "ghostwriterpp::StatisticsIndicator|"
 msgid "%Ln sentence(s)"
 msgid_plural "%Ln sentence(s)"
 msgstr[0] "%Ln sentence"
 msgstr[1] "%Ln sentences"
 
 #: ../src/statistics/statisticsindicator.cpp:27
-msgctxt "ghostwriter::StatisticsIndicator|"
+msgctxt "ghostwriterpp::StatisticsIndicator|"
 msgid "%Ln paragraph(s)"
 msgid_plural "%Ln paragraph(s)"
 msgstr[0] "%Ln paragraph"
 msgstr[1] "%Ln paragraphs"
 
 #: ../src/statistics/statisticsindicator.cpp:31
-msgctxt "ghostwriter::StatisticsIndicator|"
+msgctxt "ghostwriterpp::StatisticsIndicator|"
 msgid "%Ln page(s)"
 msgid_plural "%Ln page(s)"
 msgstr[0] "%Ln page"
 msgstr[1] "%Ln pages"
 
 #: ../src/statistics/statisticsindicator.cpp:35
-msgctxt "ghostwriter::StatisticsIndicator|"
+msgctxt "ghostwriterpp::StatisticsIndicator|"
 msgid "%Ln word(s) added"
 msgid_plural "%Ln word(s) added"
 msgstr[0] "%Ln word added"

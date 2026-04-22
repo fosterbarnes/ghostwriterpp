@@ -11,7 +11,7 @@
 
 #include "timelabel.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 class TimeLabelPrivate
 {
@@ -87,4 +87,4 @@ void TimeLabelPrivate::updateTimeOfDay()
 
     timer->start(interval);
 }
-} // namespace ghostwriter
+} // namespace ghostwriterpp

@@ -8,7 +8,7 @@
 
 #include "bookmark.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 class BookmarkPrivate
 {
@@ -120,4 +120,4 @@ QString Bookmark::toString() const
     return QString("%1:%2").arg(filePath()).arg(cursorPosition());
 }
 
-} // namespace ghostwriter
+} // namespace ghostwriterpp

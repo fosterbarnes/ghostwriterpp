@@ -12,9 +12,9 @@ apps:
   ghostwriter:
     extensions:
       - kde-neon-6
-    common-id: org.kde.ghostwriter.desktop
-    desktop: usr/share/applications/org.kde.ghostwriter.desktop
-    command: usr/bin/ghostwriter
+    common-id: org.kde.ghostwriterpp.desktop
+    desktop: usr/share/applications/org.kde.ghostwriterpp.desktop
+    command: usr/bin/ghostwriter++
     plugs:
       - home
       - cups
@@ -32,12 +32,12 @@ plugs:
 slots:
   session-dbus-interface:
     interface: dbus
-    name: org.kde.ghostwriter
+    name: org.kde.ghostwriterpp
     bus: session
 parts:
   ghostwriter:
     parse-info:
-      - usr/share/metainfo/org.kde.ghostwriter.metainfo.xml
+      - usr/share/metainfo/org.kde.ghostwriterpp.metainfo.xml
     plugin: cmake
     source: .
     source-type: local

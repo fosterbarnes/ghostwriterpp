@@ -1,4 +1,4 @@
-﻿/*
+/*
  * SPDX-FileCopyrightText: 2016-2023 Megan Conkle <megan.conkle@kdemail.net>
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
@@ -9,7 +9,7 @@
 
 #include "documentstatistics.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 class DocumentStatisticsPrivate
 {

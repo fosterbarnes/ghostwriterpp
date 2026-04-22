@@ -17,7 +17,7 @@
 
 #include "inlinemarkuptoggle.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 typedef struct
 {
@@ -248,4 +248,4 @@ void InlineMarkupTogglePrivate::removeFormatting(
     cursor = oldCursor;
 }
 
-} // namespace ghostwriter
+} // namespace ghostwriterpp

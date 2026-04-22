@@ -9,7 +9,7 @@
 
 #include <array>
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 /*
 * Line states for use in tracking the line state of each block (line) in
@@ -55,6 +55,6 @@ const std::array<MarkdownState, 6> MarkdownHeaderStates{
     MarkdownStateAtxHeading5,
     MarkdownStateAtxHeading6
 };
-} // namespace ghostwriter
+} // namespace ghostwriterpp
 
 #endif // MARKDOWN_STATES_H

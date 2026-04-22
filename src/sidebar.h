@@ -1,4 +1,4 @@
-﻿/*
+/*
  * SPDX-FileCopyrightText: 2020-2022 Megan Conkle <megan.conkle@kdemail.net>
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
@@ -13,7 +13,7 @@
 #include <QScopedPointer>
 #include <QShowEvent>
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 /**
  * Sidebar similar to VS Code's activity bar/sidebar.  This widget presents
@@ -143,6 +143,6 @@ protected:
 private:
     QScopedPointer<SidebarPrivate> d_ptr;
 };
-} // namespace ghostwriter
+} // namespace ghostwriterpp
 
 #endif // SIDEBAR_H

@@ -15,7 +15,7 @@
 
 #include "../../src/editor/asynctextwriter.h"
 
-using namespace ghostwriter;
+using namespace ghostwriterpp;
 
 /**
  * Unit test for the AsyncTextWriter class.

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * SPDX-FileCopyrightText: 2016-2022 Megan Conkle <megan.conkle@kdemail.net>
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
@@ -11,7 +11,7 @@
 
 #include "abstractstatisticswidget.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 /**
  * Widget to display writing session statistics
@@ -63,6 +63,6 @@ private:
     QScopedPointer<SessionStatisticsWidgetPrivate> d_ptr;
 
 };
-} // namespace ghostwriter
+} // namespace ghostwriterpp
 
 #endif // SESSIONSTATISTICSWIDGET_H

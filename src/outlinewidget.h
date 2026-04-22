@@ -12,7 +12,7 @@
 
 #include "editor/markdowneditor.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 /**
  * Outline widget for use in navigating document headings and displaying the
@@ -27,6 +27,12 @@ class OutlineWidget : public QListWidget
 public:
     OutlineWidget(MarkdownEditor *editor, QWidget *parent = nullptr);
     virtual ~OutlineWidget();
+
+    /**
+     * Switches the outline to follow the given editor, reloading its
+     * contents. Safe to call with nullptr to detach.
+     */
+    void setEditor(MarkdownEditor *editor);
 
 signals:
     /**
@@ -51,6 +57,6 @@ public slots:
 private:
     QScopedPointer<OutlineWidgetPrivate> d_ptr;
 };
-} // namespace ghostwriter
+} // namespace ghostwriterpp
 
 #endif // OUTLINE_WIDGET_H

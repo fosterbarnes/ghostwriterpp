@@ -8,7 +8,7 @@
 
 #include "sandboxedwebpage.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 SandboxedWebPage::SandboxedWebPage(QObject *parent)
     : QWebEnginePage(parent)
@@ -37,4 +37,4 @@ bool SandboxedWebPage::acceptNavigationRequest
         return true;
     }
 }
-} // namespace ghostwriter
+} // namespace ghostwriterpp

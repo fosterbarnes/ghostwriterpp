@@ -1,43 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
 <component type="desktop">
-  <id>org.kde.ghostwriter.desktop</id>
-  <launchable type="desktop-id">org.kde.ghostwriter.desktop</launchable>
+  <id>org.kde.ghostwriterpp.desktop</id>
+  <launchable type="desktop-id">org.kde.ghostwriterpp.desktop</launchable>
   <metadata_license>CC-BY-SA-4.0</metadata_license>
   <project_license>GPL-3.0+</project_license>
-  <name>ghostwriter</name>
+  <name>ghostwriter++</name>
   <name xml:lang="ar">الشبح</name>
-  <name xml:lang="ca">ghostwriter</name>
-  <name xml:lang="ca-valencia">ghostwriter</name>
-  <name xml:lang="cs">ghostwriter</name>
-  <name xml:lang="de">Ghostwriter</name>
-  <name xml:lang="en-GB">ghostwriter</name>
-  <name xml:lang="eo">ghostwriter</name>
-  <name xml:lang="es">ghostwriter</name>
-  <name xml:lang="eu">ghostwriter</name>
-  <name xml:lang="fi">ghostwriter</name>
-  <name xml:lang="fr">Ghostwriter</name>
-  <name xml:lang="gl">ghostwriter</name>
-  <name xml:lang="he">ghostwriter</name>
+  <name xml:lang="ca">ghostwriter++</name>
+  <name xml:lang="ca-valencia">ghostwriter++</name>
+  <name xml:lang="cs">ghostwriter++</name>
+  <name xml:lang="de">Ghostwriter++</name>
+  <name xml:lang="en-GB">ghostwriter++</name>
+  <name xml:lang="eo">ghostwriter++</name>
+  <name xml:lang="es">ghostwriter++</name>
+  <name xml:lang="eu">ghostwriter++</name>
+  <name xml:lang="fi">ghostwriter++</name>
+  <name xml:lang="fr">Ghostwriter++</name>
+  <name xml:lang="gl">ghostwriter++</name>
+  <name xml:lang="he">ghostwriter++</name>
   <name xml:lang="hi">असली लेखक</name>
-  <name xml:lang="ia">ghostwriter</name>
-  <name xml:lang="id">ghostwriter</name>
-  <name xml:lang="it">ghostwriter</name>
-  <name xml:lang="ka">ghostwriter</name>
-  <name xml:lang="ko">ghostwriter</name>
-  <name xml:lang="lv">ghostwriter</name>
-  <name xml:lang="nl">ghostwriter</name>
-  <name xml:lang="pl">ghostwriter</name>
-  <name xml:lang="pt">ghostwriter</name>
-  <name xml:lang="pt-BR">ghostwriter</name>
-  <name xml:lang="ru">ghostwriter</name>
+  <name xml:lang="ia">ghostwriter++</name>
+  <name xml:lang="id">ghostwriter++</name>
+  <name xml:lang="it">ghostwriter++</name>
+  <name xml:lang="ka">ghostwriter++</name>
+  <name xml:lang="ko">ghostwriter++</name>
+  <name xml:lang="lv">ghostwriter++</name>
+  <name xml:lang="nl">ghostwriter++</name>
+  <name xml:lang="pl">ghostwriter++</name>
+  <name xml:lang="pt">ghostwriter++</name>
+  <name xml:lang="pt-BR">ghostwriter++</name>
+  <name xml:lang="ru">ghostwriter++</name>
   <name xml:lang="sa">भूतलेखकः</name>
-  <name xml:lang="sk">ghostwriter</name>
-  <name xml:lang="sl">ghostwriter</name>
-  <name xml:lang="sv">ghostwriter</name>
-  <name xml:lang="tr">ghostwriter</name>
-  <name xml:lang="uk">ghostwriter</name>
-  <name xml:lang="zh-CN">ghostwriter</name>
-  <name xml:lang="zh-TW">ghostwriter</name>
+  <name xml:lang="sk">ghostwriter++</name>
+  <name xml:lang="sl">ghostwriter++</name>
+  <name xml:lang="sv">ghostwriter++</name>
+  <name xml:lang="tr">ghostwriter++</name>
+  <name xml:lang="uk">ghostwriter++</name>
+  <name xml:lang="zh-CN">ghostwriter++</name>
+  <name xml:lang="zh-TW">ghostwriter++</name>
   <summary>Distraction-free text editor for Markdown</summary>
   <summary xml:lang="ar">محرِّر نصوص خالٍ من المشتتات للغة ماركداون</summary>
   <summary xml:lang="ca">Editor de text lliure de distraccions per al Markdown</summary>
@@ -72,7 +72,7 @@
   <summary xml:lang="zh-CN">不受干扰的 Markdown 编辑器</summary>
   <summary xml:lang="zh-TW">不分散注意力的 Markdown 用文字編輯器</summary>
   <description>
-    <p>ghostwriter is a distraction-free text editor for Markdown featuring
+    <p>ghostwriter++ is a distraction-free text editor for Markdown featuring
        a live HTML preview as you type, theme creation, focus mode, fullscreen
        mode, live word count, and document navigation in an aesthetic writing
        environment.  It comes with the cmark-gfm Markdown processor built in, and

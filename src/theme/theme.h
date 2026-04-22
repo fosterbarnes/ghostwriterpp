@@ -15,7 +15,7 @@
 #include "chromecolors.h"
 #include <editor/colorscheme.h>
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 /**
  * Encapsulates a theme for customizing the look and feel of the application.
@@ -128,6 +128,6 @@ public:
 private:
     QScopedPointer<ThemePrivate> d;
 };
-} // namespace ghostwriter
+} // namespace ghostwriterpp
 
 #endif

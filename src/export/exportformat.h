@@ -10,7 +10,7 @@
 #include <QScopedPointer>
 #include <QString>
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 /**
  * Encapsulates an export format for exporting to a specific file format.
@@ -127,6 +127,6 @@ public:
 private:
     QScopedPointer<ExportFormatPrivate> d_ptr;
 };
-} // namespace ghostwriter
+} // namespace ghostwriterpp
 
 #endif // EXPORTFORMAT_H

@@ -12,7 +12,7 @@
 
 #include "exportformat.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 /**
  * Abstract class to export text to another format (i.e., Markdown text to
@@ -145,6 +145,6 @@ protected:
 private:
     QString m_name;
 };
-} // namespace ghostwriter
+} // namespace ghostwriterpp
 
 #endif

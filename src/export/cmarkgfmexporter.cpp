@@ -16,7 +16,7 @@
 
 #include "cmarkgfmexporter.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 CmarkGfmExporter::CmarkGfmExporter() : Exporter("cmark-gfm")
 {

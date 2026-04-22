@@ -16,7 +16,7 @@
 
 #include "simplefontdialog.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 
 class SimpleFontDialogPrivate
@@ -269,4 +269,4 @@ void SimpleFontDialogPrivate::onFontSizeChanged(int size)
     font.setPointSize(size);
     fontPreview->setFont(font);
 }
-} // namespace ghostwriter
+} // namespace ghostwriterpp

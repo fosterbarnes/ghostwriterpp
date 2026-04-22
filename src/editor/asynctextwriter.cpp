@@ -20,7 +20,7 @@
 #define DEFAULT_STREAM_CODEC QStringConverter::Utf8;
 #endif
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 class AsyncTextWriterPrivate
 {
@@ -220,4 +220,4 @@ void AsyncTextWriterPrivate::onWriteCompleted()
     emit q->writeComplete();
 }
 
-} //namespace ghostwriter
+} //namespace ghostwriterpp

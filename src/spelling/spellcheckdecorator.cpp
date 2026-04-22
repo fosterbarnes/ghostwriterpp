@@ -28,7 +28,7 @@
 #include "spellcheckdecorator.h"
 #include "spellcheckdialog.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 class SpellCheckDecoratorPrivate
 {
@@ -565,4 +565,4 @@ SpellCheckDecoratorPrivate::sentenceBreaks(const QString &text) const
     return breaks;
 }
 
-} // namespace ghostwriter
+} // namespace ghostwriterpp

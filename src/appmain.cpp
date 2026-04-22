@@ -1,4 +1,4 @@
-﻿/*
+/*
  * SPDX-FileCopyrightText: 2014-2024 Megan Conkle <megan.conkle@kdemail.net>
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
@@ -7,6 +7,7 @@
 #include <QApplication>
 #include <QCommandLineParser>
 #include <QCoreApplication>
+#include <QGuiApplication>
 #include <QDate>
 #include <QDateTime>
 #include <QLibraryInfo>
@@ -34,7 +35,7 @@ int main(int argc, char *argv[])
         "%{if-debug}  %{function}():%{endif}"
         "  %{message}"
         "%{if-debug} (%{file}:%{line})%{endif}");
-    qInstallMessageHandler(ghostwriter::logMessage);
+    qInstallMessageHandler(ghostwriterpp::logMessage);
 
     bool disableGPU = false;
 
@@ -85,11 +86,11 @@ int main(int argc, char *argv[])
     qApp->installEventFilter(KToolTipHelper::instance());
 
 #if defined(Q_OS_LINUX)
-    QGuiApplication::setDesktopFileName("ghostwriter");
+    QGuiApplication::setDesktopFileName(QStringLiteral("org.kde.ghostwriterpp"));
 #endif
 
-    KAboutData aboutData("ghostwriter",
-                    QCoreApplication::translate("main", "ghostwriter"),
+    KAboutData aboutData(QStringLiteral("ghostwriterpp"),
+                    QCoreApplication::translate("main", "ghostwriter++"),
                     APPVERSION);
 
     aboutData.setOrganizationDomain("kde.org");
@@ -137,25 +138,30 @@ int main(int argc, char *argv[])
         "https://www.mathjax.org/");
     aboutData.setLicense(KAboutLicense::GPL_V3);
     aboutData.setCopyrightStatement(QCoreApplication::translate("main",
-        "Copyright 2014-%1 The ghostwriter team")
+        "Copyright 2014-%1 The ghostwriter++ team")
             .arg(QDateTime::currentDateTime().date().year()));
     aboutData.setHomepage("https://ghostwriter.kde.org");
-    aboutData.setDesktopFileName("org.kde.ghostwriter");
+    aboutData.setDesktopFileName(QStringLiteral("org.kde.ghostwriterpp"));
 
     // Set the application metadata.
     KAboutData::setApplicationData(aboutData);
 
+    // Internal name must stay CSS-safe for Qt style sheet selectors (see resources/widgets.qss).
+    QCoreApplication::setApplicationName(QStringLiteral("ghostwriterpp"));
+    QGuiApplication::setApplicationDisplayName(
+        QCoreApplication::translate("main", "ghostwriter++"));
+
     // Call this to force settings initialization before the application
     // fully launches.
     //
-    ghostwriter::AppSettings::instance();
+    ghostwriterpp::AppSettings::instance();
 
     QString filePath = QString();
 
     QCommandLineParser clParser;
     aboutData.setupCommandLine(&clParser);
     clParser.setApplicationDescription(QCoreApplication::translate("main",
-        "Welcome to ghostwriter!"));
+        "Welcome to ghostwriter++!"));
     clParser.addPositionalArgument("file",
         QCoreApplication::translate("main", "(Optional) File to open."));
 
@@ -176,7 +182,7 @@ int main(int argc, char *argv[])
 
     // Note: --disable-gpu option was already processed. We added it here
     //       only so it is displayed in the help output.
-    ghostwriter::MainWindow window(filePath);
+    ghostwriterpp::MainWindow window(filePath);
 
     window.show();
     return app.exec();

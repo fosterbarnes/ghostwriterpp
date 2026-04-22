@@ -12,7 +12,7 @@
 #include <QScopedPointer>
 #include <QString>
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 /**
  * This class represents a bookmark of a file and its last known cursor
@@ -110,6 +110,6 @@ private:
 
 typedef QList<Bookmark> BookmarkList;
 
-} // namespace ghostwriter
+} // namespace ghostwriterpp
 
 #endif

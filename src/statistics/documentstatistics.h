@@ -1,4 +1,4 @@
-﻿/*
+/*
  * SPDX-FileCopyrightText: 2016-2023 Megan Conkle <megan.conkle@kdemail.net>
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
@@ -13,7 +13,7 @@
 #include "../editor/markdowndocument.h"
 #include "../editor/textblockdata.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 /**
  * Class to compute document statistics for a QTextDocument.
@@ -128,6 +128,6 @@ private:
     QScopedPointer<DocumentStatisticsPrivate> d_ptr;
 };
 
-} //namespace ghostwriter
+} //namespace ghostwriterpp
 
 #endif // DOCUMENTSTATISTICS_H

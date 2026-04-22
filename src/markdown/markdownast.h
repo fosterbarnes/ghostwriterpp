@@ -14,7 +14,7 @@
 
 struct cmark_node;
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 /**
  * This class encapsulates an abstract syntax tree of Markdown nodes.
@@ -86,6 +86,6 @@ public:
 private:
     QScopedPointer<MarkdownASTPrivate> d_ptr;
 };
-} // namespace ghostwriter
+} // namespace ghostwriterpp
 
 #endif

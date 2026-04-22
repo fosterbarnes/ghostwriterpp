@@ -7,7 +7,7 @@
 #ifndef MARKDOWNEDITORTYPES_H
 #define MARKDOWNEDITORTYPES_H
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 enum FocusMode {
     FocusModeFirst,
@@ -35,6 +35,6 @@ enum InterfaceStyle {
     InterfaceStyleSquare,
     InterfaceStyleLast = InterfaceStyleSquare,
 };
-} // namespace ghostwriter
+} // namespace ghostwriterpp
 
 #endif // MARKDOWNEDITORTYPES_H

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * SPDX-FileCopyrightText: 2014-2024 Megan Conkle <megan.conkle@kdemail.net>
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
@@ -17,6 +17,10 @@
 #include <QtConcurrentRun>
 #include <QFuture>
 #include <QWebChannel>
+#include <QEventLoop>
+#include <QMetaObject>
+#include <QTextCursor>
+#include <QTimer>
 
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 #include <QWebEngineProfile>
@@ -28,7 +32,41 @@
 #include "previewproxy.h"
 #include "sandboxedwebpage.h"
 
-namespace ghostwriter
+namespace {
+
+void computeDiffReplacement(
+    const QString &oldPlain,
+    const QString &newPlain,
+    QString *oldChunk,
+    QString *newChunk,
+    int *prefixLen)
+{
+    *oldChunk = QString();
+    *newChunk = QString();
+    *prefixLen = 0;
+    if (oldPlain == newPlain) {
+        return;
+    }
+
+    int i = 0;
+    const int oldLen = oldPlain.size();
+    const int newLen = newPlain.size();
+    while (i < oldLen && i < newLen && oldPlain.at(i) == newPlain.at(i)) {
+        ++i;
+    }
+    int j = 0;
+    while (j < (oldLen - i) && j < (newLen - i)
+           && oldPlain.at(oldLen - 1 - j) == newPlain.at(newLen - 1 - j)) {
+        ++j;
+    }
+    *prefixLen = i;
+    *oldChunk = oldPlain.mid(i, oldLen - i - j);
+    *newChunk = newPlain.mid(i, newLen - i - j);
+}
+
+} // namespace
+
+namespace ghostwriterpp
 {
 class HtmlPreviewPrivate
 {
@@ -58,8 +96,15 @@ public:
     QString wrapperHtml;
     QFutureWatcher<QString> *futureWatcher;
 
+    QString previewPlainBaseline;
+    bool previewDirty;
+    bool inPlaceEditingEnabled;
+
     void onHtmlReady();
     void onLoadFinished(bool ok);
+    void flushPreviewEditsToMarkdown();
+    bool applyPreviewPlainDiffToDocument(const QString &editedPlain);
+    void onPreviewEditedFromJs();
 
     /**
      * Sets the base directory path for determining resource
@@ -92,6 +137,23 @@ HtmlPreview::HtmlPreview
     d->updateAgain = false;
     d->exporter = exporter;
     d->proxy->setMathEnabled(d->exporter->supportsMath());
+    d->previewDirty = false;
+    d->inPlaceEditingEnabled = false;
+
+    connect(
+        d->proxy,
+        &PreviewProxy::previewPlainBaselineChanged,
+        this,
+        [d](const QString &plain) {
+            d->previewPlainBaseline = plain;
+        });
+    connect(
+        d->proxy,
+        &PreviewProxy::previewEdited,
+        this,
+        [d]() {
+            d->onPreviewEditedFromJs();
+        });
 
     d->baseUrl = "";
 
@@ -172,10 +234,32 @@ HtmlPreview::HtmlPreview
 
 HtmlPreview::~HtmlPreview()
 {
+    shutdownBeforeDestroy();
+}
+
+void HtmlPreview::shutdownBeforeDestroy()
+{
     Q_D(HtmlPreview);
-    
-    // Wait for thread to finish if in the middle of updating the preview.
-    d->futureWatcher->waitForFinished();
+
+    d->updateInProgress = false;
+    d->updateAgain = false;
+
+    if (d->futureWatcher->isRunning()) {
+        d->futureWatcher->disconnect();
+        d->futureWatcher->cancel();
+        QEventLoop loop;
+        QTimer timer;
+        timer.setSingleShot(true);
+        QObject::connect(&timer, &QTimer::timeout, &loop, &QEventLoop::quit);
+        QObject::connect(d->futureWatcher, &QFutureWatcherBase::finished, &loop, &QEventLoop::quit);
+        timer.start(3000);
+        loop.exec(QEventLoop::ExcludeUserInputEvents);
+        if (d->futureWatcher->isRunning()) {
+            qWarning() << "ghostwriter++: preview export did not finish before shutdown; continuing.";
+        }
+    }
+
+    d->setHtmlContent("");
 }
 
 void HtmlPreview::contextMenuEvent(QContextMenuEvent *event)
@@ -199,6 +283,8 @@ void HtmlPreview::updatePreview()
     }
 
     if (this->isVisible()) {
+        d->flushPreviewEditsToMarkdown();
+
         // Some markdown processors don't handle empty text very well
         // and will err.  Thus, only pass in text from the document
         // into the markdown processor if the text isn't empty or null.
@@ -258,6 +344,126 @@ void HtmlPreview::setMathEnabled(bool enabled)
     d->proxy->setMathEnabled(enabled);
 }
 
+void HtmlPreview::setInPlaceEditingEnabled(bool enabled)
+{
+    Q_D(HtmlPreview);
+
+    if (!enabled && d->previewDirty) {
+        d->flushPreviewEditsToMarkdown();
+    }
+    d->inPlaceEditingEnabled = enabled;
+    this->page()->runJavaScript(
+        QStringLiteral("window.__gwSetPreviewEditingEnabled && window.__gwSetPreviewEditingEnabled(%1);")
+            .arg(enabled ? QLatin1String("true") : QLatin1String("false")));
+}
+
+void HtmlPreview::flushPreviewEditsToDocumentSync()
+{
+    Q_D(HtmlPreview);
+    d->flushPreviewEditsToMarkdown();
+}
+
+void HtmlPreviewPrivate::onPreviewEditedFromJs()
+{
+    if (!inPlaceEditingEnabled || document->isReadOnly()) {
+        return;
+    }
+    previewDirty = true;
+    document->setModified(true);
+}
+
+void HtmlPreviewPrivate::flushPreviewEditsToMarkdown()
+{
+    if (!previewDirty) {
+        return;
+    }
+
+    Q_Q(HtmlPreview);
+    QEventLoop loop;
+    QString capturedPlain;
+    bool received = false;
+    QTimer failSafe;
+    failSafe.setSingleShot(true);
+    QObject::connect(&failSafe, &QTimer::timeout, &loop, &QEventLoop::quit);
+    failSafe.start(8000);
+    q->page()->runJavaScript(
+        QStringLiteral("(function(){ return (window.__gwPreviewPlain ? window.__gwPreviewPlain() : ''); })()"),
+        [&](const QVariant &v) {
+            capturedPlain = v.toString();
+            received = true;
+            loop.quit();
+        });
+    loop.exec(QEventLoop::ExcludeUserInputEvents);
+    failSafe.stop();
+    if (!received) {
+        qWarning() << "ghostwriter++: timed out merging in-preview edits; save continues without that merge.";
+        return;
+    }
+
+    if (!applyPreviewPlainDiffToDocument(capturedPlain)) {
+        qWarning(
+            "ghostwriter++: could not apply preview edit to markdown source "
+            "(edited text may not appear verbatim in the file). "
+            "Try the same change in the editor, or simplify the edit.");
+        previewDirty = false;
+        QMetaObject::invokeMethod(q, "updatePreview", Qt::QueuedConnection);
+        return;
+    }
+    previewDirty = false;
+}
+
+bool HtmlPreviewPrivate::applyPreviewPlainDiffToDocument(const QString &editedPlain)
+{
+    if (document->isReadOnly()) {
+        return true;
+    }
+    if (editedPlain == previewPlainBaseline) {
+        return true;
+    }
+
+    QString oldChunk;
+    QString newChunk;
+    int prefixLen = 0;
+    computeDiffReplacement(previewPlainBaseline, editedPlain, &oldChunk, &newChunk, &prefixLen);
+
+    if (oldChunk.isEmpty() && newChunk.isEmpty()) {
+        previewPlainBaseline = editedPlain;
+        return true;
+    }
+
+    const QString md = document->toPlainText();
+    QTextCursor cursor(document);
+
+    if (!oldChunk.isEmpty()) {
+        const int pos = md.indexOf(oldChunk);
+        if (pos >= 0) {
+            cursor.beginEditBlock();
+            cursor.setPosition(pos);
+            cursor.setPosition(pos + oldChunk.size(), QTextCursor::KeepAnchor);
+            cursor.insertText(newChunk);
+            cursor.endEditBlock();
+            previewPlainBaseline = editedPlain;
+            return true;
+        }
+    }
+
+    if (oldChunk.isEmpty() && !newChunk.isEmpty() && prefixLen > 0) {
+        const QString prefix = previewPlainBaseline.left(prefixLen);
+        const int pos = md.indexOf(prefix);
+        if (pos >= 0) {
+            const int ins = pos + prefix.size();
+            cursor.beginEditBlock();
+            cursor.setPosition(ins);
+            cursor.insertText(newChunk);
+            cursor.endEditBlock();
+            previewPlainBaseline = editedPlain;
+            return true;
+        }
+    }
+
+    return false;
+}
+
 void HtmlPreviewPrivate::onHtmlReady()
 {
     Q_Q(HtmlPreview);
@@ -278,7 +484,10 @@ void HtmlPreviewPrivate::onLoadFinished(bool ok)
     
     if (ok) {
         q->page()->runJavaScript(
-            "document.documentElement.contentEditable = false;");
+            QStringLiteral(
+                "window.__gwSetPreviewEditingEnabled && window.__gwSetPreviewEditingEnabled(%1);")
+                .arg(inPlaceEditingEnabled ? QLatin1String("true")
+                                            : QLatin1String("false")));
     }
 }
 
@@ -337,4 +546,4 @@ QString HtmlPreviewPrivate::exportToHtml
 
     return html;
 }
-} // namespace ghostwriter
+} // namespace ghostwriterpp

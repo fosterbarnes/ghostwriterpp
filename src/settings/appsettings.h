@@ -1,4 +1,4 @@
-﻿/*
+/*
  * SPDX-FileCopyrightText: 2014-2026 Megan Conkle <megan.conkle@kdemail.net>
  * SPDX-FileCopyrightText: 2026 Nate Peterson
  *
@@ -16,8 +16,19 @@
 #include <export/exporter.h>
 #include <editor/markdowneditortypes.h>
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
+/**
+ * Which editor/preview layout the window is using.
+ */
+enum FocusView {
+    FocusViewFirst,
+    FocusViewSplit = FocusViewFirst,
+    FocusViewEditorOnly,
+    FocusViewPreviewOnly,
+    FocusViewLast = FocusViewPreviewOnly
+};
+
 /**
  * Loads and stores application settings via QSettings, particularly for
  * those settings that need special range checking.  Be sure to call
@@ -56,7 +67,8 @@ public:
     Q_SIGNAL void backupFileChanged(bool enabled);
 
     QFont editorFont() const;
-    void setEditorFont(const QFont &font);
+    Q_SLOT void setEditorFont(const QFont &font);
+    Q_SIGNAL void editorFontChanged(const QFont &font);
 
     QFont previewTextFont() const;
     void setPreviewTextFont(const QFont &font);
@@ -147,6 +159,10 @@ public:
 
     bool htmlPreviewVisible() const;
     void setHtmlPreviewVisible(bool visible);
+
+    FocusView focusView() const;
+    void setFocusView(FocusView view);
+    Q_SIGNAL void focusViewChanged(FocusView view);
 
     bool sidebarVisible() const;
     void setSidebarVisible(bool visible);

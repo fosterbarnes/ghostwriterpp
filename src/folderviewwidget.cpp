@@ -13,7 +13,7 @@
 #include "folderviewwidget.h"
 #include "library.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 
 class FolderViewWidgetPrivate
@@ -203,4 +203,4 @@ void FolderViewWidgetPrivate::setNameFilters(bool showAllFiles)
     folderModel->setNameFilters(nameFilters);
 }
 
-} // namespace ghostwriter
+} // namespace ghostwriterpp

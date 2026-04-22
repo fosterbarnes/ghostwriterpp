@@ -11,7 +11,7 @@
 #include <QFont>
 #include <QScopedPointer>
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 /**
  * A simplified font dialog displaying only the font family and font size as
@@ -97,6 +97,6 @@ public:
 private:
     QScopedPointer<SimpleFontDialogPrivate> d_ptr;
 };
-} // namespace ghostwriter
+} // namespace ghostwriterpp
 
 #endif // SIMPLEFONTDIALOG_H

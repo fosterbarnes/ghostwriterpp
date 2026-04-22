@@ -12,7 +12,7 @@
 #include <QScopedPointer>
 #include <QWidget>
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 /**
  * Find/Replace widget intended to be placed at the top or bottom of a window.
@@ -34,6 +34,11 @@ public:
      * Destructor.
      */
     ~FindReplace();
+
+    /**
+     * Retargets the find/replace widget at a new editor.
+     */
+    void setEditor(QPlainTextEdit *editor);
 
     void setRegexSearchIcon(const QIcon &icon);
     void setMatchCaseIcon(const QIcon &icon);

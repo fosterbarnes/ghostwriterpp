@@ -10,7 +10,7 @@
 #include <QDialog>
 #include <QScopedPointer>
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 /**
  * Displays HTML preview options.
@@ -35,6 +35,6 @@ public:
 private:
     QScopedPointer<PreviewOptionsDialogPrivate> d_ptr;
 };
-} // namespace ghostwriter
+} // namespace ghostwriterpp
 
 #endif // PREVIEWOPTIONSDIALOG_H

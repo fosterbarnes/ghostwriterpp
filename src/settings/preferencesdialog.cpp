@@ -27,7 +27,7 @@
 #include "preferencesdialog.h"
 #include "ui_preferencesdialog.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 
 class PreferencesDialogPrivate : public QObject
@@ -296,6 +296,6 @@ QWidget *PreferencesDialogPrivate::initializeSpellCheckTab()
 
     return (QWidget *)tab;
 }
-} // namespace ghostwriter
+} // namespace ghostwriterpp
 
 #include "preferencesdialog.moc"

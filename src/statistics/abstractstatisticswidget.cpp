@@ -10,7 +10,7 @@
 
 #include "abstractstatisticswidget.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 AbstractStatisticsWidget::AbstractStatisticsWidget(QWidget *parent)
     : QListWidget(parent),

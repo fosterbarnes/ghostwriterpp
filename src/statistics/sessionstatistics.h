@@ -1,4 +1,4 @@
-﻿/*
+/*
  * SPDX-FileCopyrightText: 2016-2023 Megan Conkle <megan.conkle@kdemail.net>
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
@@ -11,7 +11,7 @@
 
 class QTimer;
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 /**
  * Class to compute session statistics.
@@ -84,6 +84,6 @@ private:
 
     int calculateWPM() const;
 };
-} // namespace ghostwriter
+} // namespace ghostwriterpp
 
 #endif // SESSIONSTATISTICS_H

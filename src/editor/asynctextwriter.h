@@ -18,7 +18,7 @@
 #include <QStringDecoder>
 #endif
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 /**
  * Writes document text asynchronously to a file.
@@ -102,6 +102,6 @@ signals:
 private:
     QScopedPointer<AsyncTextWriterPrivate> d_ptr;
 };
-} //namespace ghostwriter
+} //namespace ghostwriterpp
 
 #endif // ASYNCTEXTWRITER_H

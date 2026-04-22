@@ -5,10 +5,11 @@
  */
 
 #include <QCoreApplication>
+#include <QGuiApplication>
 
 #include "messageboxhelper.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 QMessageBox::StandardButton
 MessageBoxHelper::critical
@@ -106,7 +107,7 @@ MessageBoxHelper::showMessageBox
 )
 {
     QMessageBox messageBox(parent);
-    messageBox.setWindowTitle(QCoreApplication::applicationName());
+    messageBox.setWindowTitle(QGuiApplication::applicationDisplayName());
     messageBox.setText(text);
     messageBox.setInformativeText(informativeText);
     messageBox.setStandardButtons(buttons);
@@ -115,4 +116,4 @@ MessageBoxHelper::showMessageBox
 
     return (QMessageBox::StandardButton) messageBox.exec();
 }
-} // namespace ghostwriter
+} // namespace ghostwriterpp

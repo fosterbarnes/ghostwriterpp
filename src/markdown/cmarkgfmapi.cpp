@@ -1,4 +1,4 @@
-﻿/*
+/*
  * SPDX-FileCopyrightText: 2020-2024 Megan Conkle <megan.conkle@kdemail.net>
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
@@ -10,7 +10,7 @@
 #include <3rdparty/cmark-gfm/extensions/cmark-gfm-core-extensions.h>
 #include "cmarkgfmapi.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 class CmarkGfmAPIPrivate
 {

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * SPDX-FileCopyrightText: 2014-2023 Megan Conkle <megan.conkle@kdemail.net>
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
@@ -15,7 +15,7 @@
 
 #include "markdowndocument.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 /**
  * User data for use with the MarkdownHighlighter and DocumentStatistics.
@@ -64,6 +64,6 @@ public:
 
     MarkupRanges markup;
 };
-} // namespace ghostwriter
+} // namespace ghostwriterpp
 
 #endif // TEXTBLOCKDATA_H

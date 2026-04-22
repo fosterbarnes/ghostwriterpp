@@ -12,7 +12,7 @@
 
 class QTimer;
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 /**
  * A simple QLabel that displays the current time of day (HH:MM).
@@ -38,6 +38,6 @@ private:
     QScopedPointer<TimeLabelPrivate> d_ptr;
 
 };
-} // namespace ghostwriter
+} // namespace ghostwriterpp
 
 #endif // TIMELABEL_H

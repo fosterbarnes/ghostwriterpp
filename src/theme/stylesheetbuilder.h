@@ -1,4 +1,4 @@
-﻿/*
+/*
  * SPDX-FileCopyrightText: 2020-2023 Megan Conkle <megan.conkle@kdemail.net>
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
@@ -13,7 +13,7 @@
 #include "chromecolors.h"
 #include "svgicontheme.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 /**
  * A convenience class to generate stylesheets for the application
@@ -118,6 +118,9 @@ namespace ghostwriter
  * $code-font-size
  *      HTML preview code font point size
  *
+ * $tab-close-icon-path
+ *      absolute path to a small PNG of the themed tab close icon (for QTabBar QSS; rasterized from tab-close.svg)
+ *
  * Color States
  * ============
  *
@@ -171,6 +174,7 @@ public:
 
 private:
     static QString m_statIndicatorArrowIconPath;
+    static QString m_tabCloseIconPath;
 
     QMap<QString, QVariant> m_styleSheetVariables;
 
@@ -178,6 +182,6 @@ private:
     QString compileStyleSheet(const QString &path) const;
     void addColor(const ChromeColors &colors, const QString &variableName, ChromeColors::ColorElem elem);
 };
-} // namespace ghostwriter
+} // namespace ghostwriterpp
 
 #endif // STYLESHEETBUILDER_H

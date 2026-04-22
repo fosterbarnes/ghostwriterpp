@@ -14,7 +14,7 @@
 
 #include <iostream>
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 /**
  * Message handler function for directing Qt qDebug(), qWarning(), qError(),
@@ -22,6 +22,6 @@ namespace ghostwriter
  * qInstallMessageHandler().
  */
 void logMessage(QtMsgType type, const QMessageLogContext &context, const QString &message);
-} // namespace ghostwriter
+} // namespace ghostwriterpp
 
 #endif // LOGGING_H

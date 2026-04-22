@@ -10,7 +10,7 @@
 #include <QStack>
 #include <QVector>
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 /**
  * This class provides a simple memory arena for allocating chunks of
@@ -55,7 +55,7 @@ private:
     int slotIndex;
     size_t chunkSize;
 };
-} // namespace ghostwriter
+} // namespace ghostwriterpp
 
 #ifndef MEMORY_ARENA_CPP
 #include "memoryarena.cpp"

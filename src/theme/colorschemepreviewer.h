@@ -12,7 +12,7 @@
 
 #include <editor/colorscheme.h>
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 /**
  * Renders a thumbnail preview of a theme.
@@ -54,6 +54,6 @@ private:
     QScopedPointer<ColorSchemePreviewerPrivate> d_ptr;
 
 };
-} // namespace ghostwriter
+} // namespace ghostwriterpp
 
 #endif // COLOR_SCHEME_PREVIEWER_H

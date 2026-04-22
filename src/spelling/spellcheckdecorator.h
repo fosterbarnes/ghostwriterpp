@@ -12,7 +12,7 @@
 #include <QPlainTextEdit>
 #include <QScopedPointer>
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 /**
  * A spell checker that does NOT use QSyntaxHighlighter!  You can use this
@@ -69,6 +69,6 @@ protected:
 private:
     QScopedPointer<SpellCheckDecoratorPrivate> d_ptr;
 };
-} // namespace ghostwriter
+} // namespace ghostwriterpp
 
 #endif

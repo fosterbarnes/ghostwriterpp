@@ -12,7 +12,7 @@
 #include "markdowndocument.h"
 #include "markdowneditor.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 /**
  * Highlighter for the Markdown text format.
@@ -107,6 +107,6 @@ private slots:
 private:
     QScopedPointer<MarkdownHighlighterPrivate> d_ptr;
 };
-} // namespace ghostwriter
+} // namespace ghostwriterpp
 
 #endif

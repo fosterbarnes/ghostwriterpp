@@ -23,7 +23,7 @@
 #include "themerepository.h"
 #include "messageboxhelper.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 class ThemeEditorDialogPrivate
 {
@@ -221,4 +221,4 @@ bool ThemeEditorDialogPrivate::saveTheme()
 
     return true;
 }
-} // namespace ghostwriter
+} // namespace ghostwriterpp

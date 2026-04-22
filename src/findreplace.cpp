@@ -1,4 +1,4 @@
-﻿/*
+/*
  * SPDX-FileCopyrightText: 2020-2023 Megan Conkle <megan.conkle@kdemail.net>
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
@@ -24,7 +24,7 @@
 #define GW_FIND_REPLACE_REGEX "FindReplace/regularExpression"
 #define GW_FIND_REPLACE_HIGHLIGHT_MATCHES "FindReplace/highlightMatches"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 class FindReplacePrivate
 {
@@ -75,6 +75,9 @@ public:
 
     QWidget *prevFocusWidget;
 
+    // Tracks the document-content-changed connection for the current
+    // editor so it can be dropped when the editor is swapped out.
+    QMetaObject::Connection editorDocumentConnection;
 };
 
 FindReplace::FindReplace(QPlainTextEdit *editor, QWidget *parent)
@@ -198,13 +201,17 @@ FindReplace::FindReplace(QPlainTextEdit *editor, QWidget *parent)
             }
         });
 
-    this->connect(d->editor->document(),
-        &QTextDocument::contentsChanged,
-        [this, d]() {
-            if (this->isVisible() && d->highlightMatchesButton->isChecked()) {
-                d->highlightMatches(true);
-            }
-        });
+    // The contentsChanged wiring lives in setEditor() because the editor
+    // pointer is now owned by the active DocumentTab and may be null here.
+    if (d->editor) {
+        d->editorDocumentConnection = this->connect(d->editor->document(),
+            &QTextDocument::contentsChanged,
+            [this, d]() {
+                if (this->isVisible() && d->highlightMatchesButton->isChecked()) {
+                    d->highlightMatches(true);
+                }
+            });
+    }
 
     showFindView();
 }
@@ -218,6 +225,29 @@ FindReplace::~FindReplace()
     settings.setValue(GW_FIND_REPLACE_WHOLE_WORD, d->wholeWordButton->isChecked());
     settings.setValue(GW_FIND_REPLACE_REGEX, d->regularExpressionButton->isChecked());
     settings.setValue(GW_FIND_REPLACE_HIGHLIGHT_MATCHES, d->highlightMatchesButton->isChecked());
+}
+
+void FindReplace::setEditor(QPlainTextEdit *editor)
+{
+    Q_D(FindReplace);
+
+    if (d->editor == editor) {
+        return;
+    }
+
+    QObject::disconnect(d->editorDocumentConnection);
+
+    d->editor = editor;
+
+    if (editor) {
+        d->editorDocumentConnection = this->connect(editor->document(),
+            &QTextDocument::contentsChanged,
+            [this, d]() {
+                if (this->isVisible() && d->highlightMatchesButton->isChecked()) {
+                    d->highlightMatches(true);
+                }
+            });
+    }
 }
 
 void FindReplace::setRegexSearchIcon(const QIcon &icon)
@@ -379,6 +409,10 @@ void FindReplace::findNext()
         showFindView();
     }
 
+    if (!d->editor) {
+        return;
+    }
+
     QTextCursor cursor = d->editor->textCursor();
 
     if (d->findMatch(cursor)) {
@@ -392,6 +426,10 @@ void FindReplace::findPrevious()
     
     if (!this->isVisible()) {
         showFindView();
+    }
+
+    if (!d->editor) {
+        return;
     }
 
     QTextCursor cursor = d->editor->textCursor();
@@ -409,6 +447,10 @@ void FindReplace::replace()
         showReplaceView();
     }
 
+    if (!d->editor) {
+        return;
+    }
+
     if (!d->editor->textCursor().hasSelection()) {
         findNext();
     }
@@ -424,6 +466,10 @@ void FindReplace::replaceAll()
     
     if (!this->isVisible() || !d->replaceRowVisible) {
         showReplaceView();
+    }
+
+    if (!d->editor) {
+        return;
     }
     
     QTextCursor cursor = d->editor->textCursor();
@@ -504,6 +550,10 @@ bool FindReplacePrivate::findMatch(QTextCursor& cursor, bool wrap, bool backward
 
 void FindReplacePrivate::highlightMatches(bool enabled)
 {
+    if (!this->editor) {
+        return;
+    }
+
     // If highlights are enabled, clear any current highlights and return.
     if (!enabled) {
         this->editor->setExtraSelections(QList<QTextEdit::ExtraSelection>());
@@ -543,6 +593,10 @@ void FindReplacePrivate::highlightMatches(bool enabled)
 
 void FindReplacePrivate::setQueryFromSelection()
 {
+    if (!this->editor) {
+        return;
+    }
+
     QTextCursor cursor = this->editor->textCursor();
 
     if (cursor.hasSelection()) {
@@ -606,4 +660,4 @@ void FindReplacePrivate::closeFindReplace()
     }
 }
 
-} // namespace ghostwriter
+} // namespace ghostwriterpp

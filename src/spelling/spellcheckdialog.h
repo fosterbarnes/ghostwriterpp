@@ -13,7 +13,7 @@
 
 #include <Sonnet/Dialog>
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 /**
  * A spell check dialog that uses Sonnet's dialog against a QPlainTextEdit.
@@ -40,6 +40,6 @@ public:
 private:
     QScopedPointer<SpellCheckDialogPrivate> d_ptr;
 };
-} // namespace ghostwriter
+} // namespace ghostwriterpp
 
 #endif

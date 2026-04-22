@@ -10,7 +10,7 @@
 #include <QObject>
 #include <QString>
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 /**
  * Web Channel Proxy to the HTML preview data. Object is shared between C++ and
@@ -65,6 +65,10 @@ public:
     Q_INVOKABLE bool mathEnabled() const;
     Q_PROPERTY(bool mathEnabled READ mathEnabled NOTIFY mathToggled)
 
+public slots:
+    void setPreviewPlainBaseline(const QString &plain);
+    void notifyPreviewEdited();
+
 signals:
     /**
      * Emitted when the HTML content changes.
@@ -81,12 +85,16 @@ signals:
      */
     void mathToggled(bool enabled);
 
+    void previewPlainBaselineChanged(const QString &plain);
+
+    void previewEdited();
+
 private:
     QString m_htmlContent;
     QString m_styleSheet;
     bool m_mathEnabled;
 };
 
-} // namespace ghostwriter
+} // namespace ghostwriterpp
 
 #endif // PREVIEWPROXY_H

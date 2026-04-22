@@ -11,7 +11,7 @@
 #include <3rdparty/cmark-gfm/src/cmark-gfm.h>
 #include "markdownast.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 class MarkdownASTPrivate
 {
@@ -228,4 +228,4 @@ QString MarkdownAST::toString() const
 
     return text;
 }
-} // namespace ghostwriter
+} // namespace ghostwriterpp

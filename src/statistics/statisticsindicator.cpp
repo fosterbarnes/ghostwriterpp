@@ -1,5 +1,6 @@
-﻿/*
+/*
  * SPDX-FileCopyrightText: 2021-2023 Megan Conkle <megan.conkle@kdemail.net>
+ * SPDX-FileCopyrightText: 2026 Nate Peterson
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
@@ -8,7 +9,7 @@
 
 #include "statisticsindicator.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 //~ singular %Ln word
 //~ plural %Ln words
@@ -46,7 +47,8 @@ static QString writeTimeText(int minutes) { return StatisticsIndicator::tr("%1:%
 StatisticsIndicator::StatisticsIndicator(DocumentStatistics *documentStats,
         SessionStatistics *sessionStats,
         QWidget *parent)
-    : QComboBox(parent)
+    : QComboBox(parent),
+      m_sessionStats(sessionStats)
 {
     this->setView(new QListView());
     this->view()->setTextElideMode(Qt::ElideNone);
@@ -60,147 +62,151 @@ StatisticsIndicator::StatisticsIndicator(DocumentStatistics *documentStats,
             this->setMinimumContentsLength(text.length());
         });
 
-
+    // Seed items with placeholder values; they will update once a document
+    // stats source is connected via connectDocumentStats().
     int index = 0;
-
     this->addItem(wordCountText(0));
-    this->setItemData(index, Qt::AlignCenter, Qt::TextAlignmentRole);
-    this->connect(documentStats,
-        &DocumentStatistics::wordCountChanged,
-        this,
-        [this, index](int value) {
-            this->setItemText(index,
-                wordCountText(value));
-
-            if (index == this->currentIndex()) {
-                this->setMinimumContentsLength(this->itemText(index).length());
-            }
-        });
-    index++;
-
+    this->setItemData(index++, Qt::AlignCenter, Qt::TextAlignmentRole);
     this->addItem(characterCountText(0));
-    this->setItemData(index, Qt::AlignCenter, Qt::TextAlignmentRole);
-    this->connect(documentStats,
-        &DocumentStatistics::characterCountChanged,
-        this,
-        [this, index](int value) {
-            this->setItemText(index,
-                characterCountText(value));
-
-            if (index == this->currentIndex()) {
-                this->setMinimumContentsLength(this->itemText(index).length());
-            }
-        });
-    index++;
-
+    this->setItemData(index++, Qt::AlignCenter, Qt::TextAlignmentRole);
     this->addItem(sentenceCountText(0));
-    this->setItemData(index, Qt::AlignCenter, Qt::TextAlignmentRole);
-    this->connect(documentStats,
-        &DocumentStatistics::sentenceCountChanged,
-        this,
-        [this, index](int value) {
-            this->setItemText(index,
-                sentenceCountText(value));
-
-            if (index == this->currentIndex()) {
-                this->setMinimumContentsLength(this->itemText(index).length());
-            }
-        });
-    index++;
-
+    this->setItemData(index++, Qt::AlignCenter, Qt::TextAlignmentRole);
     this->addItem(paragraphCountText(0));
-    this->setItemData(index, Qt::AlignCenter, Qt::TextAlignmentRole);
-    this->connect(documentStats,
-        &DocumentStatistics::paragraphCountChanged,
-        this,
-        [this, index](int value) {
-            this->setItemText(index,
-                paragraphCountText(value));
-
-            if (index == this->currentIndex()) {
-                this->setMinimumContentsLength(this->itemText(index).length());
-            }
-        });
-    index++;
-
+    this->setItemData(index++, Qt::AlignCenter, Qt::TextAlignmentRole);
     this->addItem(pageCountText(0));
-    this->setItemData(index, Qt::AlignCenter, Qt::TextAlignmentRole);
-    this->connect(documentStats,
-        &DocumentStatistics::pageCountChanged,
-        this,
-        [this, index](int value) {
-            this->setItemText(index,
-                pageCountText(value));
-
-            if (index == this->currentIndex()) {
-                this->setMinimumContentsLength(this->itemText(index).length());
-            }
-        });
-    index++;
-
+    this->setItemData(index++, Qt::AlignCenter, Qt::TextAlignmentRole);
     this->addItem(readTimeText(0));
-    this->setItemData(index, Qt::AlignCenter, Qt::TextAlignmentRole);
-    this->connect(documentStats,
-        &DocumentStatistics::readingTimeChanged,
-        this,
-        [this, index](int minutes) {
-            this->setItemText(index,
-                readTimeText(minutes));
+    this->setItemData(index++, Qt::AlignCenter, Qt::TextAlignmentRole);
 
-            if (index == this->currentIndex()) {
-                this->setMinimumContentsLength(this->itemText(index).length());
-            }
-        });
-    index++;
-
+    const int wordsAddedIndex = index;
     this->addItem(wordsAddedText(0));
-    this->setItemData(index, Qt::AlignCenter, Qt::TextAlignmentRole);
-    this->connect(sessionStats,
-        &SessionStatistics::wordCountChanged,
-        this,
-        [this, index](int value) {
-            this->setItemText(index,
-                wordsAddedText(value));
-
-            if (index == this->currentIndex()) {
-                this->setMinimumContentsLength(this->itemText(index).length());
-            }
-        });
-    index++;
-
+    this->setItemData(index++, Qt::AlignCenter, Qt::TextAlignmentRole);
+    const int wpmIndex = index;
     this->addItem(wpmText(0));
-    this->setItemData(index, Qt::AlignCenter, Qt::TextAlignmentRole);
-    this->connect(sessionStats,
-        &SessionStatistics::wordsPerMinuteChanged,
-        this,
-        [this, index](int value) {
-            this->setItemText(index,
-                wpmText(value));
-
-            if (index == this->currentIndex()) {
-                this->setMinimumContentsLength(this->itemText(index).length());
-            }
-        });
-    index++;
-
+    this->setItemData(index++, Qt::AlignCenter, Qt::TextAlignmentRole);
+    const int writeTimeIndex = index;
     this->addItem(writeTimeText(0));
-    this->setItemData(index, Qt::AlignCenter, Qt::TextAlignmentRole);
-    this->connect(sessionStats,
-        &SessionStatistics::writingTimeChanged,
-        this,
-        [this, index](int minutes) {
-            this->setItemText(index,
-                writeTimeText(minutes));
+    this->setItemData(index++, Qt::AlignCenter, Qt::TextAlignmentRole);
 
-            if (index == this->currentIndex()) {
-                this->setMinimumContentsLength(this->itemText(index).length());
-            }
-        });
+    if (sessionStats) {
+        this->connect(sessionStats,
+            &SessionStatistics::wordCountChanged,
+            this,
+            [this, wordsAddedIndex](int value) {
+                this->setItemText(wordsAddedIndex, wordsAddedText(value));
+                if (wordsAddedIndex == this->currentIndex()) {
+                    this->setMinimumContentsLength(this->itemText(wordsAddedIndex).length());
+                }
+            });
+
+        this->connect(sessionStats,
+            &SessionStatistics::wordsPerMinuteChanged,
+            this,
+            [this, wpmIndex](int value) {
+                this->setItemText(wpmIndex, wpmText(value));
+                if (wpmIndex == this->currentIndex()) {
+                    this->setMinimumContentsLength(this->itemText(wpmIndex).length());
+                }
+            });
+
+        this->connect(sessionStats,
+            &SessionStatistics::writingTimeChanged,
+            this,
+            [this, writeTimeIndex](int minutes) {
+                this->setItemText(writeTimeIndex, writeTimeText(minutes));
+                if (writeTimeIndex == this->currentIndex()) {
+                    this->setMinimumContentsLength(this->itemText(writeTimeIndex).length());
+                }
+            });
+    }
+
+    connectDocumentStats(documentStats);
 }
 
 StatisticsIndicator::~StatisticsIndicator()
 {
     ;
+}
+
+void StatisticsIndicator::setDocumentStats(DocumentStatistics *documentStats)
+{
+    if (m_documentStats.data() == documentStats) {
+        return;
+    }
+
+    for (const auto &c : std::as_const(m_documentStatsConnections)) {
+        QObject::disconnect(c);
+    }
+    m_documentStatsConnections.clear();
+
+    connectDocumentStats(documentStats);
+}
+
+void StatisticsIndicator::connectDocumentStats(DocumentStatistics *documentStats)
+{
+    m_documentStats = documentStats;
+
+    if (!documentStats) {
+        auto z = [this](int itemIndex, const QString &text) {
+            this->setItemText(itemIndex, text);
+            if (itemIndex == this->currentIndex()) {
+                this->setMinimumContentsLength(this->itemText(itemIndex).length());
+            }
+        };
+        z(0, wordCountText(0));
+        z(1, characterCountText(0));
+        z(2, sentenceCountText(0));
+        z(3, paragraphCountText(0));
+        z(4, pageCountText(0));
+        z(5, readTimeText(0));
+        return;
+    }
+
+    auto updateItem = [this](int itemIndex, const QString &text) {
+        this->setItemText(itemIndex, text);
+        if (itemIndex == this->currentIndex()) {
+            this->setMinimumContentsLength(this->itemText(itemIndex).length());
+        }
+    };
+
+    // Seed items with the new source's current values so switching tabs
+    // reflects the stats immediately rather than waiting for the next edit.
+    updateItem(0, wordCountText(documentStats->wordCount()));
+    updateItem(1, characterCountText(documentStats->characterCount()));
+    updateItem(2, sentenceCountText(documentStats->sentenceCount()));
+    updateItem(3, paragraphCountText(documentStats->paragraphCount()));
+    updateItem(4, pageCountText(documentStats->pageCount()));
+    updateItem(5, readTimeText(documentStats->readingTime()));
+
+    m_documentStatsConnections << this->connect(documentStats,
+        &DocumentStatistics::wordCountChanged,
+        this,
+        [updateItem](int value) { updateItem(0, wordCountText(value)); });
+
+    m_documentStatsConnections << this->connect(documentStats,
+        &DocumentStatistics::characterCountChanged,
+        this,
+        [updateItem](int value) { updateItem(1, characterCountText(value)); });
+
+    m_documentStatsConnections << this->connect(documentStats,
+        &DocumentStatistics::sentenceCountChanged,
+        this,
+        [updateItem](int value) { updateItem(2, sentenceCountText(value)); });
+
+    m_documentStatsConnections << this->connect(documentStats,
+        &DocumentStatistics::paragraphCountChanged,
+        this,
+        [updateItem](int value) { updateItem(3, paragraphCountText(value)); });
+
+    m_documentStatsConnections << this->connect(documentStats,
+        &DocumentStatistics::pageCountChanged,
+        this,
+        [updateItem](int value) { updateItem(4, pageCountText(value)); });
+
+    m_documentStatsConnections << this->connect(documentStats,
+        &DocumentStatistics::readingTimeChanged,
+        this,
+        [updateItem](int minutes) { updateItem(5, readTimeText(minutes)); });
 }
 
 void StatisticsIndicator::showPopup()

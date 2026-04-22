@@ -9,7 +9,7 @@
 
 #include "documentstatisticswidget.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 
 class DocumentStatisticsWidgetPrivate
@@ -158,4 +158,4 @@ void DocumentStatisticsWidget::setReadabilityIndex(int value)
 
     setStringValueForLabel(d->cliLabel, cliStr);
 }
-} // namespace ghostwriter
+} // namespace ghostwriterpp

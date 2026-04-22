@@ -1,4 +1,4 @@
-﻿/*
+/*
  * SPDX-FileCopyrightText: 2014-2023 Megan Conkle <megan.conkle@kdemail.net>
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
@@ -15,7 +15,7 @@
 
 #include "../markdown/markdownast.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 /**
  * Text document that maintains timestamp, read-only state, and new vs.
@@ -108,6 +108,6 @@ signals:
 private:
     QScopedPointer<MarkdownDocumentPrivate> d_ptr;
 };
-} // namespace ghostwriter
+} // namespace ghostwriterpp
 
 #endif // MARKDOWNDOCUMENT_H

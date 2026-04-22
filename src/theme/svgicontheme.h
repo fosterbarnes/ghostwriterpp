@@ -1,4 +1,4 @@
-﻿/**
+/**
  * SPDX-FileCopyrightText: 2024 Megan Conkle <megan.conkle@kdemail.net>
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
@@ -11,7 +11,7 @@
 #include <QScopedPointer>
 #include <QString>
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 /**
  * Custom renders SVG icons with the given colors for each icon mode.
@@ -77,6 +77,6 @@ public:
 private:
     QScopedPointer<SvgIconThemePrivate> d;
 };
-} // namespace ghostwriter
+} // namespace ghostwriterpp
 
 #endif // SVGICONTHEME_H

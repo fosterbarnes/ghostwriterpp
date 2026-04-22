@@ -12,7 +12,7 @@
 
 struct cmark_node;
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 /**
  * Markdown node wrapper for cmark-gfm node.
@@ -253,6 +253,6 @@ private:
 
     QString toString(NodeType nodeType) const;
 };
-} // namespace ghostwriter
+} // namespace ghostwriterpp
 
 #endif

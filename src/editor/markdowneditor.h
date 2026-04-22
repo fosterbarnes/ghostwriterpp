@@ -1,4 +1,4 @@
-﻿/*
+/*
  * SPDX-FileCopyrightText: 2014-2024 Megan Conkle <megan.conkle@kdemail.net>
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
@@ -15,7 +15,7 @@
 #include "markdowndocument.h"
 #include "markdowneditortypes.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 /**
  * Markdown editor having special shortcut key handing and syntax highlighting.
@@ -394,6 +394,6 @@ protected slots:
 private:
     QScopedPointer<MarkdownEditorPrivate> d_ptr;
 };
-} // namespace ghostwriter
+} // namespace ghostwriterpp
 
 #endif

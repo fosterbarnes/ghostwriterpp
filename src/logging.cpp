@@ -9,7 +9,7 @@
 #include <QDir>
 #include <QtLogging>
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 void logMessage(QtMsgType type, const QMessageLogContext &context, const QString &message)
 
@@ -56,4 +56,4 @@ void logMessage(QtMsgType type, const QMessageLogContext &context, const QString
         abort();
     }
 }
-} // namespace ghostwriter
+} // namespace ghostwriterpp

@@ -35,7 +35,7 @@
 #define GW_SMART_TYPOGRAPHY_KEY "Export/smartTypographyEnabled"
 #define GW_OPEN_ON_EXPORT_KEY "Export/openOnExport"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 ExportDialog::ExportDialog(MarkdownDocument *document, QWidget *parent)
     : QDialog(parent), document(document)
@@ -231,4 +231,4 @@ void ExportDialog::onExporterChanged(int index)
 
 }
 
-} // namespace ghostwriter
+} // namespace ghostwriterpp

@@ -16,7 +16,7 @@
 #include "../messageboxhelper.h"
 #include "spellcheckdialog.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 typedef QPair<int, int> TextRange;
 
@@ -199,4 +199,4 @@ void SpellCheckDialogPrivate::replace(
     }
 }
 
-} // namespace ghostwriter
+} // namespace ghostwriterpp

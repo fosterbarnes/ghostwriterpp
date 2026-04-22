@@ -10,7 +10,7 @@
 
 #include "chromecolors.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 
 typedef enum ColorId {
@@ -342,4 +342,4 @@ static QColor mix(const QColor &color1, const QColor &color2, int weight)
     return blendedColor;
 }
 
-} // namespace ghostwriter
+} // namespace ghostwriterpp

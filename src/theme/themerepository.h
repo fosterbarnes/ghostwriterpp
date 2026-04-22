@@ -15,7 +15,7 @@
 
 #include "theme.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 /**
  * Singleton class to fetch themes, either built-in or from the hard disk.
@@ -93,6 +93,6 @@ public:
 private:
     QScopedPointer<ThemeRepositoryPrivate> d_ptr;
 };
-} // namespace ghostwriter
+} // namespace ghostwriterpp
 
 #endif

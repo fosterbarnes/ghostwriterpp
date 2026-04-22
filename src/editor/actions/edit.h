@@ -8,7 +8,7 @@
 
 #include "../markdowneditor.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 class Edit
 {
@@ -18,6 +18,6 @@ public:
     virtual void operator()(MarkdownEditor *editor) = 0;
 };
 
-} // namespace ghostwriter
+} // namespace ghostwriterpp
 
 #endif // EDIT_H

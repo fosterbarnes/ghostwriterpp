@@ -1,4 +1,4 @@
-﻿/*
+/*
  * SPDX-FileCopyrightText: 2016-2023 Megan Conkle <megan.conkle@kdemail.net>
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
@@ -6,7 +6,7 @@
 
 #include "sessionstatisticswidget.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 class SessionStatisticsWidgetPrivate
 {
@@ -80,4 +80,4 @@ void SessionStatisticsWidget::setIdleTime(int percentage)
 
     setPercentageValueForLabel(d->idleTimePercentageLabel, percentage);
 }
-} // namespace ghostwriter
+} // namespace ghostwriterpp

@@ -13,7 +13,7 @@
 
 class Ui_PreferencesDialog;
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 /**
  * Displays application preferences.
@@ -39,6 +39,6 @@ private:
     QScopedPointer<PreferencesDialogPrivate> d_ptr;
     Ui_PreferencesDialog *m_ui;
 };
-} // namespace ghostwriter
+} // namespace ghostwriterpp
 
 #endif // PREFERENCESDIALOG_H

@@ -9,7 +9,7 @@
 
 #include <QColor>
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 typedef struct ColorScheme {
     QColor foreground;
@@ -31,6 +31,6 @@ typedef struct ColorScheme {
     QColor codeMarkup;
     QColor error;
 } ColorScheme;
-} // namespace ghostwriter
+} // namespace ghostwriterpp
 
 #endif // COLORSCHEME_H

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * SPDX-FileCopyrightText: 2023 Megan Conkle <megan.conkle@kdemail.net>
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
@@ -12,7 +12,7 @@
 
 #include <editor/colorscheme.h>
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 class ChromeColorsPrivate;
 class ChromeColors
@@ -73,6 +73,6 @@ private:
     QScopedPointer<ChromeColorsPrivate> d;
 };
 
-} // namespace ghostwriter
+} // namespace ghostwriterpp
 
 #endif // CHROMECOLORS_H

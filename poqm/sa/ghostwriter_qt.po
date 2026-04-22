@@ -14,127 +14,127 @@ msgstr ""
 "X-Generator: Lokalize 24.08.2\n"
 
 #: src/appactions.cpp:74
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "Reopen Last Closed File"
 msgstr "अन्तिम बन्द सञ्चिका पुनः उद्घाटयन्तु"
 
 #: src/appactions.cpp:74
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "Ctrl+Shift+T"
 msgstr "Ctrl+Shift+T"
 
 #: src/appactions.cpp:87
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "Clear List"
 msgstr "स्पष्ट सूची"
 
 #: src/appactions.cpp:91
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "Reload from Disk..."
 msgstr "डिस्कतः पुनः लोड् कुर्वन्तु..."
 
 #: src/appactions.cpp:92
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "Export"
 msgstr "निर्यात"
 
 #: src/appactions.cpp:92
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "CTRL+E"
 msgstr "सीटीआरएल+ई"
 
 #: src/appactions.cpp:102
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "Copy &HTML"
 msgstr "प्रतिलिपि &HTML"
 
 #: src/appactions.cpp:102
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "SHIFT+CTRL+C"
 msgstr "SHIFT+CTRL+C"
 
 #: src/appactions.cpp:105
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "&Insert Image..."
 msgstr "&प्रतिबिम्बं सम्मिलितं कुर्वन्तु..."
 
 #: src/appactions.cpp:114
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "Strong"
 msgstr "समर्थः"
 
 #: src/appactions.cpp:115
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "Emphasis"
 msgstr "बलं"
 
 #: src/appactions.cpp:116
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "Strikethrough"
 msgstr "स्ट्राइकथ्रू"
 
 #: src/appactions.cpp:116
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "CTRL+K"
 msgstr "सीटीआरएल+के"
 
 #: src/appactions.cpp:117
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "HTML Comment"
 msgstr "HTML टिप्पणी"
 
 #: src/appactions.cpp:117
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "CTRL+/"
 msgstr "सीटीआरएल+/"
 
 #: src/appactions.cpp:118
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "Indent"
 msgstr "इण्डेन्ट्"
 
 #: src/appactions.cpp:118
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "Tab"
 msgstr "टब"
 
 #: src/appactions.cpp:119
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "Unindent"
 msgstr "अनिन्दन्"
 
 #: src/appactions.cpp:119
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "SHIFT+Tab"
 msgstr "SHIFT+Tab इति"
 
 #: src/appactions.cpp:120
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "&Code Fences"
 msgstr "&कोड फेन्स"
 
 #: src/appactions.cpp:120
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "CTRL+G"
 msgstr "सीटीआरएल+जी"
 
 #: src/appactions.cpp:122
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "Block Quote"
 msgstr "ब्लॉक उद्धरण"
 
 #: src/appactions.cpp:122
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "CTRL+SHIFT+."
 msgstr "CTRL+SHIFT+ इति ।"
 
 #: src/appactions.cpp:123
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "Formats the current line or selected lines as a block quote."
 msgstr "वर्तमानपङ्क्तिं वा चयनितपङ्क्तयः वा ब्लॉक् उद्धरणरूपेण प्रारूपयति ।"
 
 #: src/appactions.cpp:125
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid ""
 "Formats the current line or selected lines as a block quote, or if already a "
 "block quote, as a nested block quote."
@@ -143,23 +143,23 @@ msgstr ""
 "नेस्टेड्-खण्ड-उद्धरणरूपेण प्रारूपयति ।"
 
 #: src/appactions.cpp:128
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "Strip Block Quote"
 msgstr "पट्टी ब्लॉक उद्धरण"
 
 #: src/appactions.cpp:128
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "CTRL+SHIFT+,"
 msgstr "सीटीआरएल+शिफ्ट+,"
 
 #: src/appactions.cpp:129
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "Strips the current line or selected lines of block quote formatting."
 msgstr ""
 "वर्तमानपङ्क्तिं अथवा block quote formatting इत्यस्य चयनितपङ्क्तयः स्ट्रिप् करोति ।"
 
 #: src/appactions.cpp:131
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid ""
 "Strips the current line or selected lines of block quote formatting. If the "
 "block is nested, only the outermost layer of block quote formatting will be "
@@ -169,73 +169,73 @@ msgstr ""
 "खण्डः नेस्टेड् अस्ति तर्हि केवलं ब्लॉक् उद्धरणस्वरूपणस्य बाह्यतमः स्तरः एव उद्धृतः भविष्यति ।"
 
 #: src/appactions.cpp:135
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "* Bullet List"
 msgstr "* गोली सूची"
 
 #: src/appactions.cpp:135
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "CTRL+8"
 msgstr "सीटीआरएल+८"
 
 #: src/appactions.cpp:137
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid ""
 "Formats the current line or selected lines as a bullet point list with an "
 "asterisk (*)."
 msgstr "वर्तमानरेखां वा चयनितपङ्क्तयः ताराचिह्नेन (*) सह बुलेट् बिन्दुसूचीरूपेण स्वरूपयति ।"
 
 #: src/appactions.cpp:140
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "- Bullet List"
 msgstr "- गोली सूची"
 
 #: src/appactions.cpp:140
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "CTRL+-"
 msgstr "सीटीआरएल+-"
 
 #: src/appactions.cpp:142
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid ""
 "Formats the current line or selected lines as a bullet point list with a "
 "minus sign (-)."
 msgstr "वर्तमानरेखां वा चयनितपङ्क्तयः माइनस् चिह्नेन (-) सह बुलेट् बिन्दुसूचीरूपेण स्वरूपयति ।"
 
 #: src/appactions.cpp:145
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "+ Bullet List"
 msgstr "+ गोलीसूची"
 
 #: src/appactions.cpp:145
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "CTRL++"
 msgstr "सीटीआरएल++"
 
 #: src/appactions.cpp:147
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid ""
 "Formats the current line or selected lines as a bullet point list with a "
 "plus sign (+)."
 msgstr "वर्तमानरेखां वा चयनितपङ्क्तयः प्लस् चिह्नेन (+) सह बुलेट् बिन्दुसूचीरूपेण स्वरूपयति ।"
 
 #: src/appactions.cpp:150
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "1. Numbered List"
 msgstr "1. सङ्ख्यायुक्तसूची"
 
 #: src/appactions.cpp:150
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "CTRL+1"
 msgstr "सीटीआरएल+1"
 
 #: src/appactions.cpp:152 src/appactions.cpp:165
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "Formats the current line or selected lines as a numbered list."
 msgstr "वर्तमानपङ्क्तिं वा चयनितपङ्क्तयः वा संख्यायुक्तसूचीरूपेण प्रारूपयति ।"
 
 #: src/appactions.cpp:155
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid ""
 "<p>Formats the current line or selected lines as a numbered list.</"
 "p><p>Example:</p><p>1. item one<br/>2. item two<br/>3. item three<br/></p>"
@@ -244,17 +244,17 @@ msgstr ""
 "1. item one<br/> 2. मदद्वयम्<br/> 3. मदं त्रीणि<br/></p>"
 
 #: src/appactions.cpp:163
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "1) Numbered List"
 msgstr "१) संख्यायुक्तसूची"
 
 #: src/appactions.cpp:163
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "CTRL+0"
 msgstr "सीटीआरएल+0"
 
 #: src/appactions.cpp:168
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid ""
 "<p>Formats the current line or selected lines as a numbered list.</"
 "p><p>Example:</p><p>1) item one<br/>2) item two<br/>3) item three<br/></"
@@ -267,22 +267,22 @@ msgstr ""
 "नास्ति ।</p>"
 
 #: src/appactions.cpp:178
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "Task List"
 msgstr "कार्यसूची"
 
 #: src/appactions.cpp:178
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "CTRL+T"
 msgstr "सीटीआरएल+टी"
 
 #: src/appactions.cpp:179
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "Formats the current line or selected lines as a task list."
 msgstr "वर्तमानपङ्क्तिं चयनितपङ्क्तयः वा कार्यसूचीरूपेण स्वरूपयति ।"
 
 #: src/appactions.cpp:181
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid ""
 "<p>Formats the current line or selected lines as a task list.</p><p>Example:"
 "</p><p>- [ ] item one<br/>- [ ] item two<br/>- [ ] item three<br/></"
@@ -295,24 +295,24 @@ msgstr ""
 "नास्ति ।</p>"
 
 #: src/appactions.cpp:191
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "Toggle Task(s) Complete"
 msgstr "Toggle Task(s) सम्पूर्णम्"
 
 #: src/appactions.cpp:191
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "CTRL+D"
 msgstr "सीटीआरएल+डी"
 
 #: src/appactions.cpp:193
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid ""
 "Toggle the current task item or selected task items as complete or "
 "incomplete."
 msgstr "वर्तमानकार्यवस्तुं वा चयनितं कार्यवस्तुं पूर्णं वा अपूर्णं वा इति टॉगलं कुर्वन्तु ।"
 
 #: src/appactions.cpp:196
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid ""
 "<p>Toggle the state of the current task item or selected task items from a "
 "task list as complete or incomplete.</p><p>Applying this action to an "
@@ -331,42 +331,42 @@ msgstr ""
 "Markdown प्रोसेसरैः समर्थिता नास्ति तथा च CommonMark इत्यस्य भागः नास्ति ।</p>"
 
 #: src/appactions.cpp:216
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "Distraction-Free Mode"
 msgstr "विक्षेप-मुक्त मोड"
 
 #: src/appactions.cpp:216
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "SHIFT+F11"
 msgstr "SHIFT+F11 इति"
 
 #: src/appactions.cpp:218
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "Live Preview"
 msgstr "लाइव पूर्वावलोकन"
 
 #: src/appactions.cpp:218
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "CTRL+P"
 msgstr "सीटीआरएल+पी"
 
 #: src/appactions.cpp:220
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "Hemingway Mode"
 msgstr "हेमिंग्वे मोड"
 
 #: src/appactions.cpp:220
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "SHIFT+Backspace"
 msgstr "SHIFT+पृष्ठस्थानम्"
 
 #: src/appactions.cpp:221
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "Toggles Hemingway mode."
 msgstr "हेमिंग्वे मोड् टॉगल करोति।"
 
 #: src/appactions.cpp:223
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid ""
 "Hemingway mode disables the backspace and delete keys to help you resist the "
 "temptation to edit your document as you write."
@@ -375,17 +375,17 @@ msgstr ""
 "सम्पादनस्य प्रलोभनस्य प्रतिरोधाय सहायकं भवति ।"
 
 #: src/appactions.cpp:226
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "Dark Mode"
 msgstr "डार्क मोड"
 
 #: src/appactions.cpp:227
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "Enables/disables the current theme's dark color scheme."
 msgstr "वर्तमानविषयस्य कृष्णवर्णयोजनां सक्षमं/अक्षमं करोति ।"
 
 #: src/appactions.cpp:229
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid ""
 "<p>Enables/disables the current theme's dark color scheme.</p><p>If the "
 "current theme does not support a dark color scheme, then this option will "
@@ -395,32 +395,32 @@ msgstr ""
 "कृष्णवर्णयोजनां न समर्थयति तर्हि अस्य विकल्पस्य कोऽपि प्रभावः न भविष्यति ।</p>"
 
 #: src/appactions.cpp:233
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "Show Sidebar"
 msgstr "पार्श्वपट्टिकां दर्शयतु"
 
 #: src/appactions.cpp:233
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "CTRL+Space"
 msgstr "सीटीआरएल+अन्तरिक्ष"
 
 #: src/appactions.cpp:235
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "Outline"
 msgstr "रूपरेखा"
 
 #: src/appactions.cpp:235
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "CTRL+J"
 msgstr "सीटीआरएल+जे"
 
 #: src/appactions.cpp:236
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "Shows the document outline."
 msgstr "दस्तावेजरूपरेखां दर्शयति ।"
 
 #: src/appactions.cpp:238
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid ""
 "<p>Shows the document outline.</p><p>Use the mouse plus left click on a "
 "heading in the document, or else the up and down arrows on the keyboard plus "
@@ -432,43 +432,43 @@ msgstr ""
 "उपरि अधः च बाणानां प्लस् ENTER कीलस्य उपयोगं कुर्वन्तु</p>"
 
 #: src/appactions.cpp:243
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "Session Statistics"
 msgstr "सत्र सांख्यिकी"
 
 #: src/appactions.cpp:245
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "Document Statistics"
 msgstr "दस्तावेज सांख्यिकी"
 
 #: src/appactions.cpp:247
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "Cheat Sheet"
 msgstr "धोखा पत्र"
 
 #: src/appactions.cpp:248
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "Shows a quick reference guide for Markdown in the sidebar."
 msgstr "पार्श्वपट्टिकायां Markdown इत्यस्य द्रुतसन्दर्भमार्गदर्शकं दर्शयति ।"
 
 #: src/appactions.cpp:255
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "Theme..."
 msgstr "विषयवस्तु..."
 
 #: src/appactions.cpp:256
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "Font..."
 msgstr "फॉन्ट..."
 
 #: src/appactions.cpp:258
-msgctxt "ghostwriter::AppActions|"
+msgctxt "ghostwriterpp::AppActions|"
 msgid "Preview Options..."
 msgstr "पूर्वावलोकनविकल्पाः..."
 
 #: src/appmain.cpp:92
 msgctxt "main|"
-msgid "ghostwriter"
+msgid "ghostwriter++"
 msgstr "भूतलेखकः"
 
 #: src/appmain.cpp:96
@@ -530,12 +530,12 @@ msgstr "गणितस्य कृते जावास्क्रिप्�
 #: src/appmain.cpp:139
 #, qt-format
 msgctxt "main|"
-msgid "Copyright 2014-%1 The ghostwriter team"
+msgid "Copyright 2014-%1 The ghostwriter++ team"
 msgstr "प्रतिलिपिधर्मः २०१४-%1 भूतलेखकदलम्"
 
 #: src/appmain.cpp:157
 msgctxt "main|"
-msgid "Welcome to ghostwriter!"
+msgid "Welcome to ghostwriter++!"
 msgstr "भूतलेखकस्य स्वागतम्!"
 
 #: src/appmain.cpp:160
@@ -549,177 +549,177 @@ msgid "Disables GPU acceleration."
 msgstr "GPU त्वरणं निष्क्रियं करोति ।"
 
 #: src/documentmanager.cpp:56
-msgctxt "ghostwriter::DocumentManager|"
+msgctxt "ghostwriterpp::DocumentManager|"
 msgid "untitled"
 msgstr "अनामिका"
 
 #: src/documentmanager.cpp:168
-msgctxt "ghostwriter::DocumentManager|"
+msgctxt "ghostwriterpp::DocumentManager|"
 msgid "Markdown"
 msgstr "मार्कडाउन"
 
 #: src/documentmanager.cpp:169
-msgctxt "ghostwriter::DocumentManager|"
+msgctxt "ghostwriterpp::DocumentManager|"
 msgid "Text"
 msgstr "पाठ"
 
 #: src/documentmanager.cpp:170
-msgctxt "ghostwriter::DocumentManager|"
+msgctxt "ghostwriterpp::DocumentManager|"
 msgid "All"
 msgstr "सर्वे"
 
 #: src/documentmanager.cpp:215 src/documentmanager.cpp:710
 #, qt-format
-msgctxt "ghostwriter::DocumentManager|"
+msgctxt "ghostwriterpp::DocumentManager|"
 msgid "Error saving %1"
 msgstr "%1 रक्षणे त्रुटिः"
 
 #: src/documentmanager.cpp:354
-msgctxt "ghostwriter::DocumentManager|"
+msgctxt "ghostwriterpp::DocumentManager|"
 msgid "Open File"
 msgstr "सञ्चिकां उद्घाटयन्तु"
 
 #: src/documentmanager.cpp:377
 #, qt-format
-msgctxt "ghostwriter::DocumentManager|"
+msgctxt "ghostwriterpp::DocumentManager|"
 msgid "Could not open %1"
 msgstr "%1 उद्घाटयितुं न शक्तवान्"
 
 #: src/documentmanager.cpp:377
-msgctxt "ghostwriter::DocumentManager|"
+msgctxt "ghostwriterpp::DocumentManager|"
 msgid "Permission denied."
 msgstr "अनुमतिः अङ्गीकृता।"
 
 #: src/documentmanager.cpp:430
-msgctxt "ghostwriter::DocumentManager|"
+msgctxt "ghostwriterpp::DocumentManager|"
 msgid "The document has been modified."
 msgstr "दस्तावेजे परिवर्तनं कृतम् अस्ति।"
 
 #: src/documentmanager.cpp:431
-msgctxt "ghostwriter::DocumentManager|"
+msgctxt "ghostwriterpp::DocumentManager|"
 msgid "Discard changes?"
 msgstr "परिवर्तनं परित्यजन्तु ?"
 
 #: src/documentmanager.cpp:462
-msgctxt "ghostwriter::DocumentManager|"
+msgctxt "ghostwriterpp::DocumentManager|"
 msgid "Rename File"
 msgstr "सञ्चिकायाः नाम परिवर्तनं कुर्वन्तु"
 
 #: src/documentmanager.cpp:475 src/documentmanager.cpp:483
 #, qt-format
-msgctxt "ghostwriter::DocumentManager|"
+msgctxt "ghostwriterpp::DocumentManager|"
 msgid "Failed to rename %1"
 msgstr "%1 इति नामकरणं कर्तुं असफलम्"
 
 #: src/documentmanager.cpp:535
-msgctxt "ghostwriter::DocumentManager|"
+msgctxt "ghostwriterpp::DocumentManager|"
 msgid "Save File"
 msgstr "सञ्चिकां रक्षतु"
 
 #: src/documentmanager.cpp:667
-msgctxt "ghostwriter::DocumentManager|"
+msgctxt "ghostwriterpp::DocumentManager|"
 msgid "The document has been modified by another program."
 msgstr "दस्तावेजं अन्येन कार्यक्रमेन परिवर्तितम् अस्ति ।"
 
 #: src/documentmanager.cpp:668
-msgctxt "ghostwriter::DocumentManager|"
+msgctxt "ghostwriterpp::DocumentManager|"
 msgid "Would you like to reload the document?"
 msgstr "किं भवान् दस्तावेजं पुनः लोड् कर्तुम् इच्छति ?"
 
 #: src/documentmanager.cpp:711
-msgctxt "ghostwriter::DocumentManager|"
+msgctxt "ghostwriterpp::DocumentManager|"
 msgid "No file path specified"
 msgstr "न सञ्चिकामार्गः निर्दिष्टः"
 
 #: src/documentmanager.cpp:725 src/documentmanager.cpp:758
 #, qt-format
-msgctxt "ghostwriter::DocumentManager|"
+msgctxt "ghostwriterpp::DocumentManager|"
 msgid "Could not read %1"
 msgstr "%1 पठितुं न शक्तवान्"
 
 #: src/documentmanager.cpp:745
 #, qt-format
-msgctxt "ghostwriter::DocumentManager|"
+msgctxt "ghostwriterpp::DocumentManager|"
 msgid "opening %1"
 msgstr "उद्घाटनम् %1"
 
 #: src/documentmanager.cpp:833
-msgctxt "ghostwriter::DocumentManager|"
+msgctxt "ghostwriterpp::DocumentManager|"
 msgid "File has been modified."
 msgstr "सञ्चिका परिवर्तिता अस्ति।"
 
 #: src/documentmanager.cpp:835
 #, qt-format
-msgctxt "ghostwriter::DocumentManager|"
+msgctxt "ghostwriterpp::DocumentManager|"
 msgid "%1 has been modified."
 msgstr "%1 परिवर्तनं कृतम् अस्ति ।"
 
 #: src/documentmanager.cpp:844
-msgctxt "ghostwriter::DocumentManager|"
+msgctxt "ghostwriterpp::DocumentManager|"
 msgid "Would you like to save your changes?"
 msgstr "किं भवान् स्वपरिवर्तनानि रक्षितुं इच्छति ?"
 
 #: src/documentmanager.cpp:875
 #, qt-format
-msgctxt "ghostwriter::DocumentManager|"
+msgctxt "ghostwriterpp::DocumentManager|"
 msgid "%1 is read only."
 msgstr "%1 केवलं पठ्यते ।"
 
 #: src/documentmanager.cpp:876
-msgctxt "ghostwriter::DocumentManager|"
+msgctxt "ghostwriterpp::DocumentManager|"
 msgid "Overwrite protected file?"
 msgstr "संरक्षितसञ्चिकां अधिलिखयतु?"
 
 #: src/documentmanager.cpp:895
-msgctxt "ghostwriter::DocumentManager|"
+msgctxt "ghostwriterpp::DocumentManager|"
 msgid "Overwrite failed."
 msgstr "अधिलेखनं विफलम् अभवत् ।"
 
 #: src/documentmanager.cpp:896
-msgctxt "ghostwriter::DocumentManager|"
+msgctxt "ghostwriterpp::DocumentManager|"
 msgid "Please save file to another location."
 msgstr "कृपया सञ्चिकां अन्यस्थाने रक्षन्तु ।"
 
 #: src/documentmanager.cpp:924
-msgctxt "ghostwriter::DocumentManager|"
+msgctxt "ghostwriterpp::DocumentManager|"
 msgid "File backup failed"
 msgstr "सञ्चिकायाः बैकअपः विफलः अभवत्"
 
 #: src/documentmanager.cpp:925
-msgctxt "ghostwriter::DocumentManager|"
+msgctxt "ghostwriterpp::DocumentManager|"
 msgid "Error creating backup location: %d"
 msgstr "बैकअपस्थानस्य निर्माणे त्रुटिः: %d"
 
 #: src/documentmanager.cpp:934
 #, qt-format
-msgctxt "ghostwriter::DocumentManager|"
+msgctxt "ghostwriterpp::DocumentManager|"
 msgid "File backup failed: Could not replace %1"
 msgstr "सञ्चिकाप्रतिरक्षणं विफलम्: %1 प्रतिस्थापनं कर्तुं न शक्तम्"
 
 #: src/documentmanager.cpp:944
 #, qt-format
-msgctxt "ghostwriter::DocumentManager|"
+msgctxt "ghostwriterpp::DocumentManager|"
 msgid "File backup failed: Could not copy %1 to %2"
 msgstr "सञ्चिकायाः बैकअपः विफलः: %1 तः %2 प्रति प्रतिलिपिं कर्तुं न शक्तम्"
 
 #: src/editor/markdowndocument.cpp:92 src/editor/markdowndocument.cpp:168
-msgctxt "ghostwriter::MarkdownDocument|"
+msgctxt "ghostwriterpp::MarkdownDocument|"
 msgid "untitled"
 msgstr "अनामिका"
 
 #: src/editor/markdowneditor.cpp:916
-msgctxt "ghostwriter::MarkdownEditor|"
+msgctxt "ghostwriterpp::MarkdownEditor|"
 msgid "Save Image"
 msgstr "चित्रं रक्षतु"
 
 #: src/editor/markdowneditor.cpp:1535
-msgctxt "ghostwriter::MarkdownEditor|"
+msgctxt "ghostwriterpp::MarkdownEditor|"
 msgid "Insert Image"
 msgstr "चित्रं सम्मिलितं कुर्वन्तु"
 
 #: src/editor/markdowneditor.cpp:2456
 #, qt-format
-msgctxt "ghostwriter::MarkdownEditor|"
+msgctxt "ghostwriterpp::MarkdownEditor|"
 msgid "Images (%1)"
 msgstr "चित्राणि (%1) ."
 
@@ -751,48 +751,48 @@ msgid "Failed to execute command: "
 msgstr "आदेशं निष्पादयितुं असफलम्: "
 
 #: src/export/exportdialog.cpp:46 src/export/exportdialog.cpp:105
-msgctxt "ghostwriter::ExportDialog|"
+msgctxt "ghostwriterpp::ExportDialog|"
 msgid "Export"
 msgstr "निर्यात"
 
 #: src/export/exportdialog.cpp:85
-msgctxt "ghostwriter::ExportDialog|"
+msgctxt "ghostwriterpp::ExportDialog|"
 msgid "Smart Typography"
 msgstr "स्मार्ट टाइपोग्राफी"
 
 #: src/export/exportdialog.cpp:89
-msgctxt "ghostwriter::ExportDialog|"
+msgctxt "ghostwriterpp::ExportDialog|"
 msgid "Open on Export"
 msgstr "निर्यात इत्यत्र उद्घाटयन्तु"
 
 #: src/export/exportdialog.cpp:92
-msgctxt "ghostwriter::ExportDialog|"
+msgctxt "ghostwriterpp::ExportDialog|"
 msgid "Export Options"
 msgstr "निर्यातविकल्पाः"
 
 #: src/export/exportdialog.cpp:94
-msgctxt "ghostwriter::ExportDialog|"
+msgctxt "ghostwriterpp::ExportDialog|"
 msgid "Markdown Converter"
 msgstr "मार्कडाउन कन्वर्टर"
 
 #: src/export/exportdialog.cpp:95
-msgctxt "ghostwriter::ExportDialog|"
+msgctxt "ghostwriterpp::ExportDialog|"
 msgid "File Format"
 msgstr "सञ्चिकास्वरूपम्"
 
 #: src/export/exportdialog.cpp:113
-msgctxt "ghostwriter::ExportDialog|"
+msgctxt "ghostwriterpp::ExportDialog|"
 msgid "Command line options:"
 msgstr "आदेशपङ्क्तिविकल्पाः :"
 
 #: src/export/exportdialog.cpp:184
 #, qt-format
-msgctxt "ghostwriter::ExportDialog|"
+msgctxt "ghostwriterpp::ExportDialog|"
 msgid "exporting to %1"
 msgstr "%1 प्रति निर्यातयति"
 
 #: src/export/exportdialog.cpp:201
-msgctxt "ghostwriter::ExportDialog|"
+msgctxt "ghostwriterpp::ExportDialog|"
 msgid "Export failed."
 msgstr "निर्यातः विफलः अभवत् ।"
 
@@ -802,374 +802,374 @@ msgid "Export to HTML is not supported with this processor."
 msgstr "अस्मिन् प्रोसेसरेण HTML मध्ये निर्यातः समर्थितः नास्ति ।"
 
 #: src/findreplace.cpp:95
-msgctxt "ghostwriter::FindReplace|"
+msgctxt "ghostwriterpp::FindReplace|"
 msgid "Match case"
 msgstr "मेलप्रकरणम्"
 
 #: src/findreplace.cpp:100
-msgctxt "ghostwriter::FindReplace|"
+msgctxt "ghostwriterpp::FindReplace|"
 msgid "Whole word"
 msgstr "सम्पूर्ण शब्द"
 
 #: src/findreplace.cpp:106
-msgctxt "ghostwriter::FindReplace|"
+msgctxt "ghostwriterpp::FindReplace|"
 msgid "Regular expression"
 msgstr "नियमित अभिव्यक्ति"
 
 #: src/findreplace.cpp:111
-msgctxt "ghostwriter::FindReplace|"
+msgctxt "ghostwriterpp::FindReplace|"
 msgid "Highlight matches"
 msgstr "मेलनं प्रकाशयन्तु"
 
 #: src/findreplace.cpp:118
-msgctxt "ghostwriter::FindReplace|"
+msgctxt "ghostwriterpp::FindReplace|"
 msgid "Find Prev"
 msgstr "Find Prev"
 
 #: src/findreplace.cpp:119
-msgctxt "ghostwriter::FindReplace|"
+msgctxt "ghostwriterpp::FindReplace|"
 msgid "Find previous"
 msgstr "पूर्वं ज्ञातव्यम्"
 
 #: src/findreplace.cpp:123
-msgctxt "ghostwriter::FindReplace|"
+msgctxt "ghostwriterpp::FindReplace|"
 msgid "Find Next"
 msgstr "अग्रिमम् अन्वेष्टुम्"
 
 #: src/findreplace.cpp:124
-msgctxt "ghostwriter::FindReplace|"
+msgctxt "ghostwriterpp::FindReplace|"
 msgid "Find next"
 msgstr "अग्रिमम् अन्वेष्यताम्"
 
 #: src/findreplace.cpp:129
-msgctxt "ghostwriter::FindReplace|"
+msgctxt "ghostwriterpp::FindReplace|"
 msgid "Replace"
 msgstr "प्रत्याहृ"
 
 #: src/findreplace.cpp:133
-msgctxt "ghostwriter::FindReplace|"
+msgctxt "ghostwriterpp::FindReplace|"
 msgid "Replace All"
 msgstr "सर्वेषां प्रतिस्थापनम्"
 
 #: src/findreplace.cpp:146 src/findreplace.cpp:147
-msgctxt "ghostwriter::FindReplace|"
+msgctxt "ghostwriterpp::FindReplace|"
 msgid "Close"
 msgstr "पिधानं करोतु"
 
 #: src/findreplace.cpp:161
-msgctxt "ghostwriter::FindReplace|"
+msgctxt "ghostwriterpp::FindReplace|"
 msgid "Find:"
 msgstr "अन्वेषय:"
 
 #: src/findreplace.cpp:167
-msgctxt "ghostwriter::FindReplace|"
+msgctxt "ghostwriterpp::FindReplace|"
 msgid "Replace with:"
 msgstr "प्रतिस्थापनं कृत्वा :"
 
 #: src/findreplace.cpp:441
-msgctxt "ghostwriter::FindReplace|"
+msgctxt "ghostwriterpp::FindReplace|"
 msgid "%Ln replacement(s)"
 msgid_plural "%Ln replacement(s)"
 msgstr[0] "%Ln प्रतिस्थापन(s) ."
 msgstr[1] "%Ln प्रतिस्थापन(s) ."
 
 #: src/findreplace.cpp:491
-msgctxt "ghostwriter::FindReplace|"
+msgctxt "ghostwriterpp::FindReplace|"
 msgid "Search wrapped"
 msgstr "अन्वेषणं वेष्टितम्"
 
 #: src/findreplace.cpp:498
-msgctxt "ghostwriter::FindReplace|"
+msgctxt "ghostwriterpp::FindReplace|"
 msgid "No results"
 msgstr "न परिणामः"
 
 #: src/findreplace.cpp:540
 #, qt-format
-msgctxt "ghostwriter::FindReplace|"
+msgctxt "ghostwriterpp::FindReplace|"
 msgid "%1 matches"
 msgstr "%1 मेलति"
 
 #: src/mainwindow.cpp:101
 #, fuzzy, qt-format
-#| msgctxt "ghostwriter::DocumentManager|"
+#| msgctxt "ghostwriterpp::DocumentManager|"
 #| msgid "Could not read %1"
-msgctxt "ghostwriter::MainWindow|"
+msgctxt "ghostwriterpp::MainWindow|"
 msgid "Could not create file: %1"
 msgstr "%1 पठितुं न शक्तवान्"
 
 #: src/mainwindow.cpp:1016
-msgctxt "ghostwriter::MainWindow|"
+msgctxt "ghostwriterpp::MainWindow|"
 msgid "&File"
 msgstr "&संचिका"
 
 #: src/mainwindow.cpp:1046
-msgctxt "ghostwriter::MainWindow|"
+msgctxt "ghostwriterpp::MainWindow|"
 msgid "&Edit"
 msgstr "&सम्पादन"
 
 #: src/mainwindow.cpp:1095
-msgctxt "ghostwriter::MainWindow|"
+msgctxt "ghostwriterpp::MainWindow|"
 msgid "&View"
 msgstr "&दृश्यं"
 
 #: src/mainwindow.cpp:1113
-msgctxt "ghostwriter::MainWindow|"
+msgctxt "ghostwriterpp::MainWindow|"
 msgid "&Settings"
 msgstr "&सेटिंग्स"
 
 #: src/mainwindow.cpp:1122
-msgctxt "ghostwriter::MainWindow|"
+msgctxt "ghostwriterpp::MainWindow|"
 msgid "&Help"
 msgstr "&साहाय्यम्‌"
 
 #: src/mainwindow.cpp:1272
-msgctxt "ghostwriter::MainWindow|"
+msgctxt "ghostwriterpp::MainWindow|"
 msgid "# Heading 1"
 msgstr "# शीर्षकम् १"
 
 #: src/mainwindow.cpp:1273
-msgctxt "ghostwriter::MainWindow|"
+msgctxt "ghostwriterpp::MainWindow|"
 msgid "## Heading 2"
 msgstr "## शीर्षकम् २"
 
 #: src/mainwindow.cpp:1274
-msgctxt "ghostwriter::MainWindow|"
+msgctxt "ghostwriterpp::MainWindow|"
 msgid "### Heading 3"
 msgstr "### शीर्षकम् ३"
 
 #: src/mainwindow.cpp:1275
-msgctxt "ghostwriter::MainWindow|"
+msgctxt "ghostwriterpp::MainWindow|"
 msgid "#### Heading 4"
 msgstr "#### शीर्षकम् ४"
 
 #: src/mainwindow.cpp:1276
-msgctxt "ghostwriter::MainWindow|"
+msgctxt "ghostwriterpp::MainWindow|"
 msgid "##### Heading 5"
 msgstr "##### शीर्षक ५"
 
 #: src/mainwindow.cpp:1277
-msgctxt "ghostwriter::MainWindow|"
+msgctxt "ghostwriterpp::MainWindow|"
 msgid "###### Heading 6"
 msgstr "###### शीर्षक ६"
 
 #: src/mainwindow.cpp:1278
-msgctxt "ghostwriter::MainWindow|"
+msgctxt "ghostwriterpp::MainWindow|"
 msgid "*Emphasis* _Emphasis_"
 msgstr "*जोर* _जोर_"
 
 #: src/mainwindow.cpp:1279
-msgctxt "ghostwriter::MainWindow|"
+msgctxt "ghostwriterpp::MainWindow|"
 msgid "**Strong** __Strong__"
 msgstr "**बलवान्** __बलवान्__ ."
 
 #: src/mainwindow.cpp:1280
-msgctxt "ghostwriter::MainWindow|"
+msgctxt "ghostwriterpp::MainWindow|"
 msgid "1. Numbered List"
 msgstr "1. सङ्ख्यायुक्तसूची"
 
 #: src/mainwindow.cpp:1281
-msgctxt "ghostwriter::MainWindow|"
+msgctxt "ghostwriterpp::MainWindow|"
 msgid "* Bullet List"
 msgstr "* गोली सूची"
 
 #: src/mainwindow.cpp:1282
-msgctxt "ghostwriter::MainWindow|"
+msgctxt "ghostwriterpp::MainWindow|"
 msgid "+ Bullet List"
 msgstr "+ गोलीसूची"
 
 #: src/mainwindow.cpp:1283
-msgctxt "ghostwriter::MainWindow|"
+msgctxt "ghostwriterpp::MainWindow|"
 msgid "- Bullet List"
 msgstr "- बुलेट सूची"
 
 #: src/mainwindow.cpp:1284
-msgctxt "ghostwriter::MainWindow|"
+msgctxt "ghostwriterpp::MainWindow|"
 msgid "> Block Quote"
 msgstr "> ब्लॉक उद्धरण"
 
 #: src/mainwindow.cpp:1285
-msgctxt "ghostwriter::MainWindow|"
+msgctxt "ghostwriterpp::MainWindow|"
 msgid "`Code Span`"
 msgstr "`कोड स्पैन`"
 
 #: src/mainwindow.cpp:1286
-msgctxt "ghostwriter::MainWindow|"
+msgctxt "ghostwriterpp::MainWindow|"
 msgid "``` Code Block"
 msgstr "``` कोड खण्ड"
 
 #: src/mainwindow.cpp:1287
-msgctxt "ghostwriter::MainWindow|"
+msgctxt "ghostwriterpp::MainWindow|"
 msgid "[Link](http://url.com \"Title\")"
 msgstr "[लिङ्क](http://url.com \"शीर्षक\")"
 
 #: src/mainwindow.cpp:1288
-msgctxt "ghostwriter::MainWindow|"
+msgctxt "ghostwriterpp::MainWindow|"
 msgid "[Reference Link][ID]"
 msgstr "[सन्दर्भलिङ्कम्][ID]"
 
 #: src/mainwindow.cpp:1289
-msgctxt "ghostwriter::MainWindow|"
+msgctxt "ghostwriterpp::MainWindow|"
 msgid "[ID]: http://url.com \"Reference Definition\""
 msgstr "[ID]: http://url.com \"सन्दर्भपरिभाषा\" ।"
 
 #: src/mainwindow.cpp:1290
-msgctxt "ghostwriter::MainWindow|"
+msgctxt "ghostwriterpp::MainWindow|"
 msgid "![Image](./image.jpg \"Title\")"
 msgstr "![चित्र](./image.jpg \"शीर्षक\")"
 
 #: src/mainwindow.cpp:1291
-msgctxt "ghostwriter::MainWindow|"
+msgctxt "ghostwriterpp::MainWindow|"
 msgid "--- *** ___ Horizontal Rule"
 msgstr "--- *** ___ क्षैतिज नियम"
 
 #: src/mainwindow.cpp:1342
-msgctxt "ghostwriter::MainWindow|"
+msgctxt "ghostwriterpp::MainWindow|"
 msgid "Folder View"
 msgstr ""
 
 #: src/mainwindow.cpp:1343
-msgctxt "ghostwriter::MainWindow|"
+msgctxt "ghostwriterpp::MainWindow|"
 msgid "Outline"
 msgstr "रूपरेखा"
 
 #: src/mainwindow.cpp:1344
-msgctxt "ghostwriter::MainWindow|"
+msgctxt "ghostwriterpp::MainWindow|"
 msgid "Session Statistics"
 msgstr "सत्र सांख्यिकी"
 
 #: src/mainwindow.cpp:1345
-msgctxt "ghostwriter::MainWindow|"
+msgctxt "ghostwriterpp::MainWindow|"
 msgid "Document Statistics"
 msgstr "दस्तावेज सांख्यिकी"
 
 #: src/mainwindow.cpp:1346
-msgctxt "ghostwriter::MainWindow|"
+msgctxt "ghostwriterpp::MainWindow|"
 msgid "Cheat Sheet"
 msgstr "धोखा पत्रक"
 
 #: src/mainwindow.cpp:1356
-msgctxt "ghostwriter::MainWindow|"
+msgctxt "ghostwriterpp::MainWindow|"
 msgid "Settings"
 msgstr "सेटिंग्स्"
 
 #: src/preview/htmlpreview.cpp:162
-msgctxt "ghostwriter::HtmlPreview|"
+msgctxt "ghostwriterpp::HtmlPreview|"
 msgid "Error loading resources/preview.html"
 msgstr "संसाधनं/preview.html लोड् करणं त्रुटिः"
 
 #: src/settings/localedialog.cpp:36
-msgctxt "ghostwriter::LocaleDialog|"
+msgctxt "ghostwriterpp::LocaleDialog|"
 msgid "Set Application Language"
 msgstr "अनुप्रयोगभाषा सेट् कुर्वन्तु"
 
 #: src/settings/localedialog.cpp:56
-msgctxt "ghostwriter::LocaleDialog|"
+msgctxt "ghostwriterpp::LocaleDialog|"
 msgid "No translations are available!"
 msgstr "अनुवादाः न प्राप्यन्ते!"
 
 #: src/settings/localedialog.cpp:57
-msgctxt "ghostwriter::LocaleDialog|"
+msgctxt "ghostwriterpp::LocaleDialog|"
 msgid "Please reinstall this application for more language options."
 msgstr "अधिकभाषाविकल्पानां कृते कृपया एतत् अनुप्रयोगं पुनः संस्थापयन्तु।"
 
 #: src/settings/localedialog.cpp:131
-msgctxt "ghostwriter::LocaleDialog|"
+msgctxt "ghostwriterpp::LocaleDialog|"
 msgid "Sorry!"
 msgstr "क्षम्यताम्‌!"
 
 #: src/settings/localedialog.cpp:132
-msgctxt "ghostwriter::LocaleDialog|"
+msgctxt "ghostwriterpp::LocaleDialog|"
 msgid "Could not load translation."
 msgstr "अनुवादं लोड् कर्तुं न शक्तवान्।"
 
 #: src/settings/localedialog.cpp:138
-msgctxt "ghostwriter::LocaleDialog|"
+msgctxt "ghostwriterpp::LocaleDialog|"
 msgid "Please restart the application for changes to take effect."
 msgstr "परिवर्तनस्य प्रभावाय कृपया अनुप्रयोगं पुनः आरभत।"
 
 #: src/settings/preferencesdialog.cpp:74
-msgctxt "ghostwriter::PreferencesDialog|"
+msgctxt "ghostwriterpp::PreferencesDialog|"
 msgid "Spell Check"
 msgstr "वर्तनीपरीक्षा"
 
 #: src/settings/preferencesdialog.cpp:89
-msgctxt "ghostwriter::PreferencesDialog|"
+msgctxt "ghostwriterpp::PreferencesDialog|"
 msgid "Matched Characters"
 msgstr "मेलकृताः पात्राः"
 
 #: src/settings/preferencesdialog.cpp:178
-msgctxt "ghostwriter::PreferencesDialog|"
+msgctxt "ghostwriterpp::PreferencesDialog|"
 msgid "Rounded"
 msgstr "गोलम्"
 
 #: src/settings/preferencesdialog.cpp:179
-msgctxt "ghostwriter::PreferencesDialog|"
+msgctxt "ghostwriterpp::PreferencesDialog|"
 msgid "Square"
 msgstr "चतुरश्रः"
 
 #: src/settings/preferencesdialog.cpp:204
-msgctxt "ghostwriter::PreferencesDialogPrivate|"
+msgctxt "ghostwriterpp::PreferencesDialogPrivate|"
 msgid "Select Backup Directory"
 msgstr "Backup Directory इति चिनोतु"
 
 #: src/settings/preferencesdialog.cpp:235
-msgctxt "ghostwriter::PreferencesDialog|"
+msgctxt "ghostwriterpp::PreferencesDialog|"
 msgid "Sentence"
 msgstr "वाक्य"
 
 #: src/settings/preferencesdialog.cpp:236
-msgctxt "ghostwriter::PreferencesDialog|"
+msgctxt "ghostwriterpp::PreferencesDialog|"
 msgid "Current Line"
 msgstr "वर्तमान रेखा"
 
 #: src/settings/preferencesdialog.cpp:237
-msgctxt "ghostwriter::PreferencesDialog|"
+msgctxt "ghostwriterpp::PreferencesDialog|"
 msgid "Three Lines"
 msgstr "त्रिपङ्क्तिः"
 
 #: src/settings/preferencesdialog.cpp:238
-msgctxt "ghostwriter::PreferencesDialog|"
+msgctxt "ghostwriterpp::PreferencesDialog|"
 msgid "Paragraph"
 msgstr "अनुच्छेदः"
 
 #: src/settings/preferencesdialog.cpp:239
-msgctxt "ghostwriter::PreferencesDialog|"
+msgctxt "ghostwriterpp::PreferencesDialog|"
 msgid "Typewriter"
 msgstr "टंकनयंत्रम्"
 
 #: src/settings/preferencesdialog.cpp:247
-msgctxt "ghostwriter::PreferencesDialog|"
+msgctxt "ghostwriterpp::PreferencesDialog|"
 msgid "Narrow"
 msgstr "सङ्कीर्णः"
 
 #: src/settings/preferencesdialog.cpp:248
-msgctxt "ghostwriter::PreferencesDialog|"
+msgctxt "ghostwriterpp::PreferencesDialog|"
 msgid "Medium"
 msgstr "मध्यम"
 
 #: src/settings/preferencesdialog.cpp:249
-msgctxt "ghostwriter::PreferencesDialog|"
+msgctxt "ghostwriterpp::PreferencesDialog|"
 msgid "Wide"
 msgstr "विस्तृतः"
 
 #: src/settings/preferencesdialog.cpp:250
-msgctxt "ghostwriter::PreferencesDialog|"
+msgctxt "ghostwriterpp::PreferencesDialog|"
 msgid "Full"
 msgstr "पूर्ण"
 
 #: src/settings/preferencesdialog.cpp:257
-msgctxt "ghostwriter::PreferencesDialog|"
+msgctxt "ghostwriterpp::PreferencesDialog|"
 msgid "Plain"
 msgstr "सम"
 
 #: src/settings/preferencesdialog.cpp:258
 #: src/settings/preferencesdialog.cpp:265
-msgctxt "ghostwriter::PreferencesDialog|"
+msgctxt "ghostwriterpp::PreferencesDialog|"
 msgid "Italic"
 msgstr "इटालिक"
 
 #: src/settings/preferencesdialog.cpp:266
-msgctxt "ghostwriter::PreferencesDialog|"
+msgctxt "ghostwriterpp::PreferencesDialog|"
 msgid "Underline"
 msgstr "रेखांकनम्"
 
@@ -1255,7 +1255,7 @@ msgstr "&स्टार्टअप समये अन्तिमसञ्च
 
 #: src/settings/preferencesdialog.ui:183
 #, fuzzy
-#| msgctxt "ghostwriter::AppActions|"
+#| msgctxt "ghostwriterpp::AppActions|"
 #| msgid "Show Sidebar"
 msgctxt "PreferencesDialog|"
 msgid "Sidebar"
@@ -1337,296 +1337,296 @@ msgid "Customize &matched characters…"
 msgstr "&मेलितवर्णान् अनुकूलितं कुर्वन्तु…"
 
 #: src/settings/previewoptionsdialog.cpp:51
-msgctxt "ghostwriter::PreviewOptionsDialog|"
+msgctxt "ghostwriterpp::PreviewOptionsDialog|"
 msgid "Preview Options"
 msgstr "पूर्वावलोकनविकल्पाः"
 
 #: src/settings/previewoptionsdialog.cpp:91
-msgctxt "ghostwriter::PreviewOptionsDialog|"
+msgctxt "ghostwriterpp::PreviewOptionsDialog|"
 msgid "Markdown Flavor"
 msgstr "मार्कडाउन स्वाद"
 
 #: src/settings/previewoptionsdialog.cpp:99
 #: src/settings/previewoptionsdialog.cpp:125
-msgctxt "ghostwriter::PreviewOptionsDialog|"
+msgctxt "ghostwriterpp::PreviewOptionsDialog|"
 msgid "Choose..."
 msgstr "चिनोतु..."
 
 #: src/settings/previewoptionsdialog.cpp:117
-msgctxt "ghostwriter::PreviewOptionsDialog|"
+msgctxt "ghostwriterpp::PreviewOptionsDialog|"
 msgid "Text Font:"
 msgstr "पाठः फ़ॉन्टः :"
 
 #: src/settings/previewoptionsdialog.cpp:143
-msgctxt "ghostwriter::PreviewOptionsDialog|"
+msgctxt "ghostwriterpp::PreviewOptionsDialog|"
 msgid "Code Font:"
 msgstr "कोड फॉन्टः :"
 
 #: src/settings/previewoptionsdialog.cpp:151
-msgctxt "ghostwriter::PreviewOptionsDialog|"
+msgctxt "ghostwriterpp::PreviewOptionsDialog|"
 msgid "Command line options:"
 msgstr "आदेशपङ्क्तिविकल्पाः :"
 
 #: src/settings/previewoptionsdialog.cpp:177
 #, qt-format
-msgctxt "ghostwriter::PreviewOptionsDialog|"
+msgctxt "ghostwriterpp::PreviewOptionsDialog|"
 msgid "%1 %2pt"
 msgstr "%1 %2pt"
 
 #: src/settings/simplefontdialog.cpp:61
-msgctxt "ghostwriter::SimpleFontDialog|"
+msgctxt "ghostwriterpp::SimpleFontDialog|"
 msgid "Family"
 msgstr "परिवारं"
 
 #: src/settings/simplefontdialog.cpp:108
-msgctxt "ghostwriter::SimpleFontDialog|"
+msgctxt "ghostwriterpp::SimpleFontDialog|"
 msgid "Size"
 msgstr "आकृति"
 
 #: src/settings/simplefontdialog.cpp:111
-msgctxt "ghostwriter::SimpleFontDialog|"
+msgctxt "ghostwriterpp::SimpleFontDialog|"
 msgid "AaBbCcXxYyZz"
 msgstr "AaBbCcXxYyZz"
 
 #: src/settings/simplefontdialog.cpp:115
-msgctxt "ghostwriter::SimpleFontDialog|"
+msgctxt "ghostwriterpp::SimpleFontDialog|"
 msgid "Preview"
 msgstr "पूर्वावलोकनम्"
 
 #: src/settings/simplefontdialog.cpp:118
-msgctxt "ghostwriter::SimpleFontDialog|"
+msgctxt "ghostwriterpp::SimpleFontDialog|"
 msgid "Show only monospaced fonts"
 msgstr "केवलं एकस्थानयुक्तानि फ़ॉन्ट् दर्शयन्तु"
 
 #: src/spelling/spellcheckdecorator.cpp:244
-msgctxt "ghostwriter::SpellCheckDecorator|"
+msgctxt "ghostwriterpp::SpellCheckDecorator|"
 msgid "Check spelling..."
 msgstr "वर्तनी जाँच..."
 
 #: src/spelling/spellcheckdecorator.cpp:272
-msgctxt "ghostwriter::SpellCheckDecorator|"
+msgctxt "ghostwriterpp::SpellCheckDecorator|"
 msgid "Spelling"
 msgstr "वर्तनी"
 
 #: src/spelling/spellcheckdecorator.cpp:297
-msgctxt "ghostwriter::SpellCheckDecorator|"
+msgctxt "ghostwriterpp::SpellCheckDecorator|"
 msgid "Add word to dictionary"
 msgstr "शब्दकोशे शब्दं योजयतु"
 
 #: src/spelling/spellcheckdecorator.cpp:337
-msgctxt "ghostwriter::SpellCheckDecorator|"
+msgctxt "ghostwriterpp::SpellCheckDecorator|"
 msgid "No spelling suggestions found"
 msgstr "वर्तनीसूचनाः न प्राप्ताः"
 
 #: src/spelling/spellcheckdialog.cpp:53
-msgctxt "ghostwriter::SpellCheckDialog|"
+msgctxt "ghostwriterpp::SpellCheckDialog|"
 msgid "Spell Check"
 msgstr "वर्तनीपरीक्षा"
 
 #: src/spelling/spellcheckdialog.cpp:152
-msgctxt "ghostwriter::SpellCheckDialog|"
+msgctxt "ghostwriterpp::SpellCheckDialog|"
 msgid "Spell check is complete!"
 msgstr "वर्तनीपरीक्षा सम्पूर्णा अस्ति!"
 
 #: src/statistics/abstractstatisticswidget.cpp:17
-msgctxt "ghostwriter::AbstractStatisticsWidget|"
+msgctxt "ghostwriterpp::AbstractStatisticsWidget|"
 msgid "&lt; 1m"
 msgstr "&lt; १मी"
 
 #: src/statistics/abstractstatisticswidget.cpp:18
-msgctxt "ghostwriter::AbstractStatisticsWidget|"
+msgctxt "ghostwriterpp::AbstractStatisticsWidget|"
 msgid "&lt; 1"
 msgstr "&lt; १"
 
 #: src/statistics/abstractstatisticswidget.cpp:19
-msgctxt "ghostwriter::AbstractStatisticsWidget|"
+msgctxt "ghostwriterpp::AbstractStatisticsWidget|"
 msgid "250 words per page"
 msgstr "प्रतिपृष्ठं २५० शब्दाः"
 
 #: src/statistics/abstractstatisticswidget.cpp:41
-msgctxt "ghostwriter::AbstractStatisticsWidget|"
+msgctxt "ghostwriterpp::AbstractStatisticsWidget|"
 msgid "<b>%L1%</b>"
 msgstr "<b>%L1% ९.</b>"
 
 #: src/statistics/abstractstatisticswidget.cpp:53
 #, qt-format
-msgctxt "ghostwriter::AbstractStatisticsWidget|"
+msgctxt "ghostwriterpp::AbstractStatisticsWidget|"
 msgid "%1h %2m"
 msgstr "%1ह %2म्"
 
 #: src/statistics/abstractstatisticswidget.cpp:55
 #, qt-format
-msgctxt "ghostwriter::AbstractStatisticsWidget|"
+msgctxt "ghostwriterpp::AbstractStatisticsWidget|"
 msgid "%1m"
 msgstr "%1म्"
 
 #: src/statistics/documentstatisticswidget.cpp:19
-msgctxt "ghostwriter::DocumentStatisticsWidget|"
+msgctxt "ghostwriterpp::DocumentStatisticsWidget|"
 msgid "Very Easy"
 msgstr "अतीव सुलभम्"
 
 #: src/statistics/documentstatisticswidget.cpp:20
-msgctxt "ghostwriter::DocumentStatisticsWidget|"
+msgctxt "ghostwriterpp::DocumentStatisticsWidget|"
 msgid "Easy"
 msgstr "सरलम्‌"
 
 #: src/statistics/documentstatisticswidget.cpp:21
-msgctxt "ghostwriter::DocumentStatisticsWidget|"
+msgctxt "ghostwriterpp::DocumentStatisticsWidget|"
 msgid "Standard"
 msgstr "स्तरीय"
 
 #: src/statistics/documentstatisticswidget.cpp:22
-msgctxt "ghostwriter::DocumentStatisticsWidget|"
+msgctxt "ghostwriterpp::DocumentStatisticsWidget|"
 msgid "Difficult"
 msgstr "कठिनम्‌"
 
 #: src/statistics/documentstatisticswidget.cpp:23
-msgctxt "ghostwriter::DocumentStatisticsWidget|"
+msgctxt "ghostwriterpp::DocumentStatisticsWidget|"
 msgid "Very Difficult"
 msgstr "अतीव कठिनम्"
 
 #: src/statistics/documentstatisticswidget.cpp:60
-msgctxt "ghostwriter::DocumentStatisticsWidget|"
+msgctxt "ghostwriterpp::DocumentStatisticsWidget|"
 msgid "Words:"
 msgstr "शब्दाः:"
 
 #: src/statistics/documentstatisticswidget.cpp:61
-msgctxt "ghostwriter::DocumentStatisticsWidget|"
+msgctxt "ghostwriterpp::DocumentStatisticsWidget|"
 msgid "Characters:"
 msgstr "पात्राणि :"
 
 #: src/statistics/documentstatisticswidget.cpp:62
-msgctxt "ghostwriter::DocumentStatisticsWidget|"
+msgctxt "ghostwriterpp::DocumentStatisticsWidget|"
 msgid "Sentences:"
 msgstr "वाक्यानि:"
 
 #: src/statistics/documentstatisticswidget.cpp:63
-msgctxt "ghostwriter::DocumentStatisticsWidget|"
+msgctxt "ghostwriterpp::DocumentStatisticsWidget|"
 msgid "Paragraphs:"
 msgstr "अनुच्छेदः :"
 
 #: src/statistics/documentstatisticswidget.cpp:64
-msgctxt "ghostwriter::DocumentStatisticsWidget|"
+msgctxt "ghostwriterpp::DocumentStatisticsWidget|"
 msgid "Pages:"
 msgstr "पृष्ठानि :"
 
 #: src/statistics/documentstatisticswidget.cpp:65
-msgctxt "ghostwriter::DocumentStatisticsWidget|"
+msgctxt "ghostwriterpp::DocumentStatisticsWidget|"
 msgid "Complex Words:"
 msgstr "जटिलशब्दाः :"
 
 #: src/statistics/documentstatisticswidget.cpp:65
-msgctxt "ghostwriter::DocumentStatisticsWidget|"
+msgctxt "ghostwriterpp::DocumentStatisticsWidget|"
 msgid "0%"
 msgstr "०%"
 
 #: src/statistics/documentstatisticswidget.cpp:66
-msgctxt "ghostwriter::DocumentStatisticsWidget|"
+msgctxt "ghostwriterpp::DocumentStatisticsWidget|"
 msgid "Reading Time:"
 msgstr "पठनसमयः :"
 
 #: src/statistics/documentstatisticswidget.cpp:67
-msgctxt "ghostwriter::DocumentStatisticsWidget|"
+msgctxt "ghostwriterpp::DocumentStatisticsWidget|"
 msgid "Reading Ease:"
 msgstr "पठनसुलभः :"
 
 #: src/statistics/documentstatisticswidget.cpp:67
-msgctxt "ghostwriter::DocumentStatisticsWidget|"
+msgctxt "ghostwriterpp::DocumentStatisticsWidget|"
 msgid "LIX Reading Ease"
 msgstr "LIX पठनसुलभता"
 
 #: src/statistics/documentstatisticswidget.cpp:68
-msgctxt "ghostwriter::DocumentStatisticsWidget|"
+msgctxt "ghostwriterpp::DocumentStatisticsWidget|"
 msgid "Grade Level:"
 msgstr "ग्रेड स्तरः :"
 
 #: src/statistics/documentstatisticswidget.cpp:68
-msgctxt "ghostwriter::DocumentStatisticsWidget|"
+msgctxt "ghostwriterpp::DocumentStatisticsWidget|"
 msgid "Coleman-Liau Readability Index (CLI)"
 msgstr "कोलमैन-लिआउ पठनीयता सूचकाङ्क (CLI) 1.1."
 
 #: src/statistics/documentstatisticswidget.cpp:149
-msgctxt "ghostwriter::DocumentStatisticsWidget|"
+msgctxt "ghostwriterpp::DocumentStatisticsWidget|"
 msgid "Kindergarten"
 msgstr "बालवाड़ी"
 
 #: src/statistics/documentstatisticswidget.cpp:152
-msgctxt "ghostwriter::DocumentStatisticsWidget|"
+msgctxt "ghostwriterpp::DocumentStatisticsWidget|"
 msgid "Rocket Science"
 msgstr "रॉकेट विज्ञान"
 
 #: src/statistics/documentstatisticswidget.cpp:154
-msgctxt "ghostwriter::DocumentStatisticsWidget|"
+msgctxt "ghostwriterpp::DocumentStatisticsWidget|"
 msgid "College"
 msgstr "महाविद्यालयं"
 
 #: src/statistics/sessionstatisticswidget.cpp:37
-msgctxt "ghostwriter::SessionStatisticsWidget|"
+msgctxt "ghostwriterpp::SessionStatisticsWidget|"
 msgid "Words Written:"
 msgstr "लिखित शब्द :"
 
 #: src/statistics/sessionstatisticswidget.cpp:38
-msgctxt "ghostwriter::SessionStatisticsWidget|"
+msgctxt "ghostwriterpp::SessionStatisticsWidget|"
 msgid "Pages Written:"
 msgstr "पृष्ठहरू लेखन :"
 
 #: src/statistics/sessionstatisticswidget.cpp:39
-msgctxt "ghostwriter::SessionStatisticsWidget|"
+msgctxt "ghostwriterpp::SessionStatisticsWidget|"
 msgid "Average WPM:"
 msgstr "औसत WPM :"
 
 #: src/statistics/sessionstatisticswidget.cpp:40
-msgctxt "ghostwriter::SessionStatisticsWidget|"
+msgctxt "ghostwriterpp::SessionStatisticsWidget|"
 msgid "Total Time:"
 msgstr "कुल समयः :"
 
 #: src/statistics/sessionstatisticswidget.cpp:41
-msgctxt "ghostwriter::SessionStatisticsWidget|"
+msgctxt "ghostwriterpp::SessionStatisticsWidget|"
 msgid "Idle Time:"
 msgstr "निष्क्रियसमयः :"
 
 #: src/statistics/sessionstatisticswidget.cpp:41
-msgctxt "ghostwriter::SessionStatisticsWidget|"
+msgctxt "ghostwriterpp::SessionStatisticsWidget|"
 msgid "100%"
 msgstr "१००%"
 
 #: src/statistics/statisticsindicator.cpp:15
-msgctxt "ghostwriter::StatisticsIndicator|"
+msgctxt "ghostwriterpp::StatisticsIndicator|"
 msgid "%Ln word(s)"
 msgid_plural "%Ln word(s)"
 msgstr[0] "%Ln शब्द(शब्द)"
 msgstr[1] "%Ln शब्द(शब्द)"
 
 #: src/statistics/statisticsindicator.cpp:19
-msgctxt "ghostwriter::StatisticsIndicator|"
+msgctxt "ghostwriterpp::StatisticsIndicator|"
 msgid "%Ln character(s)"
 msgid_plural "%Ln character(s)"
 msgstr[0] "%Ln वर्ण(s) ."
 msgstr[1] "%Ln वर्ण(s) ."
 
 #: src/statistics/statisticsindicator.cpp:23
-msgctxt "ghostwriter::StatisticsIndicator|"
+msgctxt "ghostwriterpp::StatisticsIndicator|"
 msgid "%Ln sentence(s)"
 msgid_plural "%Ln sentence(s)"
 msgstr[0] "%Ln वाक्य(s) ."
 msgstr[1] "%Ln वाक्य(s) ."
 
 #: src/statistics/statisticsindicator.cpp:27
-msgctxt "ghostwriter::StatisticsIndicator|"
+msgctxt "ghostwriterpp::StatisticsIndicator|"
 msgid "%Ln paragraph(s)"
 msgid_plural "%Ln paragraph(s)"
 msgstr[0] "%Ln अनुच्छेद(s) ."
 msgstr[1] "%Ln अनुच्छेद(s) ."
 
 #: src/statistics/statisticsindicator.cpp:31
-msgctxt "ghostwriter::StatisticsIndicator|"
+msgctxt "ghostwriterpp::StatisticsIndicator|"
 msgid "%Ln page(s)"
 msgid_plural "%Ln page(s)"
 msgstr[0] "%Ln पृष्ठ(s) ."
 msgstr[1] "%Ln पृष्ठ(s) ."
 
 #: src/statistics/statisticsindicator.cpp:35
-msgctxt "ghostwriter::StatisticsIndicator|"
+msgctxt "ghostwriterpp::StatisticsIndicator|"
 msgid "%Ln word(s) added"
 msgid_plural "%Ln word(s) added"
 msgstr[0] "%Ln शब्द(शब्दाः) योजिताः"
@@ -1634,133 +1634,133 @@ msgstr[1] "%Ln शब्द(शब्दाः) योजिताः"
 
 #: src/statistics/statisticsindicator.cpp:37
 #, qt-format
-msgctxt "ghostwriter::StatisticsIndicator|"
+msgctxt "ghostwriterpp::StatisticsIndicator|"
 msgid "%1 wpm"
 msgstr "%1 wpm"
 
 #: src/statistics/statisticsindicator.cpp:38
 #, qt-format
-msgctxt "ghostwriter::StatisticsIndicator|"
+msgctxt "ghostwriterpp::StatisticsIndicator|"
 msgid "%1:%2 read time"
 msgstr "%1:%2 पठनसमयः"
 
 #: src/statistics/statisticsindicator.cpp:41
 #, qt-format
-msgctxt "ghostwriter::StatisticsIndicator|"
+msgctxt "ghostwriterpp::StatisticsIndicator|"
 msgid "%1:%2 write time"
 msgstr "%1:%2 लेखनसमयः"
 
 #: src/theme/themeeditordialog.cpp:81
-msgctxt "ghostwriter::ThemeEditorDialog|"
+msgctxt "ghostwriterpp::ThemeEditorDialog|"
 msgid "Edit Theme"
 msgstr "विषय सम्पादयतु"
 
 #: src/theme/themeeditordialog.cpp:84
-msgctxt "ghostwriter::ThemeEditorDialog|"
+msgctxt "ghostwriterpp::ThemeEditorDialog|"
 msgid "Theme Name"
 msgstr "विषय नाम"
 
 #: src/theme/themeeditordialog.cpp:168
-msgctxt "ghostwriter::ThemeEditorDialog|"
+msgctxt "ghostwriterpp::ThemeEditorDialog|"
 msgid "Element"
 msgstr "तत्व"
 
 #: src/theme/themeeditordialog.cpp:169
-msgctxt "ghostwriter::ThemeEditorDialog|"
+msgctxt "ghostwriterpp::ThemeEditorDialog|"
 msgid "Light Mode"
 msgstr "प्रकाश मोड"
 
 #: src/theme/themeeditordialog.cpp:170
-msgctxt "ghostwriter::ThemeEditorDialog|"
+msgctxt "ghostwriterpp::ThemeEditorDialog|"
 msgid "Dark Mode"
 msgstr "डार्क मोड"
 
 #: src/theme/themeeditordialog.cpp:172
-msgctxt "ghostwriter::ThemeEditorDialog|"
+msgctxt "ghostwriterpp::ThemeEditorDialog|"
 msgid "Foreground"
 msgstr "अग्रभूमिः"
 
 #: src/theme/themeeditordialog.cpp:173
-msgctxt "ghostwriter::ThemeEditorDialog|"
+msgctxt "ghostwriterpp::ThemeEditorDialog|"
 msgid "Background"
 msgstr "पृष्ठभूमि"
 
 #: src/theme/themeeditordialog.cpp:174
-msgctxt "ghostwriter::ThemeEditorDialog|"
+msgctxt "ghostwriterpp::ThemeEditorDialog|"
 msgid "Selection"
 msgstr "चयनम्"
 
 #: src/theme/themeeditordialog.cpp:175
-msgctxt "ghostwriter::ThemeEditorDialog|"
+msgctxt "ghostwriterpp::ThemeEditorDialog|"
 msgid "Cursor"
 msgstr "कर्सर"
 
 #: src/theme/themeeditordialog.cpp:176
-msgctxt "ghostwriter::ThemeEditorDialog|"
+msgctxt "ghostwriterpp::ThemeEditorDialog|"
 msgid "Markup"
 msgstr "मार्कअप"
 
 #: src/theme/themeeditordialog.cpp:177
-msgctxt "ghostwriter::ThemeEditorDialog|"
+msgctxt "ghostwriterpp::ThemeEditorDialog|"
 msgid "Accent"
 msgstr "उच्चारण"
 
 #: src/theme/themeeditordialog.cpp:178
-msgctxt "ghostwriter::ThemeEditorDialog|"
+msgctxt "ghostwriterpp::ThemeEditorDialog|"
 msgid "Heading"
 msgstr "शीर्षकम्"
 
 #: src/theme/themeeditordialog.cpp:179
-msgctxt "ghostwriter::ThemeEditorDialog|"
+msgctxt "ghostwriterpp::ThemeEditorDialog|"
 msgid "Emphasis"
 msgstr "बलं"
 
 #: src/theme/themeeditordialog.cpp:180
-msgctxt "ghostwriter::ThemeEditorDialog|"
+msgctxt "ghostwriterpp::ThemeEditorDialog|"
 msgid "Block Text"
 msgstr "पाठः अवरोधः"
 
 #: src/theme/themeeditordialog.cpp:181
-msgctxt "ghostwriter::ThemeEditorDialog|"
+msgctxt "ghostwriterpp::ThemeEditorDialog|"
 msgid "Link"
 msgstr "सम्बन्ध"
 
 #: src/theme/themeeditordialog.cpp:182
-msgctxt "ghostwriter::ThemeEditorDialog|"
+msgctxt "ghostwriterpp::ThemeEditorDialog|"
 msgid "Error"
 msgstr "त्रुटि"
 
 #: src/theme/themeeditordialog.cpp:215
-msgctxt "ghostwriter::ThemeEditorDialog|"
+msgctxt "ghostwriterpp::ThemeEditorDialog|"
 msgid "Unable to save theme."
 msgstr "विषयं रक्षितुं असमर्थः।"
 
 #: src/theme/themerepository.cpp:138
 #, qt-format
-msgctxt "ghostwriter::ThemeRepository|"
+msgctxt "ghostwriterpp::ThemeRepository|"
 msgid "The specified theme does not exist in the file system: %1"
 msgstr "निर्दिष्टः विषयः सञ्चिकातन्त्रे नास्ति: %1"
 
 #: src/theme/themerepository.cpp:146
 #, qt-format
-msgctxt "ghostwriter::ThemeRepository|"
+msgctxt "ghostwriterpp::ThemeRepository|"
 msgid "Could not open theme file for reading: %1"
 msgstr "पठनार्थं विषयसञ्चिकां उद्घाटयितुं न शक्यते: %1"
 
 #: src/theme/themerepository.cpp:156
 #, qt-format
-msgctxt "ghostwriter::ThemeRepository|"
+msgctxt "ghostwriterpp::ThemeRepository|"
 msgid "Invalid theme format: %1"
 msgstr "अमान्य विषयस्वरूपम्: %1"
 
 #: src/theme/themerepository.cpp:175 src/theme/themerepository.cpp:184
 #, qt-format
-msgctxt "ghostwriter::ThemeRepository|"
+msgctxt "ghostwriterpp::ThemeRepository|"
 msgid "Invalid or missing value(s) in %1"
 msgstr "%1 मध्ये अमान्यं अथवा अनुपलब्धं मूल्यं (मूल्यानि)"
 
 #: src/theme/themerepository.cpp:192
-msgctxt "ghostwriter::ThemeRepository|"
+msgctxt "ghostwriterpp::ThemeRepository|"
 msgid ""
 "The specified theme is not available.  Try restarting the application.  If "
 "problem persists, please file a bug report."
@@ -1770,7 +1770,7 @@ msgstr ""
 
 #: src/theme/themerepository.cpp:208
 #, qt-format
-msgctxt "ghostwriter::ThemeRepository|"
+msgctxt "ghostwriterpp::ThemeRepository|"
 msgid ""
 "Could not delete theme at %1. Please try setting the file permissions to be "
 "writeable."
@@ -1780,23 +1780,23 @@ msgstr ""
 
 #: src/theme/themerepository.cpp:228
 #, qt-format
-msgctxt "ghostwriter::ThemeRepository|"
+msgctxt "ghostwriterpp::ThemeRepository|"
 msgid "'%1' already exists.  Please choose another name."
 msgstr "'%1' पूर्वमेव अस्ति ।  कृपया अन्यत् नाम चिनुत।"
 
 #: src/theme/themerepository.cpp:237
 #, qt-format
-msgctxt "ghostwriter::ThemeRepository|"
+msgctxt "ghostwriterpp::ThemeRepository|"
 msgid "'%1' theme already exists.  Please choose another name."
 msgstr "'%1' विषयः पूर्वमेव अस्ति ।  कृपया अन्यत् नाम चिनुत।"
 
 #: src/theme/themerepository.cpp:244
-msgctxt "ghostwriter::ThemeRepository|"
+msgctxt "ghostwriterpp::ThemeRepository|"
 msgid "Failed to rename theme.  Please check file permissions."
 msgstr "विषयस्य नामकरणं कर्तुं असफलम्।  कृपया सञ्चिकायाः अनुमतिः पश्यन्तु ।"
 
 #: src/theme/themerepository.cpp:282
-msgctxt "ghostwriter::ThemeRepository|"
+msgctxt "ghostwriterpp::ThemeRepository|"
 msgid ""
 "Theme could not be saved to disk.  Please check file permissions or try "
 "renaming the theme."
@@ -1805,58 +1805,58 @@ msgstr ""
 "नामकरणं कर्तुं प्रयतध्वम् ।"
 
 #: src/theme/themerepository.cpp:312
-msgctxt "ghostwriter::ThemeRepository|"
+msgctxt "ghostwriterpp::ThemeRepository|"
 msgid "Untitled 1"
 msgstr "अनामिका 1"
 
 #: src/theme/themerepository.cpp:322
 #, qt-format
-msgctxt "ghostwriter::ThemeRepository|"
+msgctxt "ghostwriterpp::ThemeRepository|"
 msgid "Untitled %1"
 msgstr "अनामिका %1"
 
 #: src/theme/themeselectiondialog.cpp:91
-msgctxt "ghostwriter::ThemeSelectionDialog|"
+msgctxt "ghostwriterpp::ThemeSelectionDialog|"
 msgid "Themes"
 msgstr "विषयाः"
 
 #: src/theme/themeselectiondialog.cpp:132
-msgctxt "ghostwriter::ThemeSelectionDialog|"
+msgctxt "ghostwriterpp::ThemeSelectionDialog|"
 msgid "Preview in dark mode"
 msgstr "अन्धकारविधाने पूर्वावलोकनम्"
 
 #: src/theme/themeselectiondialog.cpp:138
-msgctxt "ghostwriter::ThemeSelectionDialog|"
+msgctxt "ghostwriterpp::ThemeSelectionDialog|"
 msgid "Edit..."
 msgstr "सम्पादन..."
 
 #: src/theme/themeselectiondialog.cpp:375
-msgctxt "ghostwriter::ThemeSelectionDialog|"
+msgctxt "ghostwriterpp::ThemeSelectionDialog|"
 msgid "Cannot delete theme."
 msgstr "विषयवस्तुं विलोपयितुं न शक्यते।"
 
 #: src/theme/themeselectiondialog.cpp:376
-msgctxt "ghostwriter::ThemeSelectionDialog|"
+msgctxt "ghostwriterpp::ThemeSelectionDialog|"
 msgid "Sorry, this is a built-in theme that cannot be deleted."
 msgstr "क्षम्यतां, एषः अन्तःनिर्मितः विषयः अस्ति यः लोपयितुं न शक्यते ।"
 
 #: src/theme/themeselectiondialog.cpp:386
 #, qt-format
-msgctxt "ghostwriter::ThemeSelectionDialog|"
+msgctxt "ghostwriterpp::ThemeSelectionDialog|"
 msgid "Are you sure you want to permanently delete the '%1' theme?"
 msgstr "किं भवान् निश्चयेन '%1' विषयवस्तुं स्थायिरूपेण विलोपयितुम् इच्छति?"
 
 #: src/theme/themeselectiondialog.cpp:401
-msgctxt "ghostwriter::ThemeSelectionDialog|"
+msgctxt "ghostwriterpp::ThemeSelectionDialog|"
 msgid "Failed to delete theme."
 msgstr "विषयवस्तुं विलोपयितुं असफलम्।"
 
 #: src/theme/themeselectiondialog.cpp:428
-msgctxt "ghostwriter::ThemeSelectionDialog|"
+msgctxt "ghostwriterpp::ThemeSelectionDialog|"
 msgid "Cannot edit theme."
 msgstr "विषयं सम्पादयितुं न शक्यते।"
 
 #: src/theme/themeselectiondialog.cpp:429
-msgctxt "ghostwriter::ThemeSelectionDialog|"
+msgctxt "ghostwriterpp::ThemeSelectionDialog|"
 msgid "Sorry, this is a built-in theme that cannot be edited."
 msgstr "क्षम्यतां, एषः अन्तःनिर्मितः विषयः अस्ति यस्य सम्पादनं कर्तुं न शक्यते ।"

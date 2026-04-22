@@ -9,7 +9,7 @@
 
 #include <QMessageBox>
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 /**
  * This class provides static convenience methods for displaying a QMessageBox
@@ -72,6 +72,6 @@ private:
         QMessageBox::StandardButton defaultButton
     );
 };
-} // namespace ghostwriter
+} // namespace ghostwriterpp
 
 #endif // MESSAGEBOXHELPER_H

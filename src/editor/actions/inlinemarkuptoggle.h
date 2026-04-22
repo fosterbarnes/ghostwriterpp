@@ -11,7 +11,7 @@
 #include "../../markdown/markdownnode.h"
 #include "edit.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 class InlineMarkupTogglePrivate;
 class InlineMarkupToggle : Edit
@@ -27,6 +27,6 @@ private:
     MarkdownNode::NodeType m_type;
 };
 
-} // namespace ghostwriter
+} // namespace ghostwriterpp
 
 #endif // INLINE_MARKUP_TOGGLE_H

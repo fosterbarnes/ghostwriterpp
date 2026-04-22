@@ -8,7 +8,7 @@
 
 #include "sessionstatistics.h"
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 SessionStatistics::SessionStatistics(QObject *parent)
     : QObject(parent)
@@ -114,4 +114,4 @@ int SessionStatistics::calculateWPM() const
         return totalWordsWritten;
     }
 }
-} // namespace ghostwriter
+} // namespace ghostwriterpp

@@ -11,7 +11,7 @@
 #include <QTreeView>
 #include <QWidget>
 
-namespace ghostwriter
+namespace ghostwriterpp
 {
 /**
  * Folder view widget for displaying and selecting files from the directory
@@ -63,6 +63,6 @@ private:
      */
     void setupConnections();
 };
-} // namespace ghostwriter
+} // namespace ghostwriterpp
 
 #endif // FOLDER_VIEW_WIDGET_H
