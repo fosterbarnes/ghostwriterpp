@@ -19,6 +19,17 @@
 namespace ghostwriter
 {
 /**
+ * Which editor/preview layout the window is using.
+ */
+enum FocusView {
+    FocusViewFirst,
+    FocusViewSplit = FocusViewFirst,
+    FocusViewEditorOnly,
+    FocusViewPreviewOnly,
+    FocusViewLast = FocusViewPreviewOnly
+};
+
+/**
  * Loads and stores application settings via QSettings, particularly for
  * those settings that need special range checking.  Be sure to call
  * instance on application start up to set up settings file paths before
@@ -56,7 +67,8 @@ public:
     Q_SIGNAL void backupFileChanged(bool enabled);
 
     QFont editorFont() const;
-    void setEditorFont(const QFont &font);
+    Q_SLOT void setEditorFont(const QFont &font);
+    Q_SIGNAL void editorFontChanged(const QFont &font);
 
     QFont previewTextFont() const;
     void setPreviewTextFont(const QFont &font);
@@ -147,6 +159,10 @@ public:
 
     bool htmlPreviewVisible() const;
     void setHtmlPreviewVisible(bool visible);
+
+    FocusView focusView() const;
+    void setFocusView(FocusView view);
+    Q_SIGNAL void focusViewChanged(FocusView view);
 
     bool sidebarVisible() const;
     void setSidebarVisible(bool visible);

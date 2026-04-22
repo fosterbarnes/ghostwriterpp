@@ -90,6 +90,9 @@ AppActions::AppActions(KActionCollection *collection, SvgIconTheme *iconTheme, Q
     d->addAction(RenameFile, KStandardAction::RenameFile, "rename-file");
     d->addAction(Reload, "file_reload", tr("Reload from Disk..."), "reload", QKeySequence::Refresh);
     d->addAction(Export, "file_export", tr("Export"), "export", tr("CTRL+E"));
+    d->addAction(CloseTab, "file_close_tab", tr("Close Tab"), "close", tr("CTRL+W"));
+    d->addAction(NextTab, "file_next_tab", tr("Next Tab"), NO_ICON, QKeySequence(Qt::CTRL | Qt::Key_Tab));
+    d->addAction(PrevTab, "file_prev_tab", tr("Previous Tab"), NO_ICON, QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_Tab));
     d->addAction(Quit, KStandardAction::Quit, "close");
 
     // Edit Menu Actions
@@ -215,7 +218,16 @@ AppActions::AppActions(KActionCollection *collection, SvgIconTheme *iconTheme, Q
 
     d->addCheckAction(DistractionFreeMode, "view_distraction_free_mode", tr("Distraction-Free Mode"), "distraction-free-mode", tr("SHIFT+F11"));
 
-    d->addCheckAction(Preview, "view_preview", tr("Live Preview"), "live-preview", tr("CTRL+P"));
+    action = d->addCheckAction(LayoutSplit, "view_layout_split", tr("Split View"), "view-layout", QKeySequence(Qt::CTRL | Qt::Key_1));
+    action->setShortcuts(
+        {QKeySequence(Qt::CTRL | Qt::Key_1), QKeySequence(Qt::CTRL | Qt::Key_P)});
+    action->setToolTip(tr("Show both the editor and the live preview."));
+
+    action = d->addCheckAction(LayoutEditorOnly, "view_layout_editor_only", tr("Editor Only"), "layout-editor-only", QKeySequence(Qt::CTRL | Qt::Key_2));
+    action->setToolTip(tr("Show only the editor."));
+
+    action = d->addCheckAction(LayoutPreviewOnly, "view_layout_preview_only", tr("Preview Only"), "layout-preview-only", QKeySequence(Qt::CTRL | Qt::Key_3));
+    action->setToolTip(tr("Show only the live preview."));
 
     action = d->addCheckAction(HemingwayMode, "view_hemingway_mode", tr("Hemingway Mode"), "hemingway-mode", tr("SHIFT+Backspace"));
     action->setToolTip(tr("Toggles Hemingway mode."));

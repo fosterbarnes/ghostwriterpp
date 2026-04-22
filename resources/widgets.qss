@@ -8,6 +8,16 @@
 /*  Scrollbars                                                                */
 /******************************************************************************/
 
+ghostwriter--HtmlPreview {
+    border: none;
+    outline: none;
+}
+
+ghostwriter--HtmlPreview:focus {
+    border: none;
+    outline: none;
+}
+
 ghostwriter--MarkdownEditor QAbstractScrollArea::corner,
 ghostwriter--HtmlPreview QAbstractScrollArea::corner,
 ghostwriter--Sidebar QAbstractScrollArea::corner {
@@ -149,6 +159,87 @@ QMainWindow QMenuBar::item:hover {
 
 QMainWindow QMenuBar::item:pressed {
     background-color: $fill-color-pressed;
+}
+
+/******************************************************************************/
+/*  Document Tab Bar                                                          */
+/******************************************************************************/
+
+QMainWindow QWidget#tabBarContainer {
+    background-color: $background-color;
+    border: 0px;
+    border-bottom: 1px solid $secondary-separator-color;
+}
+
+QMainWindow QTabBar#documentTabBar {
+    background-color: $background-color;
+    border: 0px;
+    border-bottom: 1px solid $secondary-separator-color;
+    qproperty-drawBase: 0;
+    padding: 0px;
+    margin: 0px;
+}
+
+QMainWindow QTabBar#documentTabBar::tab {
+    background-color: $background-color;
+    color: $secondary-label-color;
+    padding: 2px 12px 2px 12px;
+    margin: 0px;
+    border: 0px;
+    border-right: 1px solid $secondary-separator-color;
+    min-width: 80px;
+    max-width: 240px;
+}
+
+QMainWindow QTabBar#documentTabBar::tab:hover {
+    background-color: $fill-color-hover;
+    color: $label-color;
+}
+
+QMainWindow QTabBar#documentTabBar::tab:selected {
+    background-color: $secondary-background-color;
+    color: $label-color;
+    border-bottom: 2px solid $accent-color;
+}
+
+QMainWindow QTabBar#documentTabBar::close-button {
+    image: url($tab-close-icon-path);
+    width: 16px;
+    height: 16px;
+    background-color: transparent;
+    border: 0px;
+    padding: 0px;
+    margin: 0px 2px 0px 2px;
+    subcontrol-origin: padding;
+    subcontrol-position: right;
+}
+
+QMainWindow QTabBar#documentTabBar::close-button:hover {
+    background-color: $fill-color-pressed;
+    border-radius: 3px;
+}
+
+QMainWindow QToolButton#newTabButton {
+    background-color: $background-color;
+    color: $secondary-label-color;
+    border: 0px;
+    border-bottom: 1px solid $secondary-separator-color;
+    padding: 0px;
+    margin: 0px;
+}
+
+QMainWindow QToolButton#newTabButton:hover {
+    background-color: $fill-color-hover;
+    color: $label-color;
+}
+
+QMainWindow QToolButton#newTabButton:pressed {
+    background-color: $fill-color-pressed;
+}
+
+QMainWindow QWidget#emptyEditorPane,
+QMainWindow QWidget#emptyPreviewPane {
+    background-color: $background-color;
 }
 
 /******************************************************************************/
@@ -357,6 +448,42 @@ ghostwriter--Sidebar QListWidget::item:selected {
     border-radius: 0px;
     color: $selected-text-fg-color;
     background-color: $selected-text-bg-color;
+}
+
+ghostwriter--Sidebar QTreeView {
+    outline: none;
+    border: 0;
+    padding: 1;
+    background-color: $background-color;
+    color: $label-color;
+    font-size: 11pt;
+    font-weight: normal;
+    alternate-background-color: $secondary-background-color;
+    selection-background-color: $selected-text-bg-color;
+    selection-color: $selected-text-fg-color;
+    show-decoration-selected: 1;
+}
+
+ghostwriter--Sidebar QTreeView::item {
+    border: 0;
+    padding: 1 0 1 0;
+    margin: 0;
+    background-color: $background-color;
+    color: $label-color;
+}
+
+ghostwriter--Sidebar QTreeView::item:selected {
+    border-radius: 0px;
+    color: $selected-text-fg-color;
+    background-color: $selected-text-bg-color;
+}
+
+ghostwriter--Sidebar QTreeView::item:hover {
+    background-color: $fill-color-hover;
+}
+
+ghostwriter--Sidebar QTreeView::branch {
+    background-color: $background-color;
 }
 
 ghostwriter--Sidebar QLabel {

@@ -28,6 +28,12 @@ public:
     OutlineWidget(MarkdownEditor *editor, QWidget *parent = nullptr);
     virtual ~OutlineWidget();
 
+    /**
+     * Switches the outline to follow the given editor, reloading its
+     * contents. Safe to call with nullptr to detach.
+     */
+    void setEditor(MarkdownEditor *editor);
+
 signals:
     /**
      * Emitted when the user selects one of the headings in the outline

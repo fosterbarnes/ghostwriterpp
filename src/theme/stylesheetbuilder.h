@@ -118,6 +118,9 @@ namespace ghostwriter
  * $code-font-size
  *      HTML preview code font point size
  *
+ * $tab-close-icon-path
+ *      absolute path to a small PNG of the themed tab close icon (for QTabBar QSS; rasterized from tab-close.svg)
+ *
  * Color States
  * ============
  *
@@ -171,6 +174,7 @@ public:
 
 private:
     static QString m_statIndicatorArrowIconPath;
+    static QString m_tabCloseIconPath;
 
     QMap<QString, QVariant> m_styleSheetVariables;
 

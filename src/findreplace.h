@@ -35,6 +35,11 @@ public:
      */
     ~FindReplace();
 
+    /**
+     * Retargets the find/replace widget at a new editor.
+     */
+    void setEditor(QPlainTextEdit *editor);
+
     void setRegexSearchIcon(const QIcon &icon);
     void setMatchCaseIcon(const QIcon &icon);
     void setWholeWordIcon(const QIcon &icon);

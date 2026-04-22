@@ -35,6 +35,8 @@ public:
 
     OutlineWidget *q_ptr;
     QPointer<MarkdownEditor> editor;
+    QMetaObject::Connection cursorConnection;
+    QMetaObject::Connection contentsConnection;
 
     /*
     * Invoked when the user selects one of the headings in the outline
@@ -65,7 +67,7 @@ const int OutlineWidgetPrivate::DOCUMENT_POSITION_ROLE = Qt::UserRole + 1;
 
 OutlineWidget::OutlineWidget(MarkdownEditor *editor, QWidget *parent)
     : QListWidget(parent),
-      d_ptr(new OutlineWidgetPrivate(this, editor))
+      d_ptr(new OutlineWidgetPrivate(this, nullptr))
 {
     Q_D(OutlineWidget);
 
@@ -85,27 +87,50 @@ OutlineWidget::OutlineWidget(MarkdownEditor *editor, QWidget *parent)
             d->onOutlineHeadingSelected(item);
         }
     );
-    this->connect
-    (
+
+    setEditor(editor);
+}
+
+OutlineWidget::~OutlineWidget()
+{
+    ;
+}
+
+void OutlineWidget::setEditor(MarkdownEditor *editor)
+{
+    Q_D(OutlineWidget);
+
+    if (d->editor == editor) {
+        return;
+    }
+
+    QObject::disconnect(d->cursorConnection);
+    QObject::disconnect(d->contentsConnection);
+
+    d->editor = editor;
+    this->clear();
+
+    if (!editor) {
+        return;
+    }
+
+    d->cursorConnection = this->connect(
         editor,
         &MarkdownEditor::cursorPositionChanged,
         this,
         &OutlineWidget::updateCurrentNavigationHeading
     );
 
-    this->connect
-    (
+    d->contentsConnection = this->connect(
         editor->document(),
         &MarkdownDocument::contentsChange,
+        this,
         [d](int, int, int) {
             d->reloadOutline();
         }
     );
-}
 
-OutlineWidget::~OutlineWidget()
-{
-    ;
+    d->reloadOutline();
 }
 
 void OutlineWidget::updateCurrentNavigationHeading(int position)

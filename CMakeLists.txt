@@ -67,17 +67,38 @@ if (IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/poqm")
     ecm_install_po_files_as_qm(poqm)
 endif()
 
-find_package(KF${KF_MAJOR_VERSION}DocTools ${KF_MIN_VERSION})
-set_package_properties(KF${KF_MAJOR_VERSION}DocTools PROPERTIES DESCRIPTION
-    "Tools to generate documentation"
-    TYPE OPTIONAL
-)
+if(WIN32)
+    option(GHOSTWRITER_BUILD_MAN_PAGES "Generate man pages (KDocTools; needs xmllint on PATH for every compile step)" OFF)
+else()
+    option(GHOSTWRITER_BUILD_MAN_PAGES "Generate man pages (KDocTools)" ON)
+endif()
+
+if(GHOSTWRITER_BUILD_MAN_PAGES)
+    find_package(KF${KF_MAJOR_VERSION}DocTools ${KF_MIN_VERSION})
+    set_package_properties(KF${KF_MAJOR_VERSION}DocTools PROPERTIES DESCRIPTION
+        "Tools to generate documentation"
+        TYPE OPTIONAL
+    )
+    find_program(KDOCTOOLS_XMLLINT_EXECUTABLE NAMES xmllint)
+    if(KF${KF_MAJOR_VERSION}DocTools_FOUND AND NOT KDOCTOOLS_XMLLINT_EXECUTABLE)
+        set(KF${KF_MAJOR_VERSION}DocTools_FOUND FALSE)
+        message(STATUS "KF${KF_MAJOR_VERSION}DocTools: xmllint not found; skipping man/handbook generation")
+    endif()
+endif()
 
 set(CMARK_TESTS OFF)
+# With Clang (not MSVC) on Windows, cmark-gfm uses OUTPUT_NAME "cmark-gfm" for the
+# static library while the DLL import library has the same name, so Ninja fails with
+# "multiple rules generate ... cmark-gfm.lib". src/CMakeLists.txt links the static
+# cmark targets whenever not MSVC; avoid building the shared libraries in that case.
+if(WIN32 AND NOT MSVC)
+    set(CMARK_SHARED OFF CACHE BOOL "" FORCE)
+    set(CMARK_STATIC ON CACHE BOOL "" FORCE)
+endif()
 add_subdirectory(3rdparty/cmark-gfm EXCLUDE_FROM_ALL)
 add_subdirectory(src)
 
-if(KF${QT_MAJOR_VERSION}DocTools_FOUND)
+if(KF${KF_MAJOR_VERSION}DocTools_FOUND)
     kdoctools_install(po)
     add_subdirectory(doc)
 endif()

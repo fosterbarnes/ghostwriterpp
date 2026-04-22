@@ -84,6 +84,22 @@ public slots:
      */
     void setMathEnabled(bool enabled);
 
+    /**
+     * Enables typing in the preview (split / preview-only layouts).
+     */
+    void setInPlaceEditingEnabled(bool enabled);
+
+    /**
+     * Merges in-preview text edits into the markdown document (synchronous).
+     */
+    void flushPreviewEditsToDocumentSync();
+
+    /**
+     * Cancels pending preview work and clears content. Call before deleting
+     * the widget (and prefer while QApplication's event loop is running).
+     */
+    void shutdownBeforeDestroy();
+
 protected:
     void closeEvent(QCloseEvent *event) override;
 

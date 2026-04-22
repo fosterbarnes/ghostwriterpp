@@ -562,6 +562,42 @@ bool DocumentManager::saveAs()
     return false;
 }
 
+bool DocumentManager::confirmTabRemoval(bool updateLastOpenedBookmark)
+{
+    Q_D(DocumentManager);
+
+    if (!d->checkSaveChanges()) {
+        return false;
+    }
+
+    if (d->writer->writeInProgress()) {
+        d->writer->waitForFinished();
+    }
+
+    if (updateLastOpenedBookmark && d->restoreSessionEnabled && !d->document->isNew()) {
+        Bookmark location(d->document->filePath(), d->editor->textCursor().position());
+        Library().updateLastOpened(location);
+        emit sessionHistoryChanged();
+    }
+
+    return true;
+}
+
+bool DocumentManager::prepareApplicationQuit()
+{
+    Q_D(DocumentManager);
+
+    if (!d->checkSaveChanges()) {
+        return false;
+    }
+
+    if (d->writer->writeInProgress()) {
+        d->writer->waitForFinished();
+    }
+
+    return true;
+}
+
 bool DocumentManager::close()
 {
     Q_D(DocumentManager);
@@ -682,6 +718,8 @@ void DocumentManagerPrivate::onFileChangedExternally(const QString &path)
 void DocumentManagerPrivate::saveFile()
 {
     Q_Q(DocumentManager);
+
+    emit q->aboutToWriteDocument();
 
     if (restoreSessionEnabled) {
         Bookmark location(document->filePath(), editor->textCursor().position());

@@ -7,6 +7,8 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  * SPDX-License-Identifier: BSD-3-Clause
  */
+#include <algorithm>
+
 #include <QApplication>
 #include <QDebug>
 #include <QDir>
@@ -54,6 +56,7 @@ constexpr auto GW_LOCALE_KEY{"Application/locale"};
 constexpr auto GW_LIVE_SPELL_CHECK_KEY{"Spelling/liveSpellCheck"};
 constexpr auto GW_SIDEBAR_OPEN_KEY{"Window/sidebarOpen"};
 constexpr auto GW_HTML_PREVIEW_OPEN_KEY{"Preview/htmlPreviewOpen"};
+constexpr auto GW_FOCUS_VIEW_KEY{"Window/focusView"};
 constexpr auto GW_LAST_USED_EXPORTER_KEY{"Preview/lastUsedExporter"};
 constexpr auto GW_LAST_USED_EXPORTER_PARAMS_KEY{"Preview/lastUsedExporterParams"};
 constexpr auto GW_PREVIEW_TEXT_FONT_KEY{"Preview/textFont"};
@@ -79,6 +82,7 @@ public:
 
     QString initialLocale() const;
     QString firstAvailableFont(const QStringList& fontList) const;
+    QString firstAvailableFontFamily(const QStringList &fontList) const;
 
     bool autoMatchEnabled;
     bool autoSaveEnabled;
@@ -93,6 +97,7 @@ public:
     bool folderViewShowAllFilesEnabled;
     bool hideMenuBarInFullScreenEnabled;
     bool htmlPreviewVisible;
+    FocusView focusView;
     bool sidebarVisible;
     bool insertSpacesForTabsEnabled;
     bool largeHeadingSizesEnabled;
@@ -155,6 +160,7 @@ void AppSettings::store()
     appSettings.setValue(constants::GW_LARGE_HEADINGS_KEY, QVariant(d->largeHeadingSizesEnabled));
     appSettings.setValue(constants::GW_SIDEBAR_OPEN_KEY, QVariant(d->sidebarVisible));
     appSettings.setValue(constants::GW_HTML_PREVIEW_OPEN_KEY, QVariant(d->htmlPreviewVisible));
+    appSettings.setValue(constants::GW_FOCUS_VIEW_KEY, QVariant((int)d->focusView));
     appSettings.setValue(constants::GW_LAST_USED_EXPORTER_KEY, QVariant(d->currentHtmlExporter->name()));
     appSettings.setValue(constants::GW_LAST_USED_EXPORTER_PARAMS_KEY, QVariant(d->currentHtmlExporter->options()));
     appSettings.setValue(constants::GW_LIVE_SPELL_CHECK_KEY, QVariant(d->liveSpellCheckEnabled));
@@ -243,8 +249,13 @@ QFont AppSettings::editorFont() const
 void AppSettings::setEditorFont(const QFont &font)
 {
     Q_D(AppSettings);
-    
+
+    if (d->editorFont == font) {
+        return;
+    }
+
     d->editorFont = font;
+    emit editorFontChanged(font);
 }
 
 QFont AppSettings::previewTextFont() const
@@ -654,6 +665,23 @@ void AppSettings::setHtmlPreviewVisible(bool visible)
     d->htmlPreviewVisible = visible;
 }
 
+FocusView AppSettings::focusView() const
+{
+    Q_D(const AppSettings);
+
+    return d->focusView;
+}
+
+void AppSettings::setFocusView(FocusView view)
+{
+    Q_D(AppSettings);
+
+    if ((view >= FocusViewFirst) && (view <= FocusViewLast) && view != d->focusView) {
+        d->focusView = view;
+        emit focusViewChanged(view);
+    }
+}
+
 bool AppSettings::sidebarVisible() const
 {
     Q_D(const AppSettings);
@@ -774,7 +802,27 @@ AppSettings::AppSettings()
         << "Courier";
 
     QString monospaceFont = QFont(d->firstAvailableFont(preferredMonospaceFonts), 12).toString();
-    QString variableFont = QFont("Noto Serif", 12).toString();
+
+    // GitHub markdown body uses a system-ui stack; on Windows 10 + Firefox the
+    // first match is typically Segoe UI. Size 16px ~= 12pt at 96dpi.
+    QStringList preferredPreviewBodyFonts;
+#ifdef Q_OS_MAC
+    preferredPreviewBodyFonts << ".AppleSystemUIFont"
+                              << ".SF NS Text"
+                              << "Helvetica Neue";
+#elif defined(Q_OS_LINUX)
+    preferredPreviewBodyFonts << "Noto Sans"
+                              << "DejaVu Sans"
+                              << "Liberation Sans";
+#elif defined(Q_OS_WIN32)
+    preferredPreviewBodyFonts << "Segoe UI";
+#endif
+    preferredPreviewBodyFonts << "Noto Sans"
+                              << "Helvetica"
+                              << "Arial";
+
+    QString previewBodyDefault =
+        QFont(d->firstAvailableFontFamily(preferredPreviewBodyFonts), 12).toString();
 
     // Last but not least, load some basic settings from the configuration file,
     // but only those that need special validation.  Things like window
@@ -785,7 +833,7 @@ AppSettings::AppSettings()
     d->autoSaveEnabled = appSettings.value(constants::GW_AUTOSAVE_KEY, QVariant(true)).toBool();
     d->backupFileEnabled = appSettings.value(constants::GW_BACKUP_FILE_KEY, QVariant(true)).toBool();
     d->editorFont.fromString(appSettings.value(constants::GW_EDITOR_FONT_KEY, QVariant(monospaceFont)).toString());
-    d->previewTextFont.fromString(appSettings.value(constants::GW_PREVIEW_TEXT_FONT_KEY, QVariant(variableFont)).toString());
+    d->previewTextFont.fromString(appSettings.value(constants::GW_PREVIEW_TEXT_FONT_KEY, QVariant(previewBodyDefault)).toString());
     d->previewCodeFont.fromString(appSettings.value(constants::GW_PREVIEW_CODE_FONT_KEY, QVariant(monospaceFont)).toString());
     d->tabWidth = appSettings.value(constants::GW_TAB_WIDTH_KEY, QVariant(DEFAULT_TAB_WIDTH)).toInt();
 
@@ -863,6 +911,14 @@ AppSettings::AppSettings()
     d->sidebarVisible = appSettings.value(constants::GW_SIDEBAR_OPEN_KEY, QVariant(true)).toBool();
     d->htmlPreviewVisible = appSettings.value(constants::GW_HTML_PREVIEW_OPEN_KEY, QVariant(true)).toBool();
 
+    // Migrate htmlPreviewVisible → focusView on first run with the new key absent.
+    int defaultFocus = d->htmlPreviewVisible ? (int)FocusViewSplit : (int)FocusViewEditorOnly;
+    d->focusView = (FocusView)appSettings.value(constants::GW_FOCUS_VIEW_KEY, QVariant(defaultFocus)).toInt();
+
+    if ((d->focusView < FocusViewFirst) || (d->focusView > FocusViewLast)) {
+        d->focusView = FocusViewSplit;
+    }
+
     QString exporterName = appSettings.value(constants::GW_LAST_USED_EXPORTER_KEY).toString();
 
     d->currentHtmlExporter = nullptr;
@@ -920,6 +976,20 @@ QString AppSettingsPrivate::firstAvailableFont(const QStringList& fontList) cons
     systemFont.setFixedPitch(true);
     systemFont.setStyleHint(QFont::Monospace);
     return systemFont.family();
+}
+
+QString AppSettingsPrivate::firstAvailableFontFamily(const QStringList &fontList) const
+{
+    QFontDatabase fontDb;
+    QStringList fontFamilies = fontDb.families();
+
+    for (const QString &name : fontList) {
+        if (std::binary_search(fontFamilies.begin(), fontFamilies.end(), name)) {
+            return name;
+        }
+    }
+
+    return QFont().family();
 }
 
 QString AppSettingsPrivate::initialLocale() const

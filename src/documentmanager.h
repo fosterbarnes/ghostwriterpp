@@ -136,6 +136,11 @@ signals:
      */
     void sessionHistoryChanged();
 
+    /**
+     * Emitted immediately before writing the document buffer to disk.
+     */
+    void aboutToWriteDocument();
+
 public slots:
 
     /**
@@ -213,6 +218,20 @@ public slots:
      * file path can be achieved by calling save() instead.
      */
     bool saveAs();
+
+    /**
+     * Prompts to save if needed, optionally records session restore bookmark,
+     * but does not clear the document or emit documentClosed(). Use when
+     * removing a tab so preview/session teardown does not run on a tab that
+     * is about to be destroyed.
+     */
+    bool confirmTabRemoval(bool updateLastOpenedBookmark);
+
+    /**
+     * Prompts to save if modified and waits for async writes; does not clear
+     * the document. Use before application exit instead of close().
+     */
+    bool prepareApplicationQuit();
 
     /**
      * Closes the current file, clearing the editor of text. Note that unlike

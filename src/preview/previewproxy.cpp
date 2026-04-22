@@ -56,4 +56,14 @@ bool PreviewProxy::mathEnabled() const
 {
     return m_mathEnabled;
 }
+
+void PreviewProxy::setPreviewPlainBaseline(const QString &plain)
+{
+    emit previewPlainBaselineChanged(plain);
+}
+
+void PreviewProxy::notifyPreviewEdited()
+{
+    emit previewEdited();
+}
 } // namespace ghostwriter

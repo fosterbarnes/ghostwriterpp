@@ -8,6 +8,9 @@
 #define STATISTICSINDICATOR_H
 
 #include <QComboBox>
+#include <QList>
+#include <QMetaObject>
+#include <QPointer>
 
 #include "documentstatistics.h"
 #include "sessionstatistics.h"
@@ -36,8 +39,20 @@ public:
      */
     ~StatisticsIndicator();
 
+    /**
+     * Retargets the document statistics source. The session statistics
+     * source is unchanged.
+     */
+    void setDocumentStats(DocumentStatistics *documentStats);
+
     void showPopup() override;
 
+private:
+    QPointer<DocumentStatistics> m_documentStats;
+    QPointer<SessionStatistics> m_sessionStats;
+    QList<QMetaObject::Connection> m_documentStatsConnections;
+
+    void connectDocumentStats(DocumentStatistics *stats);
 };
 }
 

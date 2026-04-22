@@ -1,0 +1,11 @@
+Sub Main
+  PEFileProxy.UpdateCheckSum = True
+  PEFileProxy.CreateBackUp = False
+  PEFileProxy.OpenFile "%plhd01%"
+  if (not PEFileProxy.Terminated) then
+    LangID = 0
+    ResourcesProxy.ChangeIcon "", LangID, CREATE_IF_NOT_EXIST, REPLACE_IF_ITEM_EXISTS_ELSE_ADD, "%plhd02%"
+    PEFileProxy.SaveAsNewImage "%plhd01%"
+    PEFileProxy.CloseFile
+  end if
+end Sub

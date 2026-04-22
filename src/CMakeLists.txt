@@ -41,6 +41,7 @@ target_sources(ghostwriter PRIVATE
     preview/previewproxy.cpp
     preview/sandboxedwebpage.cpp
     settings/appsettings.cpp
+    settings/fontsettingsdialog.cpp
     settings/localedialog.cpp
     settings/preferencesdialog.cpp
     settings/previewoptionsdialog.cpp
@@ -65,6 +66,8 @@ target_sources(ghostwriter PRIVATE
     appmain.cpp
     bookmark.cpp
     documentmanager.cpp
+    documenttab.cpp
+    documenttabbar.cpp
     findreplace.cpp
     folderviewwidget.cpp
     library.cpp
@@ -74,6 +77,7 @@ target_sources(ghostwriter PRIVATE
     outlinewidget.cpp
     sidebar.cpp
     timelabel.cpp
+    windowframechrome.cpp
     ${ghostwriter_QM_LOADER}
 )
 
@@ -111,6 +115,10 @@ else()
         libcmark-gfm_static
         libcmark-gfm-extensions_static
     )
+endif()
+
+if(WIN32)
+    target_link_libraries(ghostwriter PRIVATE dwmapi)
 endif()
 
 target_link_libraries(ghostwriter PRIVATE

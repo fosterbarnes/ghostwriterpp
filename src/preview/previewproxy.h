@@ -65,6 +65,10 @@ public:
     Q_INVOKABLE bool mathEnabled() const;
     Q_PROPERTY(bool mathEnabled READ mathEnabled NOTIFY mathToggled)
 
+public slots:
+    void setPreviewPlainBaseline(const QString &plain);
+    void notifyPreviewEdited();
+
 signals:
     /**
      * Emitted when the HTML content changes.
@@ -80,6 +84,10 @@ signals:
      * Emitted when the math rendering is toggled.
      */
     void mathToggled(bool enabled);
+
+    void previewPlainBaselineChanged(const QString &plain);
+
+    void previewEdited();
 
 private:
     QString m_htmlContent;
