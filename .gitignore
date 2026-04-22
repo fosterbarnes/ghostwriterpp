@@ -77,3 +77,4 @@ Makefile*
 *.code-workspace
 *s.md
 ToDo.md
+/.installer/Output/
