@@ -136,11 +136,6 @@ signals:
      */
     void sessionHistoryChanged();
 
-    /**
-     * Emitted immediately before writing the document buffer to disk.
-     */
-    void aboutToWriteDocument();
-
 public slots:
 
     /**

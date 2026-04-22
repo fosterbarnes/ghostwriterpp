@@ -10,6 +10,7 @@
 #include <QGuiApplication>
 #include <QDate>
 #include <QDateTime>
+#include <QDir>
 #include <QLibraryInfo>
 #include <QLocale>
 #include <QTranslator>
@@ -81,7 +82,10 @@ int main(int argc, char *argv[])
     // current theme is not supported yet.
     // QCoreApplication::setAttribute(Qt::AA_DontShowIconsInMenus, true);
 
+    QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
+
     QApplication app(argc, argv);
+    QGuiApplication::setQuitOnLastWindowClosed(false);
 
     qApp->installEventFilter(KToolTipHelper::instance());
 
@@ -168,9 +172,31 @@ int main(int argc, char *argv[])
     QCommandLineOption renderingOption("disable-gpu",
         QCoreApplication::translate("main", "Disables GPU acceleration."));
 
+    QCommandLineOption debugLogOption(QStringLiteral("debug-log"),
+        QCoreApplication::translate("main",
+            "Append all Qt log output to a file in the system temp directory (ghostwriter++_last_run.log)."));
+    QCommandLineOption logFileOption(QStringLiteral("log-file"),
+        QCoreApplication::translate("main", "Append all Qt log output to the given file."),
+        QCoreApplication::translate("main", "path"));
+
     clParser.addOption(renderingOption);
+    clParser.addOption(debugLogOption);
+    clParser.addOption(logFileOption);
     clParser.process(app);
     aboutData.processCommandLine(&clParser);
+
+    {
+        const QString envPath = qEnvironmentVariable("GHOSTWRITER_LOG_FILE");
+        if (!envPath.isEmpty()) {
+            ghostwriterpp::setLogMirrorFilePath(envPath);
+        }
+        if (clParser.isSet(logFileOption)) {
+            ghostwriterpp::setLogMirrorFilePath(clParser.value(logFileOption));
+        } else if (clParser.isSet(debugLogOption)) {
+            ghostwriterpp::setLogMirrorFilePath(
+                QDir::temp().absoluteFilePath(QStringLiteral("ghostwriter++_last_run.log")));
+        }
+    }
 
     QStringList posArgs = clParser.positionalArguments();
 

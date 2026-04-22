@@ -5,6 +5,7 @@ param(
     [switch]$Clean,
     [switch]$NoBuild,
     [switch]$Log,
+    [switch]$DebugLog,
     [string]$CraftRoot = "C:\CraftRoot",
     [switch]$StrictExeIcon,
     [string]$RepoRoot = "",
@@ -47,6 +48,26 @@ function Test-HasQtOnPath {
     return $false
 }
 
+function Get-GhostwriterDebugLogFromLastMarker {
+    param(
+        [Parameter(Mandatory)] [string]$Path
+    )
+    if (-not (Test-Path -LiteralPath $Path)) {
+        return $null
+    }
+    $item = Get-Item -LiteralPath $Path
+    if ($item.Length -eq 0) {
+        return ""
+    }
+    $raw = Get-Content -LiteralPath $Path -Raw -Encoding utf8
+    $marker = "--- ghostwriter++ log "
+    $idx = $raw.LastIndexOf($marker, [StringComparison]::Ordinal)
+    if ($idx -lt 0) {
+        return $raw.TrimEnd()
+    }
+    return $raw.Substring($idx).TrimEnd()
+}
+
 function Initialize-RunEnvironment {
     if (Test-HasQtOnPath) {
         return
@@ -65,6 +86,8 @@ function Initialize-RunEnvironment {
     Write-Warning "Qt6Core.dll not on PATH and craftenv.ps1 not found at $craftEnv. The app may fail with missing DLL errors."
 }
 
+Get-Process -Name "ghostwriter++" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+
 Push-Location $repoRoot
 try {
     if (-not $NoBuild) {
@@ -75,9 +98,16 @@ try {
         throw "Executable not found: $exePath"
     }
 
-    Initialize-RunEnvironment
 
+    Initialize-RunEnvironment
     Write-Host "Running: $exePath"
+
+    $debugLogPath = Join-Path ([System.IO.Path]::GetTempPath()) "ghostwriter++_last_run.log"
+    if ($DebugLog) {
+        if (-not $AppArgs) { $AppArgs = @() }
+        $AppArgs = @('--debug-log') + @($AppArgs)
+        Write-Host "Qt log mirror: $debugLogPath (--debug-log)"
+    }
 
     if ($Log) {
         # /SUBSYSTEM:WINDOWS detaches stdout/stderr from the parent console, so
@@ -116,6 +146,21 @@ try {
     }
 
     Write-Host "$ExeFileName exited with code $exit (0x$([Convert]::ToString($exit, 16)))"
+
+    if ($DebugLog) {
+        Write-Host "--- Log from last '--- ghostwriter++ log' marker: $debugLogPath ---"
+        $tail = Get-GhostwriterDebugLogFromLastMarker -Path $debugLogPath
+        if ($null -eq $tail) {
+            Write-Host "(log file not found)"
+        }
+        elseif ($tail -eq "") {
+            Write-Host "(log file empty)"
+        }
+        else {
+            Write-Host $tail
+        }
+    }
+
     if ($exit -ne 0) {
         exit $exit
     }

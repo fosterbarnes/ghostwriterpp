@@ -10,6 +10,7 @@
 #include <QScopedPointer>
 
 #include "markdownast.h"
+#include "previeweditmetadata.h"
 
 namespace ghostwriterpp
 {
@@ -44,6 +45,27 @@ public:
      * smartTypographyEnabled to enable smart typography.
      */
     QString renderToHtml(const QString &text, const bool smartTypographyEnabled);
+
+    /**
+     * Renders HTML for live preview with data-gw-* edit metadata (cmark-gfm only).
+     */
+    QString renderToHtmlWithPreviewEditMetadata(const QString &text, const bool smartTypographyEnabled);
+
+    /**
+     * Parses the current markdown and extracts a plain-text + source-range map for the
+     * CMARK TEXT descendants of the element identified by [elementSourceStart,
+     * elementSourceEndExclusive). Used by the preview-edit session to translate DOM-level
+     * edits back to surgical source-range replacements, leaving inline structure intact.
+     */
+    PreviewEditTextMap extractPreviewEditTextMap(const QString &markdown,
+                                                 int elementSourceStart,
+                                                 int elementSourceEndExclusive);
+
+    PreviewEditTextMap extractPreviewEditTextMap(const QString &markdown,
+                                                 int elementSourceStart,
+                                                 int elementSourceEndExclusive,
+                                                 bool allowSoftbreaks,
+                                                 bool allowParagraphGaps);
 
 protected:
     /**

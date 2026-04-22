@@ -28,12 +28,14 @@
 #include <QPushButton>
 #include <QHash>
 #include <QScrollBar>
+#include <QScreen>
 #include <QSet>
 #include <QSettings>
 #include <QShowEvent>
 #include <QSizePolicy>
 #include <QTextCursor>
 #include <QStatusBar>
+#include <QStyle>
 #include <QStyleFactory>
 #include <QTextDocumentFragment>
 #include <QToolButton>
@@ -76,6 +78,75 @@
 namespace ghostwriterpp
 {
 using namespace std::placeholders;
+
+namespace {
+int layoutScreenWidth()
+{
+    if (QScreen *s = QGuiApplication::primaryScreen()) {
+        return s->size().width();
+    }
+    const QList<QScreen *> screens = QGuiApplication::screens();
+    if (!screens.isEmpty()) {
+        return screens.first()->size().width();
+    }
+    return 1280;
+}
+
+int layoutScreenAvailableWidth()
+{
+    if (QScreen *s = QGuiApplication::primaryScreen()) {
+        return s->availableSize().width();
+    }
+    const QList<QScreen *> screens = QGuiApplication::screens();
+    if (!screens.isEmpty()) {
+        return screens.first()->availableSize().width();
+    }
+    return layoutScreenWidth();
+}
+
+void ensureTopLevelVisibleOnScreen(QWidget *w)
+{
+    if (!w || !w->isWindow()) {
+        return;
+    }
+
+    Qt::WindowStates st = w->windowState();
+    if (st & Qt::WindowMinimized) {
+        w->setWindowState(st & ~Qt::WindowMinimized);
+    }
+
+    if (w->isMaximized() || w->isFullScreen()) {
+        w->raise();
+        w->activateWindow();
+        return;
+    }
+
+    QRect frame = w->frameGeometry();
+    if (frame.width() < 64 || frame.height() < 64) {
+        const QSize cap(1200, 900);
+        QSize ns = w->sizeHint().expandedTo(w->minimumSize());
+        ns = ns.boundedTo(cap).expandedTo(QSize(400, 300));
+        w->resize(ns);
+        frame = w->frameGeometry();
+    }
+
+    for (QScreen *s : QGuiApplication::screens()) {
+        if (s->availableGeometry().intersects(frame)) {
+            w->raise();
+            w->activateWindow();
+            return;
+        }
+    }
+
+    QScreen *ps = QGuiApplication::primaryScreen();
+    QRect avail = ps ? ps->availableGeometry() : QRect(0, 0, 1280, 720);
+    QSize sh = w->sizeHint().expandedTo(w->minimumSize()).boundedTo(avail.size());
+    sh = sh.expandedTo(QSize(400, 300));
+    w->setGeometry(QStyle::alignedRect(Qt::LeftToRight, Qt::AlignCenter, sh, avail));
+    w->raise();
+    w->activateWindow();
+}
+} // namespace
 
 static QString absoluteFileKey(const QString &path)
 {
@@ -212,6 +283,8 @@ MainWindow::MainWindow(const QString &filePath, QWidget *parent)
     } else {
         applyHtmlPreviewStyleSheetToAllTabs(previewSheet);
     }
+
+    ensureTopLevelVisibleOnScreen(this);
 }
 
 MainWindow::~MainWindow()
@@ -239,7 +312,7 @@ void MainWindow::resizeEvent(QResizeEvent *event)
 {
     int width = event->size().width();
 
-    if (width < (0.5 * qApp->primaryScreen()->size().width())) {
+    if (width < (0.5 * layoutScreenWidth())) {
         this->sidebar->setVisible(false);
         this->sidebar->setAutoHideEnabled(true);
         this->sidebarHiddenForResize = true;
@@ -834,7 +907,7 @@ DocumentTab *MainWindow::addDocumentTab(const Bookmark &location, bool activate)
     tabs.append(tab);
 
     auto *editor = tab->editor();
-    editor->setMinimumWidth(0.1 * qApp->primaryScreen()->size().width());
+    editor->setMinimumWidth(0.1 * layoutScreenWidth());
     editor->setEditorWidth((EditorWidth)appSettings->editorWidth());
     editor->setEditorCorners((InterfaceStyle)appSettings->interfaceStyle());
     editor->setHemingWayModeEnabled(hemingwayModeEnabled);
@@ -844,7 +917,7 @@ DocumentTab *MainWindow::addDocumentTab(const Bookmark &location, bool activate)
     }
 
     auto *preview = tab->htmlPreview();
-    preview->setMinimumWidth(0.1 * qApp->primaryScreen()->size().width());
+    preview->setMinimumWidth(0.1 * layoutScreenWidth());
 
     editorStack->addWidget(editor);
     previewStack->addWidget(preview);
@@ -880,8 +953,6 @@ DocumentTab *MainWindow::addDocumentTab(const Bookmark &location, bool activate)
     } else {
         preview->setStyleSheet(previewSheet);
     }
-
-    tab->setPreviewInPlaceEditingEnabled(appSettings->focusView() != FocusViewEditorOnly);
 
     return tab;
 }
@@ -1214,6 +1285,11 @@ void MainWindow::applyFocusView(FocusView view)
     const bool showEditor = (view != FocusViewPreviewOnly);
     const bool showPreview = (view != FocusViewEditorOnly);
 
+    bool previewWasHidden = false;
+    if (previewStack) {
+        previewWasHidden = !previewStack->isVisible();
+    }
+
     if (editorStack) {
         editorStack->setVisible(showEditor);
     }
@@ -1224,14 +1300,15 @@ void MainWindow::applyFocusView(FocusView view)
     // Keep legacy htmlPreviewVisible in sync so older code paths stay happy.
     appSettings->setHtmlPreviewVisible(showPreview);
 
-    const bool previewTyping = (view != FocusViewEditorOnly);
-    for (DocumentTab *tab : std::as_const(tabs)) {
-        if (tab) {
-            tab->setPreviewInPlaceEditingEnabled(previewTyping);
+    adjustEditor();
+
+    if (showPreview && previewWasHidden) {
+        for (DocumentTab *tab : tabs) {
+            if (tab && tab->htmlPreview()) {
+                tab->htmlPreview()->updatePreview();
+            }
         }
     }
-
-    adjustEditor();
 }
 
 void MainWindow::syncFocusViewActions(FocusView view)
@@ -1512,8 +1589,8 @@ void MainWindow::setupGui()
 
     editorStack = new QStackedWidget(this);
     previewStack = new QStackedWidget(this);
-    editorStack->setMinimumWidth(0.1 * qApp->primaryScreen()->size().width());
-    previewStack->setMinimumWidth(0.1 * qApp->primaryScreen()->size().width());
+    editorStack->setMinimumWidth(0.1 * layoutScreenWidth());
+    previewStack->setMinimumWidth(0.1 * layoutScreenWidth());
     editorStack->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     previewStack->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
@@ -1977,8 +2054,8 @@ void MainWindow::setupSidebar()
 
     sidebar = new Sidebar(this);
     sidebar->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
-    sidebar->setMinimumWidth(0.1 * QGuiApplication::primaryScreen()->availableSize().width());
-    sidebar->setMaximumWidth(0.5 * QGuiApplication::primaryScreen()->availableSize().width());
+    sidebar->setMinimumWidth(0.1 * layoutScreenAvailableWidth());
+    sidebar->setMaximumWidth(0.5 * layoutScreenAvailableWidth());
 
     folderViewWidget = new FolderViewWidget(this);
     sidebar->addTab(primaryIconTheme->icon("open-file"), folderViewWidget, tr("Folder View"));
@@ -2021,7 +2098,7 @@ void MainWindow::setupSidebar()
 
     connect(sidebar, &Sidebar::visibilityChanged, this, &MainWindow::onSidebarVisibilityChanged);
 
-    sidebar->setMinimumWidth(0.1 * qApp->primaryScreen()->size().width());
+    sidebar->setMinimumWidth(0.1 * layoutScreenWidth());
 }
 
 void MainWindow::adjustEditor()

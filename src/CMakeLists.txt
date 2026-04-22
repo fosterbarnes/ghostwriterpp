@@ -34,6 +34,7 @@ target_sources(ghostwriterpp PRIVATE
     export/exporterfactory.cpp
     export/exportformat.cpp
     markdown/cmarkgfmapi.cpp
+    markdown/previeweditmetadata.cpp
     markdown/markdownast.cpp
     markdown/markdownnode.cpp
     markdown/memoryarena.cpp

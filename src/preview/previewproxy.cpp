@@ -6,6 +6,8 @@
 
 #include "previewproxy.h"
 
+#include "htmlpreview.h"
+
 namespace ghostwriterpp
 {
 PreviewProxy::PreviewProxy(QObject *parent)
@@ -57,13 +59,35 @@ bool PreviewProxy::mathEnabled() const
     return m_mathEnabled;
 }
 
-void PreviewProxy::setPreviewPlainBaseline(const QString &plain)
+void PreviewProxy::beginPreviewEdit(const QString &kind, int start, int end)
 {
-    emit previewPlainBaselineChanged(plain);
+    HtmlPreview *hp = qobject_cast<HtmlPreview *>(parent());
+    if (hp) {
+        hp->beginPreviewEditSession(kind, start, end);
+    }
 }
 
-void PreviewProxy::notifyPreviewEdited()
+void PreviewProxy::applyPreviewEdit(const QString &text)
 {
-    emit previewEdited();
+    HtmlPreview *hp = qobject_cast<HtmlPreview *>(parent());
+    if (hp) {
+        hp->applyPreviewEdit(text);
+    }
+}
+
+void PreviewProxy::endPreviewEdit()
+{
+    HtmlPreview *hp = qobject_cast<HtmlPreview *>(parent());
+    if (hp) {
+        hp->endPreviewEditSession();
+    }
+}
+
+void PreviewProxy::togglePreviewCheckbox(int offset, bool checked)
+{
+    HtmlPreview *hp = qobject_cast<HtmlPreview *>(parent());
+    if (hp) {
+        hp->togglePreviewCheckbox(offset, checked);
+    }
 }
 } // namespace ghostwriterpp

@@ -373,6 +373,33 @@ try {
 
     Write-Host "Release folder ready: $binDir"
     Write-Host "You can run $ExeFileName from Explorer or any shell without Craft on PATH."
+
+    $versionPath = Join-Path $PSScriptRoot "version"
+    if (-not (Test-Path -LiteralPath $versionPath)) {
+        throw "Version file not found: $versionPath"
+    }
+    $releaseVer = (Get-Content -LiteralPath $versionPath -Raw).Trim()
+    if ([string]::IsNullOrWhiteSpace($releaseVer)) {
+        throw "Version file is empty: $versionPath"
+    }
+    $zipFileName = "ghostwriter++_v${releaseVer}_win64.zip"
+    $zipOut = Join-Path $buildDirPath $zipFileName
+    if (Test-Path -LiteralPath $zipOut) {
+        Remove-Item -LiteralPath $zipOut -Force
+    }
+    Write-Host "Zipping portable folder -> $zipOut (7z) ..."
+    Push-Location $binDir
+    try {
+        $seven = Get-Command 7z -ErrorAction Stop
+        & $seven.Source a -tzip -mx=5 $zipOut *
+        if ($LASTEXITCODE -ne 0) {
+            throw "7z failed (exit $LASTEXITCODE)"
+        }
+    }
+    finally {
+        Pop-Location
+    }
+    Write-Host "Zip ready: $zipOut"
 }
 finally {
     Pop-Location

@@ -43,8 +43,6 @@ public:
 
     void applyColorScheme(const ColorScheme &colors);
 
-    void setPreviewInPlaceEditingEnabled(bool enabled);
-
     /**
      * Removes and destroys the HTML preview (e.g. before application quit
      * so WebEngine tears down with a running event loop).

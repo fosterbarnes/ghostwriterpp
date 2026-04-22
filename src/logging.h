@@ -22,6 +22,12 @@ namespace ghostwriterpp
  * qInstallMessageHandler().
  */
 void logMessage(QtMsgType type, const QMessageLogContext &context, const QString &message);
+
+/**
+ * Duplicate all formatted log lines to this file (append). Pass an empty path
+ * to disable. Used with --debug-log / --log-file or GHOSTWRITER_LOG_FILE.
+ */
+void setLogMirrorFilePath(const QString &path);
 } // namespace ghostwriterpp
 
 #endif // LOGGING_H

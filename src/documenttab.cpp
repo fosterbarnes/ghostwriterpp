@@ -81,7 +81,6 @@ DocumentTab::DocumentTab(const ColorScheme &colors, QObject *parent)
     connect(m_editor, &MarkdownEditor::typingPausedScaled, m_htmlPreview, &HtmlPreview::updatePreview);
     connect(m_documentManager, &DocumentManager::documentLoaded, m_htmlPreview, &HtmlPreview::updatePreview);
     connect(m_documentManager, &DocumentManager::documentClosed, m_htmlPreview, &HtmlPreview::updatePreview);
-    connect(m_documentManager, &DocumentManager::aboutToWriteDocument, m_htmlPreview, &HtmlPreview::flushPreviewEditsToDocumentSync);
     connect(appSettings, &AppSettings::currentHtmlExporterChanged, m_htmlPreview, &HtmlPreview::setHtmlExporter);
 
     m_documentStats = new DocumentStatistics(m_document, this);
@@ -136,15 +135,6 @@ void DocumentTab::applyColorScheme(const ColorScheme &colors)
     if (m_editor) {
         m_editor->setColorScheme(colors);
     }
-}
-
-void DocumentTab::setPreviewInPlaceEditingEnabled(bool enabled)
-{
-    if (!m_htmlPreview) {
-        return;
-    }
-    const bool readOnly = m_document && m_document->isReadOnly();
-    m_htmlPreview->setInPlaceEditingEnabled(enabled && !readOnly);
 }
 
 void DocumentTab::releaseHtmlPreview()

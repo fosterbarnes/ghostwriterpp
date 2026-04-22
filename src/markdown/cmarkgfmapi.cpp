@@ -7,8 +7,10 @@
 #include <QMutex>
 
 #include <3rdparty/cmark-gfm/src/cmark-gfm-extension_api.h>
+#include <3rdparty/cmark-gfm/src/cmark-gfm.h>
 #include <3rdparty/cmark-gfm/extensions/cmark-gfm-core-extensions.h>
 #include "cmarkgfmapi.h"
+#include "previeweditmetadata.h"
 
 namespace ghostwriterpp
 {
@@ -87,7 +89,9 @@ MarkdownAST *CmarkGfmAPI::parse(const QString &text, const bool smartTypographyE
     return ast;
 }
 
-QString CmarkGfmAPI::renderToHtml(const QString &text, const bool smartTypographyEnabled)
+QString CmarkGfmAPI::renderToHtml(
+    const QString &text,
+    const bool smartTypographyEnabled)
 {
     Q_D(CmarkGfmAPI);
     
@@ -120,6 +124,97 @@ QString CmarkGfmAPI::renderToHtml(const QString &text, const bool smartTypograph
     d->apiMutex.unlock();
 
     return html;
+}
+
+QString CmarkGfmAPI::renderToHtmlWithPreviewEditMetadata(
+    const QString &text,
+    const bool smartTypographyEnabled)
+{
+    Q_D(CmarkGfmAPI);
+
+    int opts = CMARK_OPT_DEFAULT | CMARK_OPT_FOOTNOTES | CMARK_OPT_UNSAFE | CMARK_OPT_SOURCEPOS;
+
+    if (smartTypographyEnabled) {
+        opts |= CMARK_OPT_SMART;
+    }
+
+    d->apiMutex.lock();
+
+    cmark_mem *mem = cmark_get_arena_mem_allocator();
+    cmark_parser *parser = cmark_parser_new_with_mem(opts, mem);
+
+    cmark_parser_attach_syntax_extension(parser, d->tableExt);
+    cmark_parser_attach_syntax_extension(parser, d->strikethroughExt);
+    cmark_parser_attach_syntax_extension(parser, d->autolinkExt);
+    cmark_parser_attach_syntax_extension(parser, d->tagfilterExt);
+    cmark_parser_attach_syntax_extension(parser, d->tasklistExt);
+
+    QByteArray utf8 = text.toUtf8();
+    cmark_parser_feed(parser, utf8.data(), utf8.length());
+
+    cmark_node *root = cmark_parser_finish(parser);
+    char *output = cmark_render_html(root, opts, cmark_parser_get_syntax_extensions(parser));
+    QString html = QString::fromUtf8(output);
+
+    html = augmentPreviewHtmlWithEditMetadata(text, root, html);
+
+    cmark_parser_free(parser);
+    cmark_arena_reset();
+
+    d->apiMutex.unlock();
+
+    return html;
+}
+
+PreviewEditTextMap CmarkGfmAPI::extractPreviewEditTextMap(
+    const QString &markdown,
+    int elementSourceStart,
+    int elementSourceEndExclusive)
+{
+    return extractPreviewEditTextMap(markdown, elementSourceStart, elementSourceEndExclusive, false, false);
+}
+
+PreviewEditTextMap CmarkGfmAPI::extractPreviewEditTextMap(
+    const QString &markdown,
+    int elementSourceStart,
+    int elementSourceEndExclusive,
+    bool allowSoftbreaks,
+    bool allowParagraphGaps)
+{
+    Q_D(CmarkGfmAPI);
+
+    int opts = CMARK_OPT_DEFAULT | CMARK_OPT_FOOTNOTES | CMARK_OPT_UNSAFE | CMARK_OPT_SOURCEPOS;
+
+    d->apiMutex.lock();
+
+    cmark_mem *mem = cmark_get_arena_mem_allocator();
+    cmark_parser *parser = cmark_parser_new_with_mem(opts, mem);
+
+    cmark_parser_attach_syntax_extension(parser, d->tableExt);
+    cmark_parser_attach_syntax_extension(parser, d->strikethroughExt);
+    cmark_parser_attach_syntax_extension(parser, d->autolinkExt);
+    cmark_parser_attach_syntax_extension(parser, d->tagfilterExt);
+    cmark_parser_attach_syntax_extension(parser, d->tasklistExt);
+
+    QByteArray utf8 = markdown.toUtf8();
+    cmark_parser_feed(parser, utf8.data(), utf8.length());
+
+    cmark_node *root = cmark_parser_finish(parser);
+
+    PreviewEditTextMap result = buildPreviewEditTextMap(
+        markdown,
+        root,
+        elementSourceStart,
+        elementSourceEndExclusive,
+        allowSoftbreaks,
+        allowParagraphGaps);
+
+    cmark_parser_free(parser);
+    cmark_arena_reset();
+
+    d->apiMutex.unlock();
+
+    return result;
 }
 
 CmarkGfmAPI::CmarkGfmAPI()

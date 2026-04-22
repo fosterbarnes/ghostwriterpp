@@ -32,26 +32,94 @@ SPDX-License-Identifier: GPL-3.0-or-later
         <div id="livepreviewplaceholder"><p></p></div>
         <script language='Javascript' type='text/javascript'>
 
-            window.__gwPreviewPlain = function() {
-                var el = document.getElementById('livepreviewplaceholder');
-                return el ? el.innerText : '';
-            };
+            function gwEditableTextContent(root) {
+                var out = '';
+                var walker = document.createTreeWalker(root, NodeFilter.SHOW_ALL, {
+                    acceptNode: function (n) {
+                        if (n !== root && n.nodeType === 1
+                                && n.getAttribute('contenteditable') === 'false') {
+                            return NodeFilter.FILTER_REJECT;
+                        }
+                        return NodeFilter.FILTER_ACCEPT;
+                    }
+                });
+                var n;
+                while ((n = walker.nextNode())) {
+                    if (n.nodeType === 3) {
+                        out += n.nodeValue;
+                    }
+                }
+                return out;
+            }
 
-            window.__gwSetPreviewEditingEnabled = function(on) {
-                var el = document.getElementById('livepreviewplaceholder');
-                if (!el) {
+            function gwClosestEditable(target) {
+                return target && target.closest ? target.closest('[data-gw-edit-kind]') : null;
+            }
+
+            function installPreviewEditBridge(proxy) {
+                if (window.__gwPreviewEditInstalled) {
+                    window.previewProxy = proxy;
                     return;
                 }
-                el.setAttribute('contenteditable', on ? 'true' : 'false');
-                if (on && !el.__gwPreviewInputHooked) {
-                    el.__gwPreviewInputHooked = true;
-                    el.addEventListener('input', function() {
-                        if (window.__gwPreviewProxy && window.__gwPreviewProxy.notifyPreviewEdited) {
-                            window.__gwPreviewProxy.notifyPreviewEdited();
-                        }
-                    });
-                }
-            };
+                window.__gwPreviewEditInstalled = true;
+                window.previewProxy = proxy;
+
+                document.addEventListener('focusin', function (ev) {
+                    var el = gwClosestEditable(ev.target);
+                    if (!el || !window.previewProxy) {
+                        return;
+                    }
+                    var kind = el.getAttribute('data-gw-edit-kind');
+                    if (kind === 'tasklist') {
+                        return;
+                    }
+                    var s = parseInt(el.getAttribute('data-gw-text-start'), 10);
+                    var e = parseInt(el.getAttribute('data-gw-text-end'), 10);
+                    if (isNaN(s) || isNaN(e)) {
+                        return;
+                    }
+                    window.previewProxy.beginPreviewEdit(kind, s, e);
+                }, true);
+
+                document.addEventListener('focusout', function (ev) {
+                    if (!window.previewProxy) {
+                        return;
+                    }
+                    if (gwClosestEditable(ev.relatedTarget)) {
+                        return;
+                    }
+                    window.previewProxy.endPreviewEdit();
+                }, true);
+
+                document.addEventListener('input', function (ev) {
+                    var el = gwClosestEditable(ev.target);
+                    if (!el || !window.previewProxy) {
+                        return;
+                    }
+                    var kind = el.getAttribute('data-gw-edit-kind');
+                    if (kind === 'tasklist') {
+                        return;
+                    }
+                    var txt = (kind === 'listitem')
+                        ? gwEditableTextContent(el)
+                        : (el.textContent != null ? el.textContent : el.innerText);
+                    window.previewProxy.applyPreviewEdit(txt);
+                }, true);
+
+                document.addEventListener('change', function (ev) {
+                    var cb = ev.target && ev.target.closest
+                        ? ev.target.closest('[data-gw-edit-kind="tasklist"]')
+                        : null;
+                    if (!cb || !window.previewProxy) {
+                        return;
+                    }
+                    var off = parseInt(cb.getAttribute('data-gw-checkbox-source'), 10);
+                    if (isNaN(off)) {
+                        return;
+                    }
+                    window.previewProxy.togglePreviewCheckbox(off, !!ev.target.checked);
+                }, true);
+            }
 
             class LivePreview extends React.Component {
                 constructor(props) {
@@ -62,7 +130,6 @@ SPDX-License-Identifier: GPL-3.0-or-later
                     this.updateLivePreview = this.updateLivePreview.bind(this);
                     this.setMathEnabled = this.setMathEnabled.bind(this);
                     this.scrollToChange = this.scrollToChange.bind(this);
-                    this.pushPlainBaseline = this.pushPlainBaseline.bind(this);
 
                     this.mutationObserver = new MutationObserver(
                         this.scrollToChange
@@ -94,8 +161,8 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
                 initializeWebChannel(channel) {
                     var proxy = channel.objects.previewProxy;
-                    this.previewProxy = proxy;
-                    window.__gwPreviewProxy = proxy;
+
+                    installPreviewEditBridge(proxy);
 
                     this.loadStyleSheet(proxy.styleSheet);
                     proxy.styleSheetChanged.connect(this.loadStyleSheet);
@@ -124,30 +191,13 @@ SPDX-License-Identifier: GPL-3.0-or-later
                 }
 
                 updateLivePreview(html) {
-                    var self = this;
-                    this.setState({ livePreviewHTML: html }, function() {
-                        var finish = function() {
-                            requestAnimationFrame(function() {
-                                self.pushPlainBaseline();
-                            });
-                        };
-                        if ((typeof window.MathJax !== 'undefined')
-                                && (self.state.mathEnabled)) {
-                            if (typeof window.MathJax.typesetPromise === 'function') {
-                                window.MathJax.typesetPromise().then(finish).catch(finish);
-                            } else {
-                                window.MathJax.typeset();
-                                finish();
-                            }
-                        } else {
-                            finish();
-                        }
-                    });
-                }
+                    this.setState({ livePreviewHTML: html });
 
-                pushPlainBaseline() {
-                    if (this.previewProxy && window.__gwPreviewPlain) {
-                        this.previewProxy.setPreviewPlainBaseline(window.__gwPreviewPlain());
+                    // Call MathJax to update document, if the library is
+                    // available and the math feature is enabled.
+                    if ((typeof window.MathJax !== 'undefined')
+                            && (this.state.mathEnabled)) {
+                        window.MathJax.typeset();
                     }
                 }
 
@@ -169,46 +219,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
                 }
 
                 scrollToChange(mutations) {
-                    var scrollToNode = null;
-
-                    for (var i = 0; i < mutations.length; i++) {
-                        var mutation = mutations[0];
-
-                        if ("attributes" === mutation.type) {
-                            scrollToNode = mutation.target;
-                        }
-                        else if ("characterData" === mutation.type) {
-                            scrollToNode = mutation.target.parentNode;
-                        }
-                        else if ("childList" === mutation.type) {
-                            if (mutation.addedNodes.length > 0) {
-                                for (var j = 0; j < mutation.addedNodes.length; j++) {
-                                    if (1 === mutation.addedNodes[j].nodeType) {
-                                        scrollToNode = mutation.addedNodes[j];
-                                        break;
-                                    }
-                                }
-                            }
-                            else if (mutation.removedNodes.length > 0) {
-                                scrollToNode = mutation.removedNodes[0].previousSibling;
-
-                                // If there is no previous sibling to the deleted nodes, then
-                                // go to the parent node.
-                                //
-                                if (!scrollToNode) {
-                                    scrollToNode = mutation.target;
-                                }
-                            }
-                        }
-                        else {
-                            console.error("Unsupported mutation type from MutationObserver: "
-                                + mutation.type);
-                        }
-                    }
-
-                    if (scrollToNode && (typeof scrollToNode.scrollIntoView !== 'undefined')) {
-                        scrollToNode.scrollIntoView();
-                    }
+                    return;
                 }
 
                 render() {

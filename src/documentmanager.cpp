@@ -719,8 +719,6 @@ void DocumentManagerPrivate::saveFile()
 {
     Q_Q(DocumentManager);
 
-    emit q->aboutToWriteDocument();
-
     if (restoreSessionEnabled) {
         Bookmark location(document->filePath(), editor->textCursor().position());
 

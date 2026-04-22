@@ -53,6 +53,12 @@ public:
      */
     void contextMenuEvent(QContextMenuEvent *event) override;
 
+    /**
+     * Cancels pending preview work and clears content. Call before deleting
+     * the widget (and prefer while QApplication's event loop is running).
+     */
+    void shutdownBeforeDestroy();
+
 public slots:
     /**
      * Call this method to re-render the HTML for the document.
@@ -84,24 +90,14 @@ public slots:
      */
     void setMathEnabled(bool enabled);
 
-    /**
-     * Enables typing in the preview (split / preview-only layouts).
-     */
-    void setInPlaceEditingEnabled(bool enabled);
-
-    /**
-     * Merges in-preview text edits into the markdown document (synchronous).
-     */
-    void flushPreviewEditsToDocumentSync();
-
-    /**
-     * Cancels pending preview work and clears content. Call before deleting
-     * the widget (and prefer while QApplication's event loop is running).
-     */
-    void shutdownBeforeDestroy();
+    void beginPreviewEditSession(const QString &kind, int start, int end);
+    void applyPreviewEdit(const QString &text);
+    void endPreviewEditSession();
+    void togglePreviewCheckbox(int offset, bool checked);
 
 protected:
     void closeEvent(QCloseEvent *event) override;
+    void showEvent(QShowEvent *event) override;
 
 private:
     QScopedPointer<HtmlPreviewPrivate> d_ptr;

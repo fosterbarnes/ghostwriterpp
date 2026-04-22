@@ -1,1 +1,41 @@
-- Replace instances of "ghostwriter" with "ghostwriter++" or "ghostwriterpp"
+v2.1.6-2 update. Fine-tune preview editing
+
+Preview Editing:
+    - Completely re-write preview editing system. Diff-based apply that only touches source ranges belonging to TEXT AST nodes inside the edited element, rejecting edits that would break formatting.
+    - Implement every possible .md formatting option systematically:
+
+    Done:
+        - general text
+        - headers (ATX + Setext)
+        - links (in-line preview edit only currently supports editing user-facing text)
+        Inline:
+            - GFM strikethrough
+            - Strong
+            - Emphasis
+            - Code spans
+            - Bullet / ordered lists
+            - Nested lists
+            - Task lists
+
+    Not done:
+            - Paragraphs
+            - Block quotes
+            - Thematic break
+            - Indented code blocks
+            - HTML blocks
+            - Link reference definitions
+            - GFM tables
+            - Line breaks
+            - Line breaks
+            - HTML inline
+            - Images
+            - Autolinks
+            - Reference / shortcut reference links
+            - Nested / edge link cases
+            - Raw HTML
+            - Footnotes
+            - Images
+
+    Small changes/fixes:
+        - Add "Open in browser" right click context menu option for links bc left-clicking now edits it
+        - Fix issue that would cause changes fail to update on view/focus change until app restart
