@@ -2,21 +2,6 @@
 
 *ghostwriter* is a Windows and Linux text editor for Markdown, which is a plain text markup format created by John Gruber. *ghostwriter++* is a fork of the main project that aims to add features like tabs, and in-preview editing. For a tour of the original app's features, please visit the [*ghostwriter* project site](https://ghostwriter.kde.org).
 
-## Testing Area
-
-`poopFart1`
-
-``poopFart2``
-
-```poopFart3```
-
-  - poop
-  - fart ass
-  - big boy ass boob
-  - fart ass big ass big boy
-	  + poopfart+
-	  + boobass
-
 ## Screenshots
 
 Coming soon.
