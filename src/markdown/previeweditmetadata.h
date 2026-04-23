@@ -27,6 +27,7 @@ struct PreviewEditTextMap {
     std::vector<TextNodeSlot> nodes;
     bool hasUntrackedText = false;
     bool valid = false;
+    bool codeblockWholeSourceReplace = false;
 };
 
 QString augmentPreviewHtmlWithEditMetadata(const QString &markdown, cmark_node *root, QString html);
@@ -36,13 +37,16 @@ PreviewEditTextMap buildPreviewEditTextMap(const QString &markdown,
                                            int elementSourceStart,
                                            int elementSourceEndExclusive,
                                            bool allowSoftbreaks = false,
-                                           bool allowParagraphGaps = false);
+                                           bool allowParagraphGaps = false,
+                                           bool requirePlainTextOnly = false);
 
 int longestBacktickRun(const QString &s);
 
 QString serializeInlineCodeRawInner(const QString &normalizedPlain, int openFenceLen);
 
 bool previewCodeblockTextHasFenceLikeLine(const QString &text);
+
+QString serializeIndentedCodeBlock(const QString &literalPlain);
 
 bool previewListItemTextHasListStarter(const QString &text);
 

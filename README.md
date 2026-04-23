@@ -2,13 +2,36 @@
 
 *ghostwriter* is a Windows and Linux text editor for Markdown, which is a plain text markup format created by John Gruber. *ghostwriter++* is a fork of the main project that aims to add features like tabs, and in-preview editing. For a tour of the original app's features, please visit the [*ghostwriter* project site](https://ghostwriter.kde.org).
 
+## Added Features
+
+*These additions are a work in progress. Issues are expected with in-preview edits*
+- Tabs, allowing multiple files to be open in one window
+- 'Focused' views. Allows showing ONLY the .md code editor, preview, or classic split view
+- In-preview editing, also known as WYSIWYG markdown. Not all .md formatting or edge cases are accounted for quite yet. Track the progress in [EXAMPLE.md](https://github.com/fosterbarnes/ghostwriterpp/blob/main/README.md) (✅ = hopefully entirely working)
+
+ 
 ## Screenshots
 
-Coming soon.
+### Split View
+
+<img src="./resources/scr/1.png" align="left" width="960" style="padding-right:5px">
+
+
+### Editor View
+
+<img src="./resources/scr/2.png" align="left" width="960" style="padding-right:5px">
+
+
+### Full Preview
+
+<img src="./resources/scr/3.png" align="left" width="960" style="padding-right:5px">
+
 
 ## Documentation
 
 Original app docs are available [here](https://ghostwriter.kde.org/documentation/)
+
+Documentation and build info coming soon.
 
 ## Downloads
 

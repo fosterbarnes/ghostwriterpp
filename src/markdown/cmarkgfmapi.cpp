@@ -171,7 +171,8 @@ PreviewEditTextMap CmarkGfmAPI::extractPreviewEditTextMap(
     int elementSourceStart,
     int elementSourceEndExclusive)
 {
-    return extractPreviewEditTextMap(markdown, elementSourceStart, elementSourceEndExclusive, false, false);
+    return extractPreviewEditTextMap(
+        markdown, elementSourceStart, elementSourceEndExclusive, false, false, false);
 }
 
 PreviewEditTextMap CmarkGfmAPI::extractPreviewEditTextMap(
@@ -180,6 +181,18 @@ PreviewEditTextMap CmarkGfmAPI::extractPreviewEditTextMap(
     int elementSourceEndExclusive,
     bool allowSoftbreaks,
     bool allowParagraphGaps)
+{
+    return extractPreviewEditTextMap(
+        markdown, elementSourceStart, elementSourceEndExclusive, allowSoftbreaks, allowParagraphGaps, false);
+}
+
+PreviewEditTextMap CmarkGfmAPI::extractPreviewEditTextMap(
+    const QString &markdown,
+    int elementSourceStart,
+    int elementSourceEndExclusive,
+    bool allowSoftbreaks,
+    bool allowParagraphGaps,
+    bool requirePlainTextOnly)
 {
     Q_D(CmarkGfmAPI);
 
@@ -207,7 +220,8 @@ PreviewEditTextMap CmarkGfmAPI::extractPreviewEditTextMap(
         elementSourceStart,
         elementSourceEndExclusive,
         allowSoftbreaks,
-        allowParagraphGaps);
+        allowParagraphGaps,
+        requirePlainTextOnly);
 
     cmark_parser_free(parser);
     cmark_arena_reset();

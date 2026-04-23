@@ -67,6 +67,13 @@ public:
                                                  bool allowSoftbreaks,
                                                  bool allowParagraphGaps);
 
+    PreviewEditTextMap extractPreviewEditTextMap(const QString &markdown,
+                                                 int elementSourceStart,
+                                                 int elementSourceEndExclusive,
+                                                 bool allowSoftbreaks,
+                                                 bool allowParagraphGaps,
+                                                 bool requirePlainTextOnly);
+
 protected:
     /**
      * Constructor.

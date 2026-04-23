@@ -1,4 +1,37 @@
 v2.1.6-2.1 update
 
-- Add x64 windows installer
-- Re-write build scripts
+Preview Editing:
+    - Implement every possible .md formatting option systematically:
+    - Center full preview view
+
+    Done:
+        - General text
+        - Headers (ATX + Setext)
+        - Links (in-line preview edit only currently supports editing user-facing text)
+        - Paragraphs
+        - Block quotes
+        - Thematic break
+        - Fenced code blocks
+        - Indented code blocks
+        - HTML blocks
+        Inline:
+            - GFM strikethrough
+            - Strong
+            - Emphasis
+            - Code spans
+            - Bullet / ordered lists
+            - Nested lists
+            - Task lists
+            - Line breaks
+            - HTML inline
+            - Raw HTML
+
+    Not done:
+            - Link reference definitions
+            - GFM tables
+            - Images
+            - Autolinks
+            - Reference / shortcut reference links
+            - Nested / edge link cases
+            - Footnotes
+            - Images
