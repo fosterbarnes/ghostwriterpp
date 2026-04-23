@@ -66,6 +66,35 @@ int columnOneBasedToIndexInLine(QStringView line, int col1)
     return idx;
 }
 
+int lineNumberForUtf16Offset(const QString &md, int absOffset)
+{
+    if (absOffset <= 0) {
+        return 1;
+    }
+    const int n = std::min(absOffset, static_cast<int>(md.size()));
+    int line = 1;
+    for (int i = 0; i < n; ++i) {
+        if (md[i] == QChar(u'\n')) {
+            ++line;
+        }
+    }
+    return line;
+}
+
+bool nodeLineRangeViaAncestors(cmark_node *node, int &outStart, int &outEnd)
+{
+    for (cmark_node *a = node; a != nullptr; a = cmark_node_parent(a)) {
+        const int sl = cmark_node_get_start_line(a);
+        const int el = cmark_node_get_end_line(a);
+        if (sl > 0 && el > 0) {
+            outStart = sl;
+            outEnd = el;
+            return true;
+        }
+    }
+    return false;
+}
+
 bool absoluteIndexForSourcePos(const QString &md, int line1, int col1, int &absOut)
 {
     int ls = 0;
@@ -122,6 +151,55 @@ bool nodeUtf16RangeHalfOpenMultiline(const QString &md, cmark_node *node, int &a
     return absStart >= 0 && absEndExclusive <= md.size() && absStart < absEndExclusive;
 }
 
+bool cmarkInlineSourceRangeUtf16(const QString &md, cmark_node *node, int &absStart, int &absEndExclusive)
+{
+    if (nodeUtf16RangeHalfOpen(md, node, absStart, absEndExclusive)) {
+        return true;
+    }
+    return nodeUtf16RangeHalfOpenMultiline(md, node, absStart, absEndExclusive);
+}
+
+void pushPlainNewlineSlot(std::vector<TextNodeSlot> &nodes,
+                          QString &plain,
+                          int &plainPos,
+                          int &lastTextEndAbs,
+                          int sourceStart,
+                          int sourceEndExclusive)
+{
+    TextNodeSlot slot;
+    slot.plainStart = plainPos;
+    slot.plainEnd = plainPos + 1;
+    slot.sourceStart = sourceStart;
+    slot.sourceEnd = sourceEndExclusive;
+    nodes.push_back(slot);
+    plain += QChar(u'\n');
+    plainPos += 1;
+    lastTextEndAbs = sourceEndExclusive;
+}
+
+bool utf16RangeInsideElement(int s, int e, int elStart, int elEndExclusive)
+{
+    return s >= elStart && e <= elEndExclusive;
+}
+
+void setUntrackedIfInlineOverlaps(
+    const QString &markdown, cmark_node *node, int elStart, int elEndExclusive, bool &hasUntracked)
+{
+    int a = 0;
+    int b = 0;
+    if (cmarkInlineSourceRangeUtf16(markdown, node, a, b) && b > elStart && a < elEndExclusive) {
+        hasUntracked = true;
+    }
+}
+
+bool htmlInlineLiteralIsBrTagOnly(const QString &lit)
+{
+    const QString t = lit.trimmed();
+    return t.compare(QLatin1String("<br>"), Qt::CaseInsensitive) == 0
+        || t.compare(QLatin1String("<br/>"), Qt::CaseInsensitive) == 0
+        || t.compare(QLatin1String("<br />"), Qt::CaseInsensitive) == 0;
+}
+
 bool nodeIsTaskListItem(cmark_node *item)
 {
     if (item == nullptr) {
@@ -129,6 +207,50 @@ bool nodeIsTaskListItem(cmark_node *item)
     }
     const char *ts = cmark_node_get_type_string(item);
     return ts != nullptr && std::strcmp(ts, "tasklist") == 0;
+}
+
+bool paragraphNodeOpensPTagInHtml(cmark_node *para)
+{
+    if (para == nullptr || cmark_node_get_type(para) != CMARK_NODE_PARAGRAPH) {
+        return false;
+    }
+    cmark_node *parent = cmark_node_parent(para);
+    if (parent == nullptr) {
+        return false;
+    }
+    cmark_node *grandparent = cmark_node_parent(parent);
+    bool tight = false;
+    if (grandparent != nullptr && cmark_node_get_type(grandparent) == CMARK_NODE_LIST) {
+        tight = cmark_node_get_list_tight(grandparent) != 0;
+    }
+    return !tight;
+}
+
+bool paragraphPreviewEditEligible(cmark_node *para)
+{
+    if (para == nullptr || cmark_node_get_type(para) != CMARK_NODE_PARAGRAPH) {
+        return false;
+    }
+    cmark_node *parent = cmark_node_parent(para);
+    if (parent == nullptr || cmark_node_get_type(parent) == CMARK_NODE_ITEM) {
+        return false;
+    }
+    for (cmark_node *ch = cmark_node_first_child(para); ch != nullptr; ch = cmark_node_next(ch)) {
+        const cmark_node_type ty = cmark_node_get_type(ch);
+        if (ty == CMARK_NODE_TEXT || ty == CMARK_NODE_SOFTBREAK || ty == CMARK_NODE_LINEBREAK) {
+            continue;
+        }
+        if (ty == CMARK_NODE_HTML_INLINE) {
+            const char *raw = cmark_node_get_literal(ch);
+            const QString lit = raw ? QString::fromUtf8(raw) : QString();
+            if (!htmlInlineLiteralIsBrTagOnly(lit)) {
+                return false;
+            }
+            continue;
+        }
+        return false;
+    }
+    return true;
 }
 
 std::optional<std::pair<int, int>> listItemEditRangeAbs(const QString &md, cmark_node *item)
@@ -398,11 +520,54 @@ QString escapeCmarkBodyTextToHtml(const QString &s)
     return r;
 }
 
+bool nodeIsStrikethrough(cmark_node *node)
+{
+    const char *ts = cmark_node_get_type_string(node);
+    return ts != nullptr && !std::strcmp(ts, "strikethrough");
+}
+
+bool nodeIsTableCell(cmark_node *node)
+{
+    const char *ts = cmark_node_get_type_string(node);
+    return ts != nullptr && !std::strcmp(ts, "table_cell");
+}
+
+bool tableCellPreviewEditEligible(cmark_node *cell)
+{
+    if (cell == nullptr || !nodeIsTableCell(cell)) {
+        return false;
+    }
+    for (cmark_node *ch = cmark_node_first_child(cell); ch != nullptr; ch = cmark_node_next(ch)) {
+        const cmark_node_type ty = cmark_node_get_type(ch);
+        if (ty == CMARK_NODE_TEXT || ty == CMARK_NODE_SOFTBREAK || ty == CMARK_NODE_LINEBREAK) {
+            continue;
+        }
+        if (ty == CMARK_NODE_HTML_INLINE) {
+            const char *raw = cmark_node_get_literal(ch);
+            const QString lit = raw ? QString::fromUtf8(raw) : QString();
+            if (!htmlInlineLiteralIsBrTagOnly(lit)) {
+                return false;
+            }
+            continue;
+        }
+        if (nodeIsStrikethrough(ch)) {
+            return false;
+        }
+        return false;
+    }
+    return true;
+}
+
 bool ancestorSkipsPlainTextEdit(cmark_node *textNode)
 {
     for (cmark_node *a = cmark_node_parent(textNode); a != nullptr; a = cmark_node_parent(a)) {
         const cmark_node_type t = cmark_node_get_type(a);
         switch (t) {
+        case CMARK_NODE_PARAGRAPH:
+            if (paragraphPreviewEditEligible(a) && paragraphNodeOpensPTagInHtml(a)) {
+                return true;
+            }
+            break;
         case CMARK_NODE_HEADING:
         case CMARK_NODE_LINK:
         case CMARK_NODE_IMAGE:
@@ -416,8 +581,10 @@ bool ancestorSkipsPlainTextEdit(cmark_node *textNode)
         case CMARK_NODE_ITEM:
             return true;
         default: {
-            const char *ts = cmark_node_get_type_string(a);
-            if (ts && !std::strcmp(ts, "strikethrough")) {
+            if (nodeIsTableCell(a) && tableCellPreviewEditEligible(a)) {
+                return true;
+            }
+            if (nodeIsStrikethrough(a)) {
                 return true;
             }
             break;
@@ -439,12 +606,6 @@ bool inlineFormatNodeIsOnlyDirectTextChildren(cmark_node *node)
         }
     }
     return true;
-}
-
-bool nodeIsStrikethrough(cmark_node *node)
-{
-    const char *ts = cmark_node_get_type_string(node);
-    return ts != nullptr && !std::strcmp(ts, "strikethrough");
 }
 
 std::optional<std::pair<int, int>> emphOrStrongInnerRangeAbs(const QString &md, cmark_node *node)
@@ -746,6 +907,60 @@ struct GtInjection {
     QString inj;
 };
 
+struct LinkInj {
+    QString url;
+    QString inj;
+};
+
+struct HeadingInj {
+    int level = 1;
+    QString inj;
+};
+
+using HtmlBlockRange = std::pair<qsizetype, qsizetype>;
+
+bool posInsideHtmlBlock(qsizetype pos, const std::vector<HtmlBlockRange> &ranges)
+{
+    for (const HtmlBlockRange &r : ranges) {
+        if (pos >= r.first && pos < r.second) {
+            return true;
+        }
+    }
+    return false;
+}
+
+std::vector<HtmlBlockRange> computeHtmlBlockRanges(const QString &html, const std::vector<QString> &blockLiterals)
+{
+    std::vector<HtmlBlockRange> out;
+    out.reserve(blockLiterals.size());
+    qsizetype cursor = 0;
+    for (const QString &lit : blockLiterals) {
+        if (lit.isEmpty()) {
+            continue;
+        }
+        const qsizetype p = html.indexOf(lit, cursor);
+        if (p < 0) {
+            continue;
+        }
+        const qsizetype e = p + lit.size();
+        out.push_back({p, e});
+        cursor = e;
+    }
+    return out;
+}
+
+QString minimalHtmlEntityUnescape(const QString &s)
+{
+    QString r = s;
+    r.replace(QStringLiteral("&amp;"), QStringLiteral("&"));
+    r.replace(QStringLiteral("&lt;"), QStringLiteral("<"));
+    r.replace(QStringLiteral("&gt;"), QStringLiteral(">"));
+    r.replace(QStringLiteral("&quot;"), QStringLiteral("\""));
+    r.replace(QStringLiteral("&#39;"), QStringLiteral("'"));
+    r.replace(QStringLiteral("&#x27;"), QStringLiteral("'"));
+    return r;
+}
+
 void sortGtInjectionsDescendingAndApply(QString &html, std::vector<GtInjection> &items)
 {
     std::sort(items.begin(), items.end(), [](const GtInjection &a, const GtInjection &b) {
@@ -756,7 +971,8 @@ void sortGtInjectionsDescendingAndApply(QString &html, std::vector<GtInjection> 
     }
 }
 
-void injectInlineCodeBeforeGt(QString &html, const std::vector<QString> &injections)
+void injectInlineCodeBeforeGt(QString &html, const std::vector<QString> &injections,
+                              const std::vector<HtmlBlockRange> *skipRanges = nullptr)
 {
     std::vector<GtInjection> items;
     items.reserve(injections.size());
@@ -775,6 +991,10 @@ void injectInlineCodeBeforeGt(QString &html, const std::vector<QString> &injecti
                 searchFrom = p + 5;
                 continue;
             }
+            if (skipRanges != nullptr && posInsideHtmlBlock(p, *skipRanges)) {
+                searchFrom = gt + 1;
+                continue;
+            }
             items.push_back({gt, inj});
             searchFrom = gt + 1;
             break;
@@ -783,14 +1003,20 @@ void injectInlineCodeBeforeGt(QString &html, const std::vector<QString> &injecti
     sortGtInjectionsDescendingAndApply(html, items);
 }
 
-void injectBeforeGt(QString &html, const QRegularExpression &re, const std::vector<QString> &injections)
+void injectBeforeGt(QString &html, const QRegularExpression &re, const std::vector<QString> &injections,
+                    const std::vector<HtmlBlockRange> *skipRanges = nullptr)
 {
     std::vector<GtInjection> items;
     items.reserve(injections.size());
 
     qsizetype searchPos = 0;
     for (const QString &inj : injections) {
-        const QRegularExpressionMatch m = re.match(html, searchPos);
+        QRegularExpressionMatch m = re.match(html, searchPos);
+        while (m.hasMatch() && skipRanges != nullptr
+               && posInsideHtmlBlock(m.capturedStart(0), *skipRanges)) {
+            searchPos = m.capturedEnd(0);
+            m = re.match(html, searchPos);
+        }
         if (!m.hasMatch()) {
             break;
         }
@@ -800,6 +1026,68 @@ void injectBeforeGt(QString &html, const QRegularExpression &re, const std::vect
         searchPos = m.capturedEnd(0);
     }
 
+    sortGtInjectionsDescendingAndApply(html, items);
+}
+
+void injectLinksByHrefMatch(QString &html, const std::vector<LinkInj> &injections,
+                            const std::vector<HtmlBlockRange> *skipRanges = nullptr)
+{
+    static const QRegularExpression linkRe(
+        QStringLiteral("<a\\s+href\\s*=\\s*\"([^\"]*)\"[^>]*>"));
+    std::vector<GtInjection> items;
+    items.reserve(injections.size());
+
+    qsizetype searchPos = 0;
+    for (const LinkInj &li : injections) {
+        while (true) {
+            const QRegularExpressionMatch m = linkRe.match(html, searchPos);
+            if (!m.hasMatch()) {
+                break;
+            }
+            const qsizetype start = m.capturedStart(0);
+            searchPos = m.capturedEnd(0);
+            if (skipRanges != nullptr && posInsideHtmlBlock(start, *skipRanges)) {
+                continue;
+            }
+            const QString href = minimalHtmlEntityUnescape(m.captured(1));
+            if (href != li.url) {
+                continue;
+            }
+            if (!li.inj.isEmpty()) {
+                items.push_back({searchPos - 1, li.inj});
+            }
+            break;
+        }
+    }
+
+    sortGtInjectionsDescendingAndApply(html, items);
+}
+
+void injectHeadingsByLevelMatch(QString &html, const std::vector<HeadingInj> &injections,
+                                const std::vector<HtmlBlockRange> *skipRanges = nullptr)
+{
+    std::vector<GtInjection> items;
+    items.reserve(injections.size());
+    qsizetype searchPos = 0;
+    for (const HeadingInj &hi : injections) {
+        if (hi.level < 1 || hi.level > 6) {
+            break;
+        }
+        const QRegularExpression re(QStringLiteral("<h%1\\b[^>]*>").arg(hi.level));
+        QRegularExpressionMatch m = re.match(html, searchPos);
+        while (m.hasMatch() && skipRanges != nullptr
+               && posInsideHtmlBlock(m.capturedStart(0), *skipRanges)) {
+            searchPos = m.capturedEnd(0);
+            m = re.match(html, searchPos);
+        }
+        if (!m.hasMatch()) {
+            break;
+        }
+        if (!hi.inj.isEmpty()) {
+            items.push_back({m.capturedEnd(0) - 1, hi.inj});
+        }
+        searchPos = m.capturedEnd(0);
+    }
     sortGtInjectionsDescendingAndApply(html, items);
 }
 
@@ -877,19 +1165,25 @@ QString augmentPreviewHtmlWithEditMetadata(const QString &markdown, cmark_node *
 {
     html = wrapUnformattedTextInHtml(markdown, root, std::move(html));
 
-    std::vector<QString> headingInj;
-    std::vector<QString> linkInj;
+    std::vector<HeadingInj> headingInj;
+    std::vector<LinkInj> linkInj;
     std::vector<QString> emphInj;
     std::vector<QString> strongInj;
     std::vector<QString> strikeInj;
     std::vector<QString> codeBlockInj;
     std::vector<QString> codespanInj;
+    std::vector<QString> paragraphInj;
     std::vector<QString> listItemInj;
     std::vector<QString> nestedListLockInj;
     std::vector<QString> taskCheckboxInj;
+    std::vector<QString> hrInj;
+    std::vector<QString> tableCellInj;
+    std::vector<QString> htmlBlockLiterals;
 
     cmark_iter *iter = cmark_iter_new(root);
     cmark_event_type ev;
+    // CMARK_NODE_HTML_BLOCK is not preview-editable; we still track its literal to mask out any
+    // raw <a>/<em>/etc. tags inside it so they don't steal injections from real cmark nodes.
 
     while ((ev = cmark_iter_next(iter)) != CMARK_EVENT_DONE) {
         if (ev != CMARK_EVENT_ENTER) {
@@ -915,10 +1209,11 @@ QString augmentPreviewHtmlWithEditMetadata(const QString &markdown, cmark_node *
                 continue;
             }
             headingInj.push_back(
-                QStringLiteral(" data-gw-edit-kind=\"heading\" data-gw-text-start=\"%1\" data-gw-text-end=\"%2\" data-gw-level=\"%3\" contenteditable=\"true\"")
-                    .arg(s)
-                    .arg(e)
-                    .arg(level));
+                {level,
+                 QStringLiteral(" data-gw-edit-kind=\"heading\" data-gw-text-start=\"%1\" data-gw-text-end=\"%2\" data-gw-level=\"%3\" contenteditable=\"true\"")
+                     .arg(s)
+                     .arg(e)
+                     .arg(level)});
         } else if (t == CMARK_NODE_LINK) {
             const char *url = cmark_node_get_url(node);
             if (!url) {
@@ -941,9 +1236,10 @@ QString augmentPreviewHtmlWithEditMetadata(const QString &markdown, cmark_node *
             if (label->first >= label->second) {
                 continue;
             }
-            linkInj.push_back(QStringLiteral(" data-gw-edit-kind=\"link\" data-gw-text-start=\"%1\" data-gw-text-end=\"%2\" contenteditable=\"true\"")
-                                  .arg(label->first)
-                                  .arg(label->second));
+            linkInj.push_back({urlStr,
+                               QStringLiteral(" data-gw-edit-kind=\"link\" data-gw-text-start=\"%1\" data-gw-text-end=\"%2\" contenteditable=\"true\"")
+                                   .arg(label->first)
+                                   .arg(label->second)});
         } else if (t == CMARK_NODE_EMPH) {
             if (!inlineFormatNodeIsOnlyDirectTextChildren(node)) {
                 continue;
@@ -987,13 +1283,56 @@ QString augmentPreviewHtmlWithEditMetadata(const QString &markdown, cmark_node *
                                       .arg(absStart)
                                       .arg(absEndEx));
         } else if (t == CMARK_NODE_CODE_BLOCK) {
-            const auto bodyRange = fencedCodeBlockBodyRangeUtf16(markdown, node);
-            if (!bodyRange || bodyRange->first >= bodyRange->second) {
+            int fenceLen = 0;
+            int fenceOff = 0;
+            char fenceCh = 0;
+            if (cmark_node_get_fenced(node, &fenceLen, &fenceOff, &fenceCh)) {
+                const auto bodyRange = fencedCodeBlockBodyRangeUtf16(markdown, node);
+                if (!bodyRange || bodyRange->first >= bodyRange->second) {
+                    continue;
+                }
+                codeBlockInj.push_back(
+                    QStringLiteral(" data-gw-edit-kind=\"codeblock\" data-gw-text-start=\"%1\" data-gw-text-end=\"%2\" contenteditable=\"true\"")
+                        .arg(bodyRange->first)
+                        .arg(bodyRange->second));
+            } else {
+                int wbStart = 0;
+                int wbEnd = 0;
+                if (!nodeUtf16RangeHalfOpenMultiline(markdown, node, wbStart, wbEnd) || wbStart >= wbEnd) {
+                    continue;
+                }
+                codeBlockInj.push_back(
+                    QStringLiteral(" data-gw-edit-kind=\"codeblock\" data-gw-text-start=\"%1\" data-gw-text-end=\"%2\" contenteditable=\"true\"")
+                        .arg(wbStart)
+                        .arg(wbEnd));
+            }
+        } else if (t == CMARK_NODE_THEMATIC_BREAK) {
+            hrInj.push_back(QStringLiteral(" contenteditable=\"false\""));
+        } else if (t == CMARK_NODE_HTML_BLOCK) {
+            const char *raw = cmark_node_get_literal(node);
+            if (raw != nullptr) {
+                const QString lit = QString::fromUtf8(raw);
+                if (!lit.isEmpty()) {
+                    htmlBlockLiterals.push_back(lit);
+                }
+            }
+        } else if (t == CMARK_NODE_PARAGRAPH) {
+            if (!paragraphNodeOpensPTagInHtml(node)) {
                 continue;
             }
-            codeBlockInj.push_back(QStringLiteral(" data-gw-edit-kind=\"codeblock\" data-gw-text-start=\"%1\" data-gw-text-end=\"%2\" contenteditable=\"true\"")
-                                       .arg(bodyRange->first)
-                                       .arg(bodyRange->second));
+            QString pInj;
+            cmark_node *pParent = cmark_node_parent(node);
+            if (pParent != nullptr && cmark_node_get_type(pParent) != CMARK_NODE_ITEM
+                && paragraphPreviewEditEligible(node)) {
+                int ps = 0;
+                int pe = 0;
+                if (nodeUtf16RangeHalfOpenMultiline(markdown, node, ps, pe) && ps < pe) {
+                    pInj = QStringLiteral(" data-gw-edit-kind=\"paragraph\" data-gw-text-start=\"%1\" data-gw-text-end=\"%2\" contenteditable=\"true\"")
+                               .arg(ps)
+                               .arg(pe);
+                }
+            }
+            paragraphInj.push_back(std::move(pInj));
         } else if (t == CMARK_NODE_ITEM) {
             const auto range = listItemEditRangeAbs(markdown, node);
             if (!range || range->first >= range->second) {
@@ -1019,28 +1358,50 @@ QString augmentPreviewHtmlWithEditMetadata(const QString &markdown, cmark_node *
             if (parent != nullptr && cmark_node_get_type(parent) == CMARK_NODE_ITEM) {
                 nestedListLockInj.push_back(QStringLiteral(" contenteditable=\"false\""));
             }
+        } else if (nodeIsTableCell(node)) {
+            QString cellInj;
+            if (tableCellPreviewEditEligible(node)) {
+                int cs = 0;
+                int ce = 0;
+                if ((nodeUtf16RangeHalfOpen(markdown, node, cs, ce) || nodeUtf16RangeHalfOpenMultiline(markdown, node, cs, ce))
+                    && cs < ce) {
+                    cellInj = QStringLiteral(" data-gw-edit-kind=\"tablecell\" data-gw-text-start=\"%1\" data-gw-text-end=\"%2\" contenteditable=\"true\"")
+                                  .arg(cs)
+                                  .arg(ce);
+                }
+            }
+            tableCellInj.push_back(std::move(cellInj));
         }
     }
 
     cmark_iter_free(iter);
 
-    static const QRegularExpression headingRe(QStringLiteral("<h([1-6])\\b[^>]*>"));
-    static const QRegularExpression linkRe(QStringLiteral("<a\\s+href\\s*=\\s*\"[^\"]*\"[^>]*>"));
+    static const QRegularExpression paragraphRe(QStringLiteral("<p\\b[^>]*>"));
     static const QRegularExpression emphRe(QStringLiteral("<em\\b[^>]*>"));
     static const QRegularExpression strongRe(QStringLiteral("<strong\\b[^>]*>"));
     static const QRegularExpression delRe(QStringLiteral("<del\\b[^>]*>"));
     static const QRegularExpression preCodeRe(QStringLiteral("<pre\\b[^>]*>\\s*<code\\b[^>]*>"));
     static const QRegularExpression liRe(QStringLiteral("<li\\b[^>]*>"));
     static const QRegularExpression taskInputRe(QStringLiteral("<input\\b[^>]*type\\s*=\\s*\"checkbox\"[^>]*?/?>"));
+    static const QRegularExpression hrRe(QStringLiteral("<hr\\b[^>]*>"));
+    static const QRegularExpression tableCellRe(QStringLiteral("<(th|td)\\b[^>]*>"));
 
-    injectBeforeGt(html, headingRe, headingInj);
-    injectBeforeGt(html, linkRe, linkInj);
-    injectBeforeGt(html, emphRe, emphInj);
-    injectBeforeGt(html, strongRe, strongInj);
-    injectBeforeGt(html, delRe, strikeInj);
-    injectBeforeGt(html, preCodeRe, codeBlockInj);
-    injectInlineCodeBeforeGt(html, codespanInj);
-    injectBeforeGt(html, liRe, listItemInj);
+    auto blockRanges = [&]() { return computeHtmlBlockRanges(html, htmlBlockLiterals); };
+
+    { const auto r = blockRanges(); injectHeadingsByLevelMatch(html, headingInj, &r); }
+    { const auto r = blockRanges(); injectBeforeGt(html, paragraphRe, paragraphInj, &r); }
+    { const auto r = blockRanges(); injectLinksByHrefMatch(html, linkInj, &r); }
+    { const auto r = blockRanges(); injectBeforeGt(html, emphRe, emphInj, &r); }
+    { const auto r = blockRanges(); injectBeforeGt(html, strongRe, strongInj, &r); }
+    { const auto r = blockRanges(); injectBeforeGt(html, delRe, strikeInj, &r); }
+    { const auto r = blockRanges(); injectBeforeGt(html, preCodeRe, codeBlockInj, &r); }
+    if (!hrInj.empty()) {
+        const auto r = blockRanges();
+        injectBeforeGt(html, hrRe, hrInj, &r);
+    }
+    { const auto r = blockRanges(); injectInlineCodeBeforeGt(html, codespanInj, &r); }
+    { const auto r = blockRanges(); injectBeforeGt(html, liRe, listItemInj, &r); }
+    { const auto r = blockRanges(); injectBeforeGt(html, tableCellRe, tableCellInj, &r); }
     injectNestedListLocksBeforeGt(html, nestedListLockInj);
     injectBeforeSelfCloseOrGt(html, taskInputRe, taskCheckboxInj);
 
@@ -1056,7 +1417,8 @@ PreviewEditTextMap buildPreviewEditTextMap(const QString &markdown,
                                            int elementSourceStart,
                                            int elementSourceEndExclusive,
                                            bool allowSoftbreaks,
-                                           bool allowParagraphGaps)
+                                           bool allowParagraphGaps,
+                                           bool requirePlainTextOnly)
 {
     PreviewEditTextMap out;
 
@@ -1099,26 +1461,52 @@ PreviewEditTextMap buildPreviewEditTextMap(const QString &markdown,
             return out;
         }
         if (preType == CMARK_NODE_CODE_BLOCK) {
-            const auto br = fencedCodeBlockBodyRangeUtf16(markdown, preNode);
-            if (!br || br->first != elementSourceStart || br->second != elementSourceEndExclusive) {
+            int fenceLen = 0;
+            int fenceOff = 0;
+            char fenceCh = 0;
+            if (cmark_node_get_fenced(preNode, &fenceLen, &fenceOff, &fenceCh)) {
+                const auto br = fencedCodeBlockBodyRangeUtf16(markdown, preNode);
+                if (!br || br->first != elementSourceStart || br->second != elementSourceEndExclusive) {
+                    continue;
+                }
+                const char *rawLit = cmark_node_get_literal(preNode);
+                const QString lit = rawLit ? QString::fromUtf8(rawLit) : QString();
+                TextNodeSlot slot;
+                slot.plainStart = 0;
+                slot.plainEnd = static_cast<int>(lit.size());
+                slot.sourceStart = br->first;
+                slot.sourceEnd = br->second;
+                out.plain = lit;
+                out.nodes.push_back(slot);
+                out.valid = true;
+                out.hasUntrackedText = false;
+                cmark_iter_free(preIter);
+                return out;
+            }
+            int wbStart = 0;
+            int wbEnd = 0;
+            if (!nodeUtf16RangeHalfOpenMultiline(markdown, preNode, wbStart, wbEnd)) {
                 continue;
             }
-            const char *rawLit = cmark_node_get_literal(preNode);
-            const QString lit = rawLit ? QString::fromUtf8(rawLit) : QString();
-            TextNodeSlot slot;
-            slot.plainStart = 0;
-            slot.plainEnd = static_cast<int>(lit.size());
-            slot.sourceStart = br->first;
-            slot.sourceEnd = br->second;
-            out.plain = lit;
-            out.nodes.push_back(slot);
+            if (wbStart != elementSourceStart || wbEnd != elementSourceEndExclusive) {
+                continue;
+            }
+            const char *rawLitInd = cmark_node_get_literal(preNode);
+            const QString litInd = rawLitInd ? QString::fromUtf8(rawLitInd) : QString();
+            out.plain = litInd;
+            out.nodes.clear();
             out.valid = true;
             out.hasUntrackedText = false;
+            out.codeblockWholeSourceReplace = true;
             cmark_iter_free(preIter);
             return out;
         }
     }
     cmark_iter_free(preIter);
+
+    const int elemStartLine = lineNumberForUtf16Offset(markdown, elementSourceStart);
+    const int elemEndLine = lineNumberForUtf16Offset(
+        markdown, std::max(elementSourceStart, elementSourceEndExclusive - 1));
 
     cmark_iter *iter = cmark_iter_new(root);
     int plainPos = 0;
@@ -1135,10 +1523,30 @@ PreviewEditTextMap buildPreviewEditTextMap(const QString &markdown,
         cmark_node *node = cmark_iter_get_node(iter);
         const cmark_node_type t = cmark_node_get_type(node);
 
+        const int nodeStartLine = cmark_node_get_start_line(node);
+        const int nodeEndLine = cmark_node_get_end_line(node);
+        int effStartLine = nodeStartLine;
+        int effEndLine = nodeEndLine;
+        if (effStartLine <= 0 || effEndLine <= 0) {
+            int as = 0;
+            int ae = 0;
+            if (nodeLineRangeViaAncestors(node, as, ae)) {
+                effStartLine = as;
+                effEndLine = ae;
+            }
+        }
+        if (effStartLine > 0 && effEndLine > 0
+            && (effEndLine < elemStartLine || effStartLine > elemEndLine)) {
+            continue;
+        }
+
         int absStart = 0;
         int absEnd = 0;
         bool hasRange = nodeUtf16RangeHalfOpen(markdown, node, absStart, absEnd);
         if (!hasRange && (t == CMARK_NODE_PARAGRAPH)) {
+            hasRange = nodeUtf16RangeHalfOpenMultiline(markdown, node, absStart, absEnd);
+        }
+        if (!hasRange && nodeIsTableCell(node)) {
             hasRange = nodeUtf16RangeHalfOpenMultiline(markdown, node, absStart, absEnd);
         }
 
@@ -1200,17 +1608,34 @@ PreviewEditTextMap buildPreviewEditTextMap(const QString &markdown,
                 hasUntracked = true;
             }
         } else if (t == CMARK_NODE_CODE_BLOCK) {
-            const auto br = fencedCodeBlockBodyRangeUtf16(markdown, node);
-            if (br) {
-                const int a = br->first;
-                const int b = br->second;
-                if (a == elementSourceStart && b == elementSourceEndExclusive) {
-                    continue;
+            int fenceLen = 0;
+            int fenceOff = 0;
+            char fenceCh = 0;
+            if (cmark_node_get_fenced(node, &fenceLen, &fenceOff, &fenceCh)) {
+                const auto br = fencedCodeBlockBodyRangeUtf16(markdown, node);
+                if (br) {
+                    const int a = br->first;
+                    const int b = br->second;
+                    if (a == elementSourceStart && b == elementSourceEndExclusive) {
+                        continue;
+                    }
+                    if (b <= elementSourceStart || a >= elementSourceEndExclusive) {
+                        continue;
+                    }
+                    hasUntracked = true;
                 }
-                if (b <= elementSourceStart || a >= elementSourceEndExclusive) {
-                    continue;
+            } else {
+                int ws = 0;
+                int we = 0;
+                if (nodeUtf16RangeHalfOpenMultiline(markdown, node, ws, we)) {
+                    if (ws == elementSourceStart && we == elementSourceEndExclusive) {
+                        continue;
+                    }
+                    if (we <= elementSourceStart || ws >= elementSourceEndExclusive) {
+                        continue;
+                    }
+                    hasUntracked = true;
                 }
-                hasUntracked = true;
             }
         } else if (t == CMARK_NODE_SOFTBREAK || t == CMARK_NODE_LINEBREAK) {
             if (!allowSoftbreaks) {
@@ -1222,25 +1647,42 @@ PreviewEditTextMap buildPreviewEditTextMap(const QString &markdown,
                     hasUntracked = true;
                 }
             } else {
-                int i = (lastTextEndAbs >= 0) ? lastTextEndAbs : elementSourceStart;
-                while (i < markdown.size() && markdown.at(i) != u'\n') {
-                    ++i;
-                }
-                if (i >= markdown.size()
-                    || i < elementSourceStart
-                    || i + 1 > elementSourceEndExclusive) {
+                int bs = 0;
+                int be = 0;
+                if (!cmarkInlineSourceRangeUtf16(markdown, node, bs, be)) {
                     hasUntracked = true;
                     continue;
                 }
-                TextNodeSlot slot;
-                slot.plainStart = plainPos;
-                slot.plainEnd = plainPos + 1;
-                slot.sourceStart = i;
-                slot.sourceEnd = i + 1;
-                out.nodes.push_back(slot);
-                out.plain += QChar(u'\n');
-                plainPos += 1;
-                lastTextEndAbs = i + 1;
+                if (!utf16RangeInsideElement(bs, be, elementSourceStart, elementSourceEndExclusive)) {
+                    hasUntracked = true;
+                    continue;
+                }
+                pushPlainNewlineSlot(out.nodes, out.plain, plainPos, lastTextEndAbs, bs, be);
+            }
+        } else if (t == CMARK_NODE_HTML_INLINE) {
+            int hs = 0;
+            int he = 0;
+            if (!cmarkInlineSourceRangeUtf16(markdown, node, hs, he)) {
+                hasUntracked = true;
+                continue;
+            }
+            if (he <= elementSourceStart || hs >= elementSourceEndExclusive) {
+                continue;
+            }
+            if (!utf16RangeInsideElement(hs, he, elementSourceStart, elementSourceEndExclusive)) {
+                hasUntracked = true;
+                continue;
+            }
+            const char *rawH = cmark_node_get_literal(node);
+            const QString litH = rawH ? QString::fromUtf8(rawH) : QString();
+            if (!allowSoftbreaks) {
+                hasUntracked = true;
+                continue;
+            }
+            if (htmlInlineLiteralIsBrTagOnly(litH)) {
+                pushPlainNewlineSlot(out.nodes, out.plain, plainPos, lastTextEndAbs, hs, he);
+            } else {
+                hasUntracked = true;
             }
         } else if (t == CMARK_NODE_PARAGRAPH) {
             if (hasRange
@@ -1265,6 +1707,24 @@ PreviewEditTextMap buildPreviewEditTextMap(const QString &markdown,
                 }
                 paragraphsSeen += 1;
                 lastParagraphEndAbs = absEnd;
+            }
+        }
+
+        if (requirePlainTextOnly) {
+            switch (t) {
+            case CMARK_NODE_EMPH:
+            case CMARK_NODE_STRONG:
+            case CMARK_NODE_LINK:
+            case CMARK_NODE_IMAGE:
+            case CMARK_NODE_FOOTNOTE_REFERENCE:
+            case CMARK_NODE_CUSTOM_INLINE:
+                setUntrackedIfInlineOverlaps(markdown, node, elementSourceStart, elementSourceEndExclusive, hasUntracked);
+                break;
+            default:
+                if (nodeIsStrikethrough(node)) {
+                    setUntrackedIfInlineOverlaps(markdown, node, elementSourceStart, elementSourceEndExclusive, hasUntracked);
+                }
+                break;
             }
         }
     }
@@ -1368,6 +1828,42 @@ bool previewCodeblockTextHasFenceLikeLine(const QString &text)
         }
     }
     return false;
+}
+
+QString serializeIndentedCodeBlock(const QString &literalPlain)
+{
+    QString norm = literalPlain;
+    norm.replace(QStringLiteral("\r\n"), QStringLiteral("\n"));
+    norm.replace(u'\r', u'\n');
+
+    if (norm.isEmpty()) {
+        return QStringLiteral("    \n");
+    }
+
+    QString out;
+    int lineStart = 0;
+    const int n = norm.size();
+    for (int i = 0; i <= n; ++i) {
+        if (i == n || norm.at(i) == u'\n') {
+            const QStringView line = QStringView(norm).mid(lineStart, i - lineStart);
+            if (line.isEmpty()) {
+                if (i < n) {
+                    out += QLatin1Char('\n');
+                }
+            } else {
+                out += QStringLiteral("    ");
+                out += line;
+                if (i < n) {
+                    out += QLatin1Char('\n');
+                }
+            }
+            lineStart = i + 1;
+        }
+    }
+    if (!out.endsWith(QLatin1Char('\n'))) {
+        out += QLatin1Char('\n');
+    }
+    return out;
 }
 
 } // namespace ghostwriterpp

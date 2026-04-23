@@ -10,6 +10,7 @@
 #include <QColor>
 #include <QDir>
 #include <QFile>
+#include <QFontMetrics>
 #include <QPalette>
 #include <QRegularExpression>
 #include <QTextStream>
@@ -42,7 +43,8 @@ StyleSheetBuilder::StyleSheetBuilder(const ChromeColors &colors,
                                      const bool roundedCorners,
                                      const QFont &editorFont,
                                      const QFont &previewTextFont,
-                                     const QFont &previewCodeFont)
+                                     const QFont &previewCodeFont,
+                                     EditorWidth editorWidth)
 {
     QString styleSheet;
     QTextStream stream(&styleSheet);
@@ -53,6 +55,26 @@ StyleSheetBuilder::StyleSheetBuilder(const ChromeColors &colors,
     m_styleSheetVariables["$editor-font-size"] = QString("%1pt").arg(editorFont.pointSize());
     m_styleSheetVariables["$body-font-size"] = QString("%1pt").arg(previewTextFont.pointSize());
     m_styleSheetVariables["$code-font-size"] = QString("%1pt").arg(previewCodeFont.pointSize());
+
+    QFont paperFont;
+    paperFont.setStyleHint(QFont::Monospace);
+    paperFont.setFamily(QStringLiteral("Courier New"));
+    paperFont.setPointSize(12);
+    const int em = QFontMetrics(paperFont).horizontalAdvance(QLatin1Char('@'));
+    switch (editorWidth) {
+    case EditorWidthNarrow:
+        m_styleSheetVariables["$preview-content-max-width"] = QStringLiteral("%1px").arg(em * 60);
+        break;
+    case EditorWidthMedium:
+        m_styleSheetVariables["$preview-content-max-width"] = QStringLiteral("%1px").arg(em * 80);
+        break;
+    case EditorWidthWide:
+        m_styleSheetVariables["$preview-content-max-width"] = QStringLiteral("%1px").arg(em * 100);
+        break;
+    default:
+        m_styleSheetVariables["$preview-content-max-width"] = QStringLiteral("none");
+        break;
+    }
 
     if (roundedCorners) {
         m_styleSheetVariables["$scrollbar-border-radius"] = "3px";

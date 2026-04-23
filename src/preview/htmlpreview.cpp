@@ -82,6 +82,7 @@ public:
         std::vector<TextNodeSlot> textNodes;
         bool allowSoftbreaks = false;
         bool allowParagraphGaps = false;
+        bool codeblockWholeSourceReplace = false;
     } previewEditSession;
 
     bool previewApplying = false;
@@ -479,14 +480,17 @@ void HtmlPreview::beginPreviewEditSession(const QString &kind, int start, int en
     d->previewEditSession.inlineCodeOpenFenceLen = 0;
     d->previewEditSession.allowSoftbreaks = false;
     d->previewEditSession.allowParagraphGaps = false;
+    d->previewEditSession.codeblockWholeSourceReplace = false;
 
     const QString plain = d->document->toPlainText();
+    const bool isTableCell = (kind == QLatin1String("tablecell"));
 
     if (kind != QLatin1String("heading") && kind != QLatin1String("link")
         && kind != QLatin1String("text") && kind != QLatin1String("emph")
         && kind != QLatin1String("strong") && kind != QLatin1String("strikethrough")
         && kind != QLatin1String("codespan") && kind != QLatin1String("codeblock")
-        && kind != QLatin1String("listitem")) {
+        && kind != QLatin1String("listitem") && kind != QLatin1String("paragraph")
+        && !isTableCell) {
         return;
     }
 
@@ -516,12 +520,13 @@ void HtmlPreview::beginPreviewEditSession(const QString &kind, int start, int en
     }
 
     const bool isListItem = (kind == QLatin1String("listitem"));
-    const bool allowSoftbreaks = isListItem;
+    const bool isParagraph = (kind == QLatin1String("paragraph"));
+    const bool allowSoftbreaks = isListItem || isParagraph;
     const bool allowParagraphGaps = isListItem
         && QStringView(plain).mid(start, end - start).indexOf(QLatin1String("\n\n")) >= 0;
 
     PreviewEditTextMap map = CmarkGfmAPI::instance()->extractPreviewEditTextMap(
-        plain, start, end, allowSoftbreaks, allowParagraphGaps);
+        plain, start, end, allowSoftbreaks, allowParagraphGaps, isTableCell);
 
     if (!map.valid) {
         return;
@@ -547,6 +552,7 @@ void HtmlPreview::beginPreviewEditSession(const QString &kind, int start, int en
     d->previewEditSession.textNodes = std::move(map.nodes);
     d->previewEditSession.allowSoftbreaks = allowSoftbreaks;
     d->previewEditSession.allowParagraphGaps = allowParagraphGaps;
+    d->previewEditSession.codeblockWholeSourceReplace = map.codeblockWholeSourceReplace;
 }
 
 void HtmlPreview::applyPreviewEdit(const QString &text)
@@ -560,6 +566,10 @@ void HtmlPreview::applyPreviewEdit(const QString &text)
     const QString &k = d->previewEditSession.kind;
     if (k == QLatin1String("link")) {
         if (text.contains(u']') || text.contains(u'\n') || text.contains(u'\r')) {
+            return;
+        }
+    } else if (k == QLatin1String("tablecell")) {
+        if (text.contains(u'|') || text.contains(u'\n') || text.contains(u'\r')) {
             return;
         }
     } else if (k == QLatin1String("heading") || k == QLatin1String("text")) {
@@ -579,17 +589,44 @@ void HtmlPreview::applyPreviewEdit(const QString &text)
         if (previewCodeblockTextHasFenceLikeLine(text)) {
             return;
         }
-    } else if (k == QLatin1String("listitem")) {
+    } else if (k == QLatin1String("listitem") || k == QLatin1String("paragraph")) {
         if (text.contains(u'\r')) {
             return;
         }
         if (previewListItemTextHasListStarter(text)) {
             return;
         }
-        if (!d->previewEditSession.allowParagraphGaps
-            && text.contains(QLatin1String("\n\n"))) {
+        const bool blockParagraphGapNewlines = (k == QLatin1String("paragraph"))
+            || !d->previewEditSession.allowParagraphGaps;
+        if (blockParagraphGapNewlines && text.contains(QLatin1String("\n\n"))) {
             return;
         }
+    }
+
+    if (k == QLatin1String("codeblock") && d->previewEditSession.codeblockWholeSourceReplace) {
+        const QString newMd = serializeIndentedCodeBlock(text);
+        const QString plainDoc = d->document->toPlainText();
+        const int bs = d->previewEditSession.elementSourceStart;
+        const int be = d->previewEditSession.elementSourceEnd;
+        if (bs < 0 || be > plainDoc.size() || bs >= be) {
+            endPreviewEditSession();
+            return;
+        }
+        d->previewApplying = true;
+        QTextCursor c(d->document);
+        c.beginEditBlock();
+        c.setPosition(bs);
+        c.setPosition(be, QTextCursor::KeepAnchor);
+        c.insertText(newMd);
+        c.endEditBlock();
+        d->previewApplying = false;
+        const int cbDelta = newMd.size() - (be - bs);
+        d->previewEditSession.elementSourceEnd = bs + newMd.size();
+        d->previewEditSession.originalPlain = text;
+        if (cbDelta != 0 && d->proxy) {
+            emit d->proxy->previewEditOffsetsShifted(be, cbDelta);
+        }
+        return;
     }
 
     if (k == QLatin1String("codespan")) {
@@ -623,10 +660,14 @@ void HtmlPreview::applyPreviewEdit(const QString &text)
         c.endEditBlock();
         d->previewApplying = false;
         const int delta = newRaw.size() - (srcReplaceEnd - srcReplaceStart);
+        const int oldElementEnd = d->previewEditSession.elementSourceEnd;
         tn.sourceEnd = tn.sourceStart + newRaw.size();
         tn.plainEnd = static_cast<int>(text.size());
         d->previewEditSession.elementSourceEnd += delta;
         d->previewEditSession.originalPlain = text;
+        if (delta != 0 && d->proxy) {
+            emit d->proxy->previewEditOffsetsShifted(oldElementEnd, delta);
+        }
         return;
     }
 
@@ -728,20 +769,29 @@ void HtmlPreview::applyPreviewEdit(const QString &text)
     d->previewApplying = false;
 
     const int delta = newMiddle.size() - (srcReplaceEnd - srcReplaceStart);
+    const int plainDelta = (newMidEnd - newMidStart) - (oldMidEnd - oldMidStart);
     for (size_t i = 0; i < d->previewEditSession.textNodes.size(); ++i) {
         TextNodeSlot &tn = d->previewEditSession.textNodes[i];
         if (static_cast<int>(i) == editedNodeIdx) {
             tn.sourceEnd += delta;
-            tn.plainEnd += delta;
-        } else if (tn.sourceStart >= srcReplaceEnd) {
-            tn.sourceStart += delta;
-            tn.sourceEnd += delta;
-            tn.plainStart += delta;
-            tn.plainEnd += delta;
+            tn.plainEnd += plainDelta;
+        } else {
+            if (tn.sourceStart >= srcReplaceEnd) {
+                tn.sourceStart += delta;
+                tn.sourceEnd += delta;
+            }
+            if (tn.plainStart >= oldMidEnd) {
+                tn.plainStart += plainDelta;
+                tn.plainEnd += plainDelta;
+            }
         }
     }
+    const int oldElementEnd = d->previewEditSession.elementSourceEnd;
     d->previewEditSession.elementSourceEnd += delta;
     d->previewEditSession.originalPlain = newPlain;
+    if (delta != 0 && d->proxy) {
+        emit d->proxy->previewEditOffsetsShifted(oldElementEnd, delta);
+    }
 }
 
 void HtmlPreview::endPreviewEditSession()

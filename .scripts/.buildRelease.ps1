@@ -262,6 +262,10 @@ try {
     $installerScript = Join-Path $PSScriptRoot "buildInstaller.ps1"
     Write-Host "Running: $installerScript"
     & $installerScript
+
+    $syncReadmeScript = Join-Path $PSScriptRoot "syncReadme.ps1"
+    Write-Host "Running: $syncReadmeScript"
+    & $syncReadmeScript
 }
 finally {
     Pop-Location

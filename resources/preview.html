@@ -47,13 +47,46 @@ SPDX-License-Identifier: GPL-3.0-or-later
                 while ((n = walker.nextNode())) {
                     if (n.nodeType === 3) {
                         out += n.nodeValue;
+                    } else if (n.nodeType === 1 && (n.tagName || '').toLowerCase() === 'br') {
+                        out += '\n';
                     }
                 }
                 return out;
             }
 
             function gwClosestEditable(target) {
-                return target && target.closest ? target.closest('[data-gw-edit-kind]') : null;
+                if (!target) {
+                    return null;
+                }
+                var n = target;
+                while (n && n.nodeType !== 1) {
+                    n = n.parentNode;
+                }
+                return n && n.closest ? n.closest('[data-gw-edit-kind]') : null;
+            }
+
+            function gwPreviewInputPlain(kind, el) {
+                if (kind === 'listitem' || kind === 'paragraph') {
+                    return gwEditableTextContent(el);
+                }
+                return el.textContent != null ? el.textContent : el.innerText;
+            }
+
+            function gwShiftEditableOffsets(fromPos, delta) {
+                if (!delta) {
+                    return;
+                }
+                var attrs = ['data-gw-text-start', 'data-gw-text-end', 'data-gw-checkbox-source'];
+                for (var ai = 0; ai < attrs.length; ai++) {
+                    var a = attrs[ai];
+                    var nodes = document.querySelectorAll('[' + a + ']');
+                    for (var i = 0; i < nodes.length; i++) {
+                        var v = parseInt(nodes[i].getAttribute(a), 10);
+                        if (!isNaN(v) && v >= fromPos) {
+                            nodes[i].setAttribute(a, String(v + delta));
+                        }
+                    }
+                }
             }
 
             function installPreviewEditBridge(proxy) {
@@ -63,6 +96,10 @@ SPDX-License-Identifier: GPL-3.0-or-later
                 }
                 window.__gwPreviewEditInstalled = true;
                 window.previewProxy = proxy;
+
+                if (proxy.previewEditOffsetsShifted && proxy.previewEditOffsetsShifted.connect) {
+                    proxy.previewEditOffsetsShifted.connect(gwShiftEditableOffsets);
+                }
 
                 document.addEventListener('focusin', function (ev) {
                     var el = gwClosestEditable(ev.target);
@@ -100,9 +137,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
                     if (kind === 'tasklist') {
                         return;
                     }
-                    var txt = (kind === 'listitem')
-                        ? gwEditableTextContent(el)
-                        : (el.textContent != null ? el.textContent : el.innerText);
+                    var txt = gwPreviewInputPlain(kind, el);
                     window.previewProxy.applyPreviewEdit(txt);
                 }, true);
 

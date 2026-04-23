@@ -591,6 +591,11 @@ void MainWindow::changeEditorWidth(EditorWidth editorWidth)
     }
 
     adjustEditor();
+
+    QString previewSheet = htmlPreviewStyleSheetForCurrentTheme();
+    if (!previewSheet.isNull()) {
+        applyHtmlPreviewStyleSheetToAllTabs(previewSheet);
+    }
 }
 
 void MainWindow::changeInterfaceStyle(InterfaceStyle style)
@@ -2158,7 +2163,8 @@ QString MainWindow::htmlPreviewStyleSheetForCurrentTheme() const
                              (InterfaceStyleRounded == appSettings->interfaceStyle()),
                              appSettings->editorFont(),
                              appSettings->previewTextFont(),
-                             appSettings->previewCodeFont());
+                             appSettings->previewCodeFont(),
+                             appSettings->editorWidth());
 
     return styler.htmlPreviewStyleSheet();
 }
@@ -2205,7 +2211,8 @@ void MainWindow::applyTheme()
                              (InterfaceStyleRounded == appSettings->interfaceStyle()),
                              appSettings->editorFont(),
                              appSettings->previewTextFont(),
-                             appSettings->previewCodeFont());
+                             appSettings->previewCodeFont(),
+                             appSettings->editorWidth());
 
     for (auto *tab : tabs) {
         tab->applyColorScheme(colorScheme);

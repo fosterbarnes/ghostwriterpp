@@ -86,6 +86,15 @@ signals:
      */
     void mathToggled(bool enabled);
 
+    /**
+     * Emitted after a successful in-preview edit writes to the markdown source.
+     * JS listeners use this to shift any data-gw-text-start / data-gw-text-end /
+     * data-gw-checkbox-source attributes on sibling editables whose value is
+     * >= fromPos by delta, so the next focusin on another editable reads
+     * offsets that match the current document.
+     */
+    void previewEditOffsetsShifted(int fromPos, int delta);
+
 private:
     QString m_htmlContent;
     QString m_styleSheet;

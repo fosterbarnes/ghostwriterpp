@@ -11,6 +11,7 @@
 #include <QString>
 
 #include "chromecolors.h"
+#include "editor/markdowneditortypes.h"
 #include "svgicontheme.h"
 
 namespace ghostwriterpp
@@ -117,6 +118,8 @@ namespace ghostwriterpp
  *      HTML preview text body font point size
  * $code-font-size
  *      HTML preview code font point size
+ * $preview-content-max-width
+ *      max width for the preview text column (matches editor paper width), e.g. 720px; "none" for Full
  *
  * $tab-close-icon-path
  *      absolute path to a small PNG of the themed tab close icon (for QTabBar QSS; rasterized from tab-close.svg)
@@ -149,7 +152,8 @@ public:
                       const bool roundedCorners,
                       const QFont &editorFont,
                       const QFont &previewTextFont,
-                      const QFont &previewCodeFont);
+                      const QFont &previewCodeFont,
+                      EditorWidth editorWidth);
 
     /**
      * Destructor.
