@@ -25,6 +25,7 @@
 #include <QMenuBar>
 #include <QMimeDatabase>
 #include <QMimeType>
+#include <QPalette>
 #include <QPushButton>
 #include <QHash>
 #include <QScrollBar>
@@ -36,6 +37,7 @@
 #include <QTextCursor>
 #include <QStatusBar>
 #include <QStyle>
+#include <QTimer>
 #include <QStyleFactory>
 #include <QTextDocumentFragment>
 #include <QToolButton>
@@ -77,29 +79,32 @@
 
 namespace ghostwriterpp
 {
-using namespace std::placeholders;
 
 namespace {
-int layoutScreenWidth()
+constexpr int kSidebarResizeHysteresisPx = 40;
+constexpr int kResizeSettleDelayMs = 120;
+
+QScreen *layoutPrimaryScreen()
 {
     if (QScreen *s = QGuiApplication::primaryScreen()) {
-        return s->size().width();
+        return s;
     }
     const QList<QScreen *> screens = QGuiApplication::screens();
-    if (!screens.isEmpty()) {
-        return screens.first()->size().width();
+    return screens.isEmpty() ? nullptr : screens.first();
+}
+
+int layoutScreenWidth()
+{
+    if (QScreen *s = layoutPrimaryScreen()) {
+        return s->size().width();
     }
     return 1280;
 }
 
 int layoutScreenAvailableWidth()
 {
-    if (QScreen *s = QGuiApplication::primaryScreen()) {
+    if (QScreen *s = layoutPrimaryScreen()) {
         return s->availableSize().width();
-    }
-    const QList<QScreen *> screens = QGuiApplication::screens();
-    if (!screens.isEmpty()) {
-        return screens.first()->availableSize().width();
     }
     return layoutScreenWidth();
 }
@@ -146,6 +151,62 @@ void ensureTopLevelVisibleOnScreen(QWidget *w)
     w->raise();
     w->activateWindow();
 }
+
+BookmarkList loadPersistedTabsFromSettings(int *activeOut)
+{
+    BookmarkList result;
+    if (activeOut) {
+        *activeOut = -1;
+    }
+
+    QSettings s;
+    int count = s.beginReadArray(GW_SESSION_OPEN_TABS_KEY);
+    QSet<QString> seenPaths;
+
+    for (int i = 0; i < count; ++i) {
+        s.setArrayIndex(i);
+        QString path = s.value(GW_SESSION_TAB_PATH_KEY).toString();
+        int cursor = s.value(GW_SESSION_TAB_CURSOR_KEY, 0).toInt();
+        if (path.isEmpty()) {
+            continue;
+        }
+
+        Bookmark bm(path, cursor);
+        if (!bm.isValid()) {
+            continue;
+        }
+
+        const QString absPath = bm.filePath();
+        if (seenPaths.contains(absPath)) {
+            continue;
+        }
+        seenPaths.insert(absPath);
+
+        result.append(bm);
+    }
+
+    s.endArray();
+
+    if (activeOut) {
+        *activeOut = s.value(GW_SESSION_ACTIVE_TAB_KEY, -1).toInt();
+    }
+
+    return result;
+}
+
+void applyWidgetSurfacePalette(QWidget *w, const QColor &background, const QColor &foreground)
+{
+    if (!w) {
+        return;
+    }
+
+    QPalette pal = w->palette();
+    pal.setColor(QPalette::Window, background);
+    pal.setColor(QPalette::Base, background);
+    pal.setColor(QPalette::Text, foreground);
+    w->setPalette(pal);
+    w->setAutoFillBackground(true);
+}
 } // namespace
 
 static QString absoluteFileKey(const QString &path)
@@ -174,10 +235,18 @@ MainWindow::MainWindow(const QString &filePath, QWidget *parent)
 {
     Bookmark fileToOpen(filePath);
 
+    setAttribute(Qt::WA_DontShowOnScreen, true);
+
     focusModeEnabled = false;
     hemingwayModeEnabled = false;
     sidebarHiddenForResize = false;
     appSettings = AppSettings::instance();
+
+    int savedActiveIndex = -1;
+    BookmarkList persisted;
+    if (appSettings->restoreSessionEnabled()) {
+        persisted = loadPersistedTabsFromSettings(&savedActiveIndex);
+    }
 
     loadTheme();
     m_actionCollection = new KActionCollection(this);
@@ -188,6 +257,8 @@ MainWindow::MainWindow(const QString &filePath, QWidget *parent)
 
     // Tab bar height should match the menu bar row.
     adjustTabBarHeight();
+
+    applyTheme();
 
     if (!fileToOpen.isValid() && !fileToOpen.isNull()) {
         QFile file(fileToOpen.filePath());
@@ -230,25 +301,8 @@ MainWindow::MainWindow(const QString &filePath, QWidget *parent)
     toggleHideMenuBarInFullScreen(appSettings->hideMenuBarInFullScreenEnabled());
     menuBarMenuActivated = false;
 
-    qApp->processEvents();
-
-    show();
-
-    applyTheme();
-    adjustEditor();
-    adjustTabBarHeight();
-
-    qApp->processEvents();
-
     // Restore persisted multi-tab session (if enabled), then layer any CLI
     // file on top. Always end up with at least one active tab.
-    int savedActiveIndex = -1;
-    BookmarkList persisted;
-
-    if (appSettings->restoreSessionEnabled()) {
-        persisted = loadPersistedTabs(&savedActiveIndex);
-    }
-
     for (const Bookmark &bm : std::as_const(persisted)) {
         addDocumentTab(bm, /*activate=*/ false);
     }
@@ -277,18 +331,60 @@ MainWindow::MainWindow(const QString &filePath, QWidget *parent)
     applyFocusView(appSettings->focusView());
     syncFocusViewActions(appSettings->focusView());
 
+    const ColorScheme colorScheme = currentColorScheme();
+
     QString previewSheet = htmlPreviewStyleSheetForCurrentTheme();
     if (previewSheet.isNull()) {
         qCritical() << "Invalid HTML preview style sheet provided.";
     } else {
-        applyHtmlPreviewStyleSheetToAllTabs(previewSheet);
+        for (auto *tab : tabs) {
+            HtmlPreview *preview = tab->htmlPreview();
+            if (!preview) {
+                continue;
+            }
+            preview->prepareForDisplay(previewSheet,
+                                       colorScheme.background,
+                                       colorScheme.foreground);
+            preview->warmUpWhileHidden();
+        }
     }
 
     ensureTopLevelVisibleOnScreen(this);
+
+    applyTheme();
+    adjustEditor();
+    adjustTabBarHeight();
+
+    applyWidgetSurfacePalette(this, colorScheme.background, colorScheme.foreground);
+    if (splitter) {
+        applyWidgetSurfacePalette(splitter, colorScheme.background, colorScheme.foreground);
+    }
+    if (editorStack) {
+        applyWidgetSurfacePalette(editorStack, colorScheme.background, colorScheme.foreground);
+    }
+    if (previewStack) {
+        applyWidgetSurfacePalette(previewStack, colorScheme.background, colorScheme.foreground);
+    }
+    if (previewFreezePane) {
+        applyWidgetSurfacePalette(previewFreezePane, colorScheme.background, colorScheme.foreground);
+    }
+
+    createWinId();
+    applyDarkModeToWindowFrame(this, appSettings->darkModeEnabled());
+
+    qApp->processEvents();
+
+    setAttribute(Qt::WA_DontShowOnScreen, false);
+    show();
 }
 
 MainWindow::~MainWindow()
 {
+    if (m_resizeSettleTimer) {
+        m_resizeSettleTimer->stop();
+    }
+    cancelLiveResize();
+
     qDeleteAll(tabs);
     tabs.clear();
 
@@ -310,27 +406,10 @@ QSize MainWindow::sizeHint() const
 
 void MainWindow::resizeEvent(QResizeEvent *event)
 {
-    int width = event->size().width();
-
-    if (width < (0.5 * layoutScreenWidth())) {
-        this->sidebar->setVisible(false);
-        this->sidebar->setAutoHideEnabled(true);
-        this->sidebarHiddenForResize = true;
+    if (isVisible() && !testAttribute(Qt::WA_DontShowOnScreen)) {
+        scheduleResizeSettle();
     }
-    else {
-        this->sidebarHiddenForResize = false;
-
-        if (!this->focusModeEnabled && this->appSettings->sidebarVisible()) {
-            this->sidebar->setAutoHideEnabled(false);
-            this->sidebar->setVisible(true);
-        }
-        else {
-            this->sidebar->setAutoHideEnabled(true);
-            this->sidebar->setVisible(false);
-        }
-    }
-
-    adjustEditor();
+    QMainWindow::resizeEvent(event);
 }
 
 void MainWindow::keyPressEvent(QKeyEvent *e)
@@ -357,9 +436,6 @@ void MainWindow::keyPressEvent(QKeyEvent *e)
         if (findReplace->isVisible() && findReplace->hasFocus()) {
             findReplace->keyPressEvent(e);
             return;
-        }
-        else if (currentEditor() && !currentEditor()->hasFocus()) {
-            QMainWindow::keyPressEvent(e);
         }
         break;
     default:
@@ -423,6 +499,8 @@ void MainWindow::changeEvent(QEvent *event)
 
 void MainWindow::quitApplication()
 {
+    cancelLiveResize();
+
     persistOpenTabs();
     appSettings->store();
 
@@ -608,11 +686,6 @@ void MainWindow::changeInterfaceStyle(InterfaceStyle style)
 void MainWindow::showQuickReferenceGuide()
 {
     QDesktopServices::openUrl(QUrl("https://ghostwriter.kde.org/documentation"));
-}
-
-void MainWindow::showWikiPage()
-{
-    QDesktopServices::openUrl(QUrl("https://github.com/KDE/ghostwriter/wiki"));
 }
 
 void MainWindow::changeFocusMode(FocusMode focusMode)
@@ -904,17 +977,13 @@ DocumentTab *MainWindow::addDocumentTab(const Bookmark &location, bool activate)
         }
     }
 
-    ColorScheme colorScheme = appSettings->darkModeEnabled()
-        ? theme.darkColorScheme()
-        : theme.lightColorScheme();
-
-    auto *tab = new DocumentTab(colorScheme, this);
+    auto *tab = new DocumentTab(currentColorScheme(), this, this);
     tabs.append(tab);
+
+    cancelLiveResize();
 
     auto *editor = tab->editor();
     editor->setMinimumWidth(0.1 * layoutScreenWidth());
-    editor->setEditorWidth((EditorWidth)appSettings->editorWidth());
-    editor->setEditorCorners((InterfaceStyle)appSettings->interfaceStyle());
     editor->setHemingWayModeEnabled(hemingwayModeEnabled);
 
     if (focusModeEnabled) {
@@ -952,11 +1021,17 @@ DocumentTab *MainWindow::addDocumentTab(const Bookmark &location, bool activate)
         tab->documentManager()->openFileAt(location);
     }
 
-    QString previewSheet = htmlPreviewStyleSheetForCurrentTheme();
-    if (previewSheet.isNull()) {
-        qCritical() << "Invalid HTML preview style sheet provided.";
-    } else {
-        preview->setStyleSheet(previewSheet);
+    if (isVisible()) {
+        const ColorScheme colorScheme = currentColorScheme();
+        QString previewSheet = htmlPreviewStyleSheetForCurrentTheme();
+        if (previewSheet.isNull()) {
+            qCritical() << "Invalid HTML preview style sheet provided.";
+        } else {
+            preview->prepareForDisplay(previewSheet,
+                                       colorScheme.background,
+                                       colorScheme.foreground);
+            preview->updatePreview();
+        }
     }
 
     return tab;
@@ -968,11 +1043,18 @@ void MainWindow::activateTab(int index)
         return;
     }
 
+    cancelLiveResize();
+
     activeTabIndex = index;
     auto *tab = tabs[index];
 
     editorStack->setCurrentWidget(tab->editor());
-    previewStack->setCurrentWidget(tab->htmlPreview());
+    if (HtmlPreview *preview = tab->htmlPreview()) {
+        if (previewStack->indexOf(preview) >= 0) {
+            previewStack->setCurrentWidget(preview);
+        }
+        preview->flushDeferredPreviewUpdate();
+    }
 
     wireActiveTab();
 
@@ -989,6 +1071,8 @@ bool MainWindow::closeTabAt(int index)
     if (index < 0 || index >= tabs.size()) {
         return false;
     }
+
+    cancelLiveResize();
 
     auto *tab = tabs[index];
     bool wasActive = (index == activeTabIndex);
@@ -1010,7 +1094,7 @@ bool MainWindow::closeTabAt(int index)
         wasActive = false; // the new replacement is active now, not the old tab
     }
 
-    detachActiveTab(index, wasActive);
+    detachActiveTab(wasActive);
     removeTabWidgets(tab, index);
     tab->deleteLater();
 
@@ -1037,7 +1121,7 @@ bool MainWindow::closeTabAt(int index)
     return true;
 }
 
-void MainWindow::detachActiveTab(int index, bool wasActive)
+void MainWindow::detachActiveTab(bool wasActive)
 {
     if (!wasActive) {
         return;
@@ -1061,7 +1145,6 @@ void MainWindow::detachActiveTab(int index, bool wasActive)
     }
 
     activeTabIndex = -1;
-    Q_UNUSED(index);
 }
 
 void MainWindow::removeTabWidgets(DocumentTab *tab, int index)
@@ -1076,7 +1159,11 @@ void MainWindow::removeTabWidgets(DocumentTab *tab, int index)
         editorStack->removeWidget(tab->editor());
     }
     if (tab->htmlPreview()) {
-        previewStack->removeWidget(tab->htmlPreview());
+        resetPreviewLiveResizeState(tab->htmlPreview());
+        HtmlPreview *preview = tab->htmlPreview();
+        if (previewStack->indexOf(preview) >= 0) {
+            previewStack->removeWidget(preview);
+        }
     }
 
     tabBar->blockSignals(true);
@@ -1230,44 +1317,6 @@ void MainWindow::persistOpenTabs()
     s.setValue(GW_SESSION_ACTIVE_TAB_KEY, activeOut);
 }
 
-BookmarkList MainWindow::loadPersistedTabs(int *activeOut) const
-{
-    BookmarkList result;
-    if (activeOut) {
-        *activeOut = -1;
-    }
-
-    QSettings s;
-    int count = s.beginReadArray(GW_SESSION_OPEN_TABS_KEY);
-    QSet<QString> seenPaths;
-
-    for (int i = 0; i < count; ++i) {
-        s.setArrayIndex(i);
-        QString path = s.value(GW_SESSION_TAB_PATH_KEY).toString();
-        int cursor = s.value(GW_SESSION_TAB_CURSOR_KEY, 0).toInt();
-        if (path.isEmpty()) continue;
-
-        Bookmark bm(path, cursor);
-        if (!bm.isValid()) continue;
-
-        const QString absPath = bm.filePath();
-        if (seenPaths.contains(absPath)) {
-            continue;
-        }
-        seenPaths.insert(absPath);
-
-        result.append(bm);
-    }
-
-    s.endArray();
-
-    if (activeOut) {
-        *activeOut = s.value(GW_SESSION_ACTIVE_TAB_KEY, -1).toInt();
-    }
-
-    return result;
-}
-
 void MainWindow::updateTabLabel(int index)
 {
     if (index < 0 || index >= tabs.size() || !tabBar) {
@@ -1287,6 +1336,8 @@ void MainWindow::updateTabLabel(int index)
 
 void MainWindow::applyFocusView(FocusView view)
 {
+    cancelLiveResize();
+
     const bool showEditor = (view != FocusViewPreviewOnly);
     const bool showPreview = (view != FocusViewEditorOnly);
 
@@ -1339,14 +1390,7 @@ void MainWindow::loadTheme()
         appSettings->setThemeName(theme.name());
     }
 
-    ColorScheme colorScheme;
-
-    if (appSettings->darkModeEnabled()) {
-        colorScheme = theme.darkColorScheme();
-    } else {
-        colorScheme = theme.lightColorScheme();
-    }
-
+    const ColorScheme colorScheme = currentColorScheme();
     ChromeColors chromeColors(colorScheme);
 
     primaryIconTheme = new SvgIconTheme(":/icons");
@@ -1600,11 +1644,16 @@ void MainWindow::setupGui()
     previewStack->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
     editorEmptyPane = new QWidget(this);
-    previewEmptyPane = new QWidget(this);
     editorEmptyPane->setObjectName(QStringLiteral("emptyEditorPane"));
+    previewEmptyPane = new QWidget(this);
     previewEmptyPane->setObjectName(QStringLiteral("emptyPreviewPane"));
     editorStack->addWidget(editorEmptyPane);
     previewStack->addWidget(previewEmptyPane);
+
+    previewFreezePane = new QWidget(this);
+    previewFreezePane->setObjectName(QStringLiteral("previewFreezePane"));
+    previewFreezePane->setAttribute(Qt::WA_StyledBackground, true);
+    previewStack->addWidget(previewFreezePane);
 
     splitter = new QSplitter(this);
     splitter->addWidget(sidebar);
@@ -1673,6 +1722,11 @@ void MainWindow::setupGui()
     if (windowSettings.contains(GW_SPLITTER_GEOMETRY_KEY)) {
         splitter->restoreState(windowSettings.value(GW_SPLITTER_GEOMETRY_KEY).toByteArray());
     }
+
+    m_resizeSettleTimer = new QTimer(this);
+    m_resizeSettleTimer->setSingleShot(true);
+    m_resizeSettleTimer->setInterval(kResizeSettleDelayMs);
+    connect(m_resizeSettleTimer, &QTimer::timeout, this, &MainWindow::onResizeSettled);
 
     // Tab seeding (session restore + CLI file + fallback untitled) is driven
     // by the MainWindow ctor after setupGui() returns.
@@ -2093,23 +2147,19 @@ void MainWindow::setupSidebar()
         popupMenu->popup(button->mapToGlobal(QPoint(button->width() / 2, -(button->height() / 2) - 10)));
     });
 
-    if (!sidebarHiddenForResize && !focusModeEnabled && appSettings->sidebarVisible()) {
-        sidebar->setAutoHideEnabled(false);
-        sidebar->setVisible(true);
-    } else {
-        sidebar->setAutoHideEnabled(true);
-        sidebar->setVisible(false);
-    }
+    updateSidebarForWindowWidth(width());
 
     connect(sidebar, &Sidebar::visibilityChanged, this, &MainWindow::onSidebarVisibilityChanged);
-
-    sidebar->setMinimumWidth(0.1 * layoutScreenWidth());
 }
 
 void MainWindow::adjustEditor()
 {
-    qApp->processEvents();
+    adjustEditorLayout();
+    adjustEditorContent();
+}
 
+void MainWindow::adjustEditorLayout()
+{
     int width = this->width();
     int sidebarWidth = 0;
 
@@ -2117,16 +2167,192 @@ void MainWindow::adjustEditor()
         sidebarWidth = sidebar->width();
     }
 
+    int newMax = QWIDGETSIZE_MAX;
     if (previewStack && previewStack->isVisible() && editorStack && editorStack->isVisible()) {
-        previewStack->setMaximumWidth((width - sidebarWidth) / 2);
-    } else if (previewStack) {
-        previewStack->setMaximumWidth(QWIDGETSIZE_MAX);
+        newMax = (width - sidebarWidth) / 2;
     }
 
+    if (previewStack && m_lastPreviewMaxWidth != newMax) {
+        previewStack->setMaximumWidth(newMax);
+        m_lastPreviewMaxWidth = newMax;
+    }
+}
+
+void MainWindow::adjustEditorContent()
+{
     if (auto *ed = currentEditor()) {
         ed->setupPaperMargins();
         ed->centerCursor();
     }
+}
+
+void MainWindow::updateSidebarForWindowWidth(int width)
+{
+    if (!sidebar) {
+        return;
+    }
+
+    const int threshold = layoutScreenWidth() / 2;
+    const bool narrow = sidebarHiddenForResize
+        ? width < threshold + kSidebarResizeHysteresisPx
+        : width < threshold - kSidebarResizeHysteresisPx;
+
+    if (narrow) {
+        sidebar->setVisible(false);
+        sidebar->setAutoHideEnabled(true);
+        sidebarHiddenForResize = true;
+        return;
+    }
+
+    sidebarHiddenForResize = false;
+
+    if (!focusModeEnabled && appSettings->sidebarVisible()) {
+        sidebar->setAutoHideEnabled(false);
+        sidebar->setVisible(true);
+    } else {
+        sidebar->setAutoHideEnabled(true);
+        sidebar->setVisible(false);
+    }
+}
+
+void MainWindow::setAllPreviewResizeSuspended(bool suspended, HtmlPreview *flushPreview)
+{
+    for (DocumentTab *tab : tabs) {
+        HtmlPreview *preview = tab ? tab->htmlPreview() : nullptr;
+        if (!preview) {
+            continue;
+        }
+        if (suspended) {
+            preview->setResizeUpdatesSuspended(true);
+        } else {
+            preview->setResizeUpdatesSuspended(false, preview == flushPreview);
+        }
+    }
+}
+
+void MainWindow::resetPreviewLiveResizeState(HtmlPreview *preview)
+{
+    if (!preview) {
+        return;
+    }
+
+    if (m_activePreviewBeforeResize.data() == preview) {
+        m_activePreviewBeforeResize = nullptr;
+    }
+
+    for (int i = m_hiddenPreviewsDuringResize.size() - 1; i >= 0; --i) {
+        if (m_hiddenPreviewsDuringResize[i].data() == preview) {
+            m_hiddenPreviewsDuringResize.removeAt(i);
+        }
+    }
+
+    preview->setUpdatesEnabled(true);
+    preview->setAttribute(Qt::WA_DontShowOnScreen, false);
+    preview->setVisible(true);
+    preview->setResizeUpdatesSuspended(false, true);
+}
+
+void MainWindow::cancelLiveResize()
+{
+    if (!m_liveResizeActive && m_hiddenPreviewsDuringResize.isEmpty()) {
+        return;
+    }
+
+    if (m_resizeSettleTimer && m_resizeSettleTimer->isActive()) {
+        m_resizeSettleTimer->stop();
+    }
+
+    finalizeResizeAfterSettle();
+}
+
+void MainWindow::showPreviewFreezePane()
+{
+    if (!previewStack || !previewFreezePane) {
+        return;
+    }
+
+    previewStack->setCurrentWidget(previewFreezePane);
+}
+
+void MainWindow::beginLiveResizeIfNeeded()
+{
+    if (m_liveResizeActive || !isVisible()) {
+        return;
+    }
+
+    if (!previewStack || !previewStack->isVisible()) {
+        return;
+    }
+
+    m_liveResizeActive = true;
+    m_activePreviewBeforeResize = currentHtmlPreview();
+    m_hiddenPreviewsDuringResize.clear();
+
+    setAllPreviewResizeSuspended(true);
+
+    for (DocumentTab *tab : tabs) {
+        HtmlPreview *preview = tab ? tab->htmlPreview() : nullptr;
+        if (!preview || !previewStack || previewStack->indexOf(preview) < 0) {
+            continue;
+        }
+
+        m_hiddenPreviewsDuringResize.append(QPointer<HtmlPreview>(preview));
+        preview->setAttribute(Qt::WA_DontShowOnScreen, true);
+        preview->setUpdatesEnabled(false);
+        preview->hide();
+    }
+
+    showPreviewFreezePane();
+}
+
+void MainWindow::scheduleResizeSettle()
+{
+    beginLiveResizeIfNeeded();
+
+    if (m_resizeSettleTimer) {
+        m_resizeSettleTimer->start();
+    }
+}
+
+void MainWindow::endLiveResize()
+{
+    HtmlPreview *activePreview = m_activePreviewBeforeResize.data();
+
+    for (const QPointer<HtmlPreview> &previewPtr : std::as_const(m_hiddenPreviewsDuringResize)) {
+        HtmlPreview *preview = previewPtr.data();
+        if (!preview) {
+            continue;
+        }
+        preview->setAttribute(Qt::WA_DontShowOnScreen, false);
+        preview->setUpdatesEnabled(true);
+        preview->show();
+    }
+
+    m_hiddenPreviewsDuringResize.clear();
+
+    if (activePreview && previewStack && previewStack->indexOf(activePreview) >= 0) {
+        previewStack->setCurrentWidget(activePreview);
+    }
+
+    if (m_liveResizeActive) {
+        setAllPreviewResizeSuspended(false, activePreview);
+    }
+
+    m_activePreviewBeforeResize = nullptr;
+    m_liveResizeActive = false;
+}
+
+void MainWindow::finalizeResizeAfterSettle()
+{
+    updateSidebarForWindowWidth(width());
+    endLiveResize();
+    adjustEditorLayout();
+    adjustEditorContent();
+}
+
+void MainWindow::onResizeSettled()
+{
+    finalizeResizeAfterSettle();
 }
 
 void MainWindow::adjustTabBarHeight()
@@ -2149,15 +2375,14 @@ void MainWindow::adjustTabBarHeight()
     }
 }
 
+ColorScheme MainWindow::currentColorScheme() const
+{
+    return appSettings->darkModeEnabled() ? theme.darkColorScheme() : theme.lightColorScheme();
+}
+
 QString MainWindow::htmlPreviewStyleSheetForCurrentTheme() const
 {
-    ColorScheme colorScheme = theme.lightColorScheme();
-
-    if (appSettings->darkModeEnabled()) {
-        colorScheme = theme.darkColorScheme();
-    }
-
-    ChromeColors chromeColors(colorScheme);
+    ChromeColors chromeColors(currentColorScheme());
     StyleSheetBuilder styler(chromeColors,
                              secondaryIconTheme,
                              (InterfaceStyleRounded == appSettings->interfaceStyle()),
@@ -2188,12 +2413,7 @@ void MainWindow::applyTheme()
         appSettings->setThemeName(theme.name());
     }
 
-    ColorScheme colorScheme = theme.lightColorScheme();
-
-    if (appSettings->darkModeEnabled()) {
-        colorScheme = theme.darkColorScheme();
-    }
-
+    const ColorScheme colorScheme = currentColorScheme();
     ChromeColors chromeColors(colorScheme);
 
     primaryIconTheme->setColor(QIcon::Normal, chromeColors.color(ChromeColors::SecondaryLabel, ChromeColors::NormalState));

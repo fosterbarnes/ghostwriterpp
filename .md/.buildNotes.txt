@@ -1,37 +1,14 @@
-v2.1.6-2.1 update
+v2.1.6-2.2
 
-Preview Editing:
-    - Implement every possible .md formatting option systematically:
-    - Center full preview view
+Startup and appearance
+- Fix app startup ui rendering issues
 
-    Done:
-        - General text
-        - Headers (ATX + Setext)
-        - Links (in-line preview edit only currently supports editing user-facing text)
-        - Paragraphs
-        - Block quotes
-        - Thematic break
-        - Fenced code blocks
-        - Indented code blocks
-        - HTML blocks
-        Inline:
-            - GFM strikethrough
-            - Strong
-            - Emphasis
-            - Code spans
-            - Bullet / ordered lists
-            - Nested lists
-            - Task lists
-            - Line breaks
-            - HTML inline
-            - Raw HTML
+Window resize (preview open)
+- Resizing the window with HTML preview visible is much smoother and less CPU-heavy
 
-    Not done:
-            - Link reference definitions
-            - GFM tables
-            - Images
-            - Autolinks
-            - Reference / shortcut reference links
-            - Nested / edge link cases
-            - Footnotes
-            - Images
+Installer
+- Windows installer license page now has "I accept the agreement" pre-checked
+
+Editor and polish
+- Tab key no longer fires twice in the editor
+- Removed unused internal code and simplified resize-related logic (no user-facing feature change)

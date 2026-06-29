@@ -13,14 +13,16 @@
 #include <QLabel>
 #include <QList>
 #include <QMainWindow>
-#include <QMap>
+#include <QHash>
 #include <QMetaObject>
+#include <QPointer>
 #include <QPushButton>
 #include <QSettings>
 #include <QSplitter>
 #include <QStackedWidget>
 #include <QStringLiteral>
 #include <QTabBar>
+#include <QTimer>
 #include <QToolButton>
 
 #include <KActionCollection>
@@ -87,7 +89,6 @@ private slots:
     void changeEditorWidth(EditorWidth editorWidth);
     void changeInterfaceStyle(InterfaceStyle style);
     void showQuickReferenceGuide();
-    void showWikiPage();
     void changeFocusMode(FocusMode focusMode);
     void applyTheme();
     void refreshRecentFiles();
@@ -105,6 +106,7 @@ private slots:
     void onSidebarVisibilityChanged(bool visible);
     void toggleSidebarVisible(bool visible);
     void runSpellCheck();
+    void onResizeSettled();
 
 private:
     // Per-tab storage and chrome.
@@ -113,15 +115,14 @@ private:
     QStackedWidget *previewStack;
     QWidget *editorEmptyPane = nullptr;
     QWidget *previewEmptyPane = nullptr;
+    QWidget *previewFreezePane = nullptr;
     QList<DocumentTab *> tabs;
     int activeTabIndex;
     QToolButton *newTabButton;
 
     FindReplace* findReplace;
     QSplitter *splitter;
-    ThemeRepository *themeRepo;
     Theme theme;
-    QString language;
     Sidebar *sidebar;
     StatisticsIndicator *statisticsIndicator;
     QLabel *statusIndicator;
@@ -151,6 +152,12 @@ private:
 
     KHelpMenu *m_helpMenu;
 
+    QTimer *m_resizeSettleTimer = nullptr;
+    bool m_liveResizeActive = false;
+    int m_lastPreviewMaxWidth = -1;
+    QPointer<HtmlPreview> m_activePreviewBeforeResize;
+    QList<QPointer<HtmlPreview>> m_hiddenPreviewsDuringResize;
+
     KActionCollection *actionCollection() const;
 
     QMenu *addMenuBarMenu(const QString &name);
@@ -171,22 +178,21 @@ private:
     bool closeTabAt(int index);
     void wireActiveTab();
     void updateTabLabel(int index);
-    void detachActiveTab(int index, bool wasActive);
+    void detachActiveTab(bool wasActive);
     void removeTabWidgets(DocumentTab *tab, int index);
 
     // Multi-tab session persistence.
     void persistOpenTabs();
-    BookmarkList loadPersistedTabs(int *activeOut) const;
 
     // Focus view.
     void applyFocusView(FocusView view);
     void syncFocusViewActions(FocusView view);
 
     void loadTheme();
+    ColorScheme currentColorScheme() const;
     QString htmlPreviewStyleSheetForCurrentTheme() const;
     void applyHtmlPreviewStyleSheetToAllTabs(const QString &css);
     void setupActions();
-    void setupRecentFileActions(const BookmarkList &recentFiles);
     void setupGui();
     void setupMenuBar();
     void setupStatusBar();
@@ -194,6 +200,17 @@ private:
     void setupTabBar();
 
     void adjustEditor();
+    void adjustEditorLayout();
+    void adjustEditorContent();
+    void scheduleResizeSettle();
+    void beginLiveResizeIfNeeded();
+    void endLiveResize();
+    void finalizeResizeAfterSettle();
+    void cancelLiveResize();
+    void resetPreviewLiveResizeState(HtmlPreview *preview);
+    void updateSidebarForWindowWidth(int width);
+    void showPreviewFreezePane();
+    void setAllPreviewResizeSuspended(bool suspended, HtmlPreview *flushPreview = nullptr);
     void adjustTabBarHeight();
 };
 } // namespace ghostwriterpp

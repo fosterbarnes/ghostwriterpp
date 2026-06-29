@@ -11,6 +11,7 @@
 ghostwriterpp--HtmlPreview {
     border: none;
     outline: none;
+    background-color: $background-color;
 }
 
 ghostwriterpp--HtmlPreview:focus {

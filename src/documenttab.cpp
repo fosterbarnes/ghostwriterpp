@@ -17,14 +17,14 @@
 namespace ghostwriterpp
 {
 
-DocumentTab::DocumentTab(const ColorScheme &colors, QObject *parent)
+DocumentTab::DocumentTab(const ColorScheme &colors, QWidget *widgetParent, QObject *parent)
     : QObject(parent)
 {
     AppSettings *appSettings = AppSettings::instance();
 
     m_document = new MarkdownDocument();
 
-    m_editor = new MarkdownEditor(m_document, colors, nullptr);
+    m_editor = new MarkdownEditor(m_document, colors, widgetParent);
     m_editor->setFont(appSettings->editorFont().family(), appSettings->editorFont().pointSize());
     m_editor->setUseUnderlineForEmphasis(appSettings->useUnderlineForEmphasis());
     m_editor->setEnableLargeHeadingSizes(appSettings->largeHeadingSizesEnabled());
@@ -74,7 +74,7 @@ DocumentTab::DocumentTab(const ColorScheme &colors, QObject *parent)
     connect(appSettings, &AppSettings::spellCheckSettingsChanged, m_spelling, &SpellCheckDecorator::settingsChanged);
 
     auto *exp = appSettings->currentHtmlExporter();
-    m_htmlPreview = new HtmlPreview(m_document, exp, nullptr);
+    m_htmlPreview = new HtmlPreview(m_document, exp, widgetParent);
     m_htmlPreview->setMinimumWidth(100);
     m_htmlPreview->setObjectName("htmlpreview");
 

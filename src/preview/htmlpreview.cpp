@@ -9,6 +9,8 @@
 #include <QFutureWatcher>
 #include <QMenu>
 #include <QVariant>
+#include <QColor>
+#include <QPalette>
 #include <QFile>
 #include <QTextStream>
 #include <QString>
@@ -53,11 +55,6 @@ public:
         proxy = new PreviewProxy(q_ptr);
     }
 
-    ~HtmlPreviewPrivate()
-    {
-        ;
-    }
-
     HtmlPreview *q_ptr;
 
     MarkdownDocument *document;
@@ -86,6 +83,12 @@ public:
     } previewEditSession;
 
     bool previewApplying = false;
+    bool pagePrepared = false;
+    bool startupWarmup = false;
+    bool shellLoadFinished = false;
+    bool resizeUpdatesSuspended = false;
+    QColor pageBackground;
+    QColor pageTextColor;
 
     void onHtmlReady();
     void onLoadFinished(bool ok);
@@ -221,14 +224,6 @@ HtmlPreview::HtmlPreview
         d->wrapperHtml = stream.readAll();
         wrapperHtmlFile.close();
     }
-
-    // Set the base URL and load the preview using wrapperHtml above.
-    d->updateBaseDir();
-}
-
-HtmlPreview::~HtmlPreview()
-{
-    shutdownBeforeDestroy();
 }
 
 void HtmlPreview::shutdownBeforeDestroy()
@@ -256,6 +251,50 @@ void HtmlPreview::shutdownBeforeDestroy()
     }
 
     d->setHtmlContent("");
+}
+
+HtmlPreview::~HtmlPreview()
+{
+    shutdownBeforeDestroy();
+}
+
+void HtmlPreview::setResizeUpdatesSuspended(bool suspended, bool flushPendingRefresh)
+{
+    Q_D(HtmlPreview);
+
+    if (d->resizeUpdatesSuspended == suspended) {
+        return;
+    }
+
+    d->resizeUpdatesSuspended = suspended;
+
+    if (suspended) {
+        d->updateAgain = false;
+        if (d->futureWatcher->isRunning()) {
+            d->futureWatcher->cancel();
+            d->updateInProgress = false;
+        }
+        return;
+    }
+
+    if (d->pendingRefresh && !d->previewEditSession.active) {
+        if (flushPendingRefresh) {
+            d->pendingRefresh = false;
+            updatePreview();
+        }
+    }
+}
+
+void HtmlPreview::flushDeferredPreviewUpdate()
+{
+    Q_D(HtmlPreview);
+
+    if (d->resizeUpdatesSuspended || d->previewEditSession.active || !d->pendingRefresh) {
+        return;
+    }
+
+    d->pendingRefresh = false;
+    updatePreview();
 }
 
 void HtmlPreview::contextMenuEvent(QContextMenuEvent *event)
@@ -302,17 +341,20 @@ void HtmlPreview::updatePreview()
 {
     Q_D(HtmlPreview);
 
-    if (d->previewEditSession.active) {
-        return;
-    }
-    
-    if (d->updateInProgress) {
-        d->updateAgain = true;
+    if (d->previewEditSession.active || d->resizeUpdatesSuspended) {
+        if (d->resizeUpdatesSuspended) {
+            d->pendingRefresh = true;
+        }
         return;
     }
 
-    if (!this->isVisible()) {
+    if (!this->isVisible() && !d->startupWarmup) {
         d->pendingRefresh = true;
+        return;
+    }
+
+    if (d->updateInProgress) {
+        d->updateAgain = true;
         return;
     }
 
@@ -343,6 +385,12 @@ void HtmlPreview::updatePreview()
 
 void HtmlPreview::navigateToHeading(int headingSequenceNumber)
 {
+    Q_D(HtmlPreview);
+
+    if (d->resizeUpdatesSuspended) {
+        return;
+    }
+
     this->page()->runJavaScript
     (
         QString
@@ -370,6 +418,66 @@ void HtmlPreview::setStyleSheet(const QString &css)
     d->proxy->setStyleSheet(css);
 }
 
+void HtmlPreview::prepareForDisplay(const QString &css,
+                                    const QColor &pageBackground,
+                                    const QColor &pageTextColor)
+{
+    Q_D(HtmlPreview);
+
+    d->pageBackground = pageBackground;
+    d->pageTextColor = pageTextColor;
+    d->proxy->setStyleSheet(css);
+    page()->setBackgroundColor(pageBackground);
+
+    QPalette pal = palette();
+    pal.setColor(QPalette::Window, pageBackground);
+    pal.setColor(QPalette::Base, pageBackground);
+    pal.setColor(QPalette::Text, pageTextColor);
+    setPalette(pal);
+    setAutoFillBackground(true);
+    setAttribute(Qt::WA_StyledBackground, true);
+
+    d->pagePrepared = true;
+    d->updateBaseDir();
+}
+
+void HtmlPreview::warmUpWhileHidden()
+{
+    Q_D(HtmlPreview);
+
+    d->startupWarmup = true;
+    updatePreview();
+
+    if (d->futureWatcher->isRunning()) {
+        QEventLoop loop;
+        QTimer timer;
+        timer.setSingleShot(true);
+        QObject::connect(d->futureWatcher, &QFutureWatcherBase::finished, &loop, &QEventLoop::quit);
+        QObject::connect(&timer, &QTimer::timeout, &loop, &QEventLoop::quit);
+        timer.start(5000);
+        loop.exec(QEventLoop::ExcludeUserInputEvents);
+    }
+
+    if (!d->shellLoadFinished) {
+        QEventLoop loop;
+        QTimer timer;
+        timer.setSingleShot(true);
+        QMetaObject::Connection conn = connect(
+            this,
+            &QWebEngineView::loadFinished,
+            &loop,
+            [&loop](bool ok) {
+                Q_UNUSED(ok);
+                loop.quit();
+            });
+        timer.start(5000);
+        loop.exec(QEventLoop::ExcludeUserInputEvents);
+        disconnect(conn);
+    }
+
+    d->startupWarmup = false;
+}
+
 void HtmlPreview::setMathEnabled(bool enabled)
 {
     Q_D(HtmlPreview);
@@ -380,39 +488,78 @@ void HtmlPreview::setMathEnabled(bool enabled)
 void HtmlPreviewPrivate::onHtmlReady()
 {
     Q_Q(HtmlPreview);
-    
-    setHtmlContent(futureWatcher->result());
+
     updateInProgress = false;
+
+    const bool blocked = resizeUpdatesSuspended || futureWatcher->isCanceled()
+        || (!q->isVisible() && !startupWarmup);
+
+    if (blocked) {
+        if (resizeUpdatesSuspended || !q->isVisible()) {
+            pendingRefresh = true;
+        }
+        updateAgain = false;
+        return;
+    }
+
+    setHtmlContent(futureWatcher->result());
 
     if (updateAgain) {
         updateAgain = false;
         q->updatePreview();
     }
-
 }
 
 void HtmlPreviewPrivate::onLoadFinished(bool ok)
 {
     Q_UNUSED(ok);
+    shellLoadFinished = true;
 }
 
 void HtmlPreviewPrivate::updateBaseDir()
 {
     Q_Q(HtmlPreview);
-    
+
+    if (!pagePrepared) {
+        return;
+    }
+
     if (!document->filePath().isNull() && !document->filePath().isEmpty()) {
         // Note that a forward slash ("/") is appended to the path to
         // ensure it works.  If the slash isn't there, then it won't
         // recognize the base URL for some reason.
         //
         baseUrl = QUrl::fromLocalFile(
-            QFileInfo(document->filePath()).dir().absolutePath() 
+            QFileInfo(document->filePath()).dir().absolutePath()
                       + "/").toString();
     } else {
         this->baseUrl = "";
     }
 
-    q->setHtml(wrapperHtml, QUrl(baseUrl));
+    QString html = wrapperHtml;
+    const QString inlineStyle = QStringLiteral(
+        "<style id=\"ghostwriter_first_paint\">body{background-color:%1;color:%2;}</style>")
+        .arg(pageBackground.name(QColor::HexRgb),
+             pageTextColor.name(QColor::HexRgb));
+    const int headEnd = html.indexOf(QStringLiteral("</head>"), 0, Qt::CaseInsensitive);
+    if (headEnd >= 0) {
+        html.insert(headEnd, inlineStyle);
+    } else {
+        html.prepend(inlineStyle);
+    }
+
+    const QString bodyOpen = QStringLiteral("<body>");
+    const int bodyTag = html.indexOf(bodyOpen, 0, Qt::CaseInsensitive);
+    if (bodyTag >= 0) {
+        html.replace(bodyTag,
+                     bodyOpen.size(),
+                     QStringLiteral("<body style=\"background-color:%1;color:%2;\">")
+                         .arg(pageBackground.name(QColor::HexRgb),
+                              pageTextColor.name(QColor::HexRgb)));
+    }
+
+    shellLoadFinished = false;
+    q->setHtml(html, QUrl(baseUrl));
     q->updatePreview();
 }
 
@@ -437,9 +584,17 @@ void HtmlPreview::showEvent(QShowEvent *event)
 
 void HtmlPreviewPrivate::setHtmlContent(const QString &html)
 {
-    if (previewEditSession.active) {
+    Q_Q(HtmlPreview);
+
+    if (previewEditSession.active || resizeUpdatesSuspended) {
         return;
     }
+
+    if (!q->isVisible() && !startupWarmup) {
+        pendingRefresh = true;
+        return;
+    }
+
     this->proxy->setHtmlContent(html);
 }
 
@@ -472,6 +627,10 @@ QString HtmlPreviewPrivate::exportToHtml
 void HtmlPreview::beginPreviewEditSession(const QString &kind, int start, int end)
 {
     Q_D(HtmlPreview);
+
+    if (d->resizeUpdatesSuspended) {
+        return;
+    }
 
     d->previewEditSession.active = false;
     d->previewEditSession.textNodes.clear();
@@ -559,7 +718,7 @@ void HtmlPreview::applyPreviewEdit(const QString &text)
 {
     Q_D(HtmlPreview);
 
-    if (!d->previewEditSession.active) {
+    if (d->resizeUpdatesSuspended || !d->previewEditSession.active) {
         return;
     }
 
@@ -801,7 +960,7 @@ void HtmlPreview::endPreviewEditSession()
     const bool was = d->previewEditSession.active;
     d->previewEditSession.active = false;
 
-    if (was) {
+    if (was && !d->resizeUpdatesSuspended) {
         updatePreview();
     }
 }
@@ -809,6 +968,10 @@ void HtmlPreview::endPreviewEditSession()
 void HtmlPreview::togglePreviewCheckbox(int offset, bool checked)
 {
     Q_D(HtmlPreview);
+
+    if (d->resizeUpdatesSuspended) {
+        return;
+    }
 
     const QString plain = d->document->toPlainText();
     if (offset < 0 || offset >= plain.size()) {

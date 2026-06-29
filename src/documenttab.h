@@ -9,6 +9,7 @@
 
 #include <QObject>
 #include <QPointer>
+#include <QWidget>
 
 #include "editor/colorscheme.h"
 
@@ -31,7 +32,7 @@ class DocumentTab : public QObject
     Q_OBJECT
 
 public:
-    explicit DocumentTab(const ColorScheme &colors, QObject *parent = nullptr);
+    explicit DocumentTab(const ColorScheme &colors, QWidget *widgetParent, QObject *parent = nullptr);
     ~DocumentTab() override;
 
     MarkdownEditor *editor() const;

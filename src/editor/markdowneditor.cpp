@@ -28,6 +28,7 @@
 #include <QMimeDatabase>
 #include <QMimeType>
 #include <QPainter>
+#include <QPalette>
 #include <QPainterPath>
 #include <QPixmap>
 #include <QPlainTextEdit>
@@ -109,6 +110,7 @@ public:
     int tabWidth;
     EditorWidth editorWidth;
     InterfaceStyle editorCorners;
+    int cachedPaperMarginH = -1;
     QRegularExpression emptyBlockquoteRegex;
     QRegularExpression emptyNumberedListRegex;
     QRegularExpression emptyBulletListRegex;
@@ -690,6 +692,19 @@ void MarkdownEditor::setColorScheme
     fadedForegroundColor.setAlpha(100);
 
     d->fadeColor = QBrush(fadedForegroundColor);
+
+    QPalette pal = palette();
+    pal.setColor(QPalette::Base, colors.background);
+    pal.setColor(QPalette::Text, colors.foreground);
+    pal.setColor(QPalette::Window, colors.background);
+    setPalette(pal);
+    setAutoFillBackground(true);
+
+    if (QWidget *vp = viewport()) {
+        vp->setPalette(pal);
+        vp->setAutoFillBackground(true);
+    }
+
     this->focusText();
 }
 
@@ -729,7 +744,6 @@ void MarkdownEditor::setupPaperMargins()
 {
     Q_D(MarkdownEditor);
 
-    this->setViewportMargins(0, 20, 0, 0);
     d->preferredLayout->setContentsMargins(0, 0, 0, 0);
 
     // Use a simple monospace font at a fixed size to determine
@@ -764,6 +778,11 @@ void MarkdownEditor::setupPaperMargins()
         margin = (this->viewport()->width() - width) / 2;
     }
 
+    if (margin == d->cachedPaperMarginH) {
+        return;
+    }
+
+    d->cachedPaperMarginH = margin;
     this->setViewportMargins(margin, 20, margin, 0);
 }
 
@@ -1630,6 +1649,7 @@ void MarkdownEditor::setEditorWidth(EditorWidth width)
     Q_D(MarkdownEditor);
     
     d->editorWidth = width;
+    d->cachedPaperMarginH = -1;
 }
 
 void MarkdownEditor::setEditorCorners(InterfaceStyle corners)

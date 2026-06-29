@@ -7,6 +7,7 @@
 #ifndef HTML_PREVIEW_H
 #define HTML_PREVIEW_H
 
+#include <QColor>
 #include <QScopedPointer>
 #include <QString>
 #include <QWidget>
@@ -59,6 +60,17 @@ public:
      */
     void shutdownBeforeDestroy();
 
+    /**
+     * Suppress HTML export/render while the preview is hidden during window resize.
+     * When unsuspending, pass flushPendingRefresh=false to keep a deferred refresh for later.
+     */
+    void setResizeUpdatesSuspended(bool suspended, bool flushPendingRefresh = true);
+
+    /**
+     * Apply a preview refresh deferred while resize updates were suspended.
+     */
+    void flushDeferredPreviewUpdate();
+
 public slots:
     /**
      * Call this method to re-render the HTML for the document.
@@ -84,6 +96,19 @@ public slots:
      * Call this method to change the CSS style sheet code.
      */
     void setStyleSheet(const QString &css);
+
+    /**
+     * Set preview CSS and page colors, then load the WebEngine shell.
+     * Must run before the preview is shown (startup or new tab).
+     */
+    void prepareForDisplay(const QString &css,
+                           const QColor &pageBackground,
+                           const QColor &pageTextColor);
+
+    /**
+     * Render preview content while the widget is still hidden (startup).
+     */
+    void warmUpWhileHidden();
 
     /**
      * Call this method to enable or disable math rendering.

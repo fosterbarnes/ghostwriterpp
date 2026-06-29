@@ -82,6 +82,7 @@ int main(int argc, char *argv[])
     // current theme is not supported yet.
     // QCoreApplication::setAttribute(Qt::AA_DontShowIconsInMenus, true);
 
+    QCoreApplication::setAttribute(Qt::AA_CompressHighFrequencyEvents);
     QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
 
     QApplication app(argc, argv);
@@ -210,6 +211,5 @@ int main(int argc, char *argv[])
     //       only so it is displayed in the help output.
     ghostwriterpp::MainWindow window(filePath);
 
-    window.show();
     return app.exec();
 }

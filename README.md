@@ -9,6 +9,27 @@
 - 'Focused' views. Allows showing ONLY the .md code editor, preview, or classic split view
 - In-preview editing, also known as WYSIWYG markdown. Not all .md formatting or edge cases are accounted for quite yet. Track the progress in [EXAMPLE.md](https://github.com/fosterbarnes/ghostwriterpp/blob/main/README.md) (✅ = hopefully entirely working)
 
+## Downloads
+
+### Windows
+
+<table border="0">
+<tbody>
+<tr>
+<td align="center" valign="top"><a href="https://github.com/fosterbarnes/ghostwriterpp/releases/download/v2.1.6-2.1/ghostwriter++Installer_v2.1.6-2.1_win64.exe"><img src="https://raw.githubusercontent.com/fosterbarnes/musicApp/refs/heads/main/.resources/svg/download_x64.svg" width="180" height="auto" alt="x64 installer"/></a></td>
+<td align="center" valign="top"><a href="https://github.com/fosterbarnes/ghostwriterpp/releases/download/v2.1.6-2.1/ghostwriter++Portable_v2.1.6-2.1_win64.zip"><img src="https://raw.githubusercontent.com/fosterbarnes/musicApp/refs/heads/main/.resources/svg/download_portable.svg" width="180" height="auto" alt="x86 installer"/></a></td>
+</tr>
+</tbody>
+</table>
+
+### Linux
+
+Coming soon.
+
+### MacOS
+
+Coming soon.
+
  
 ## Screenshots
 
@@ -30,26 +51,6 @@ Original app docs are available [here](https://ghostwriter.kde.org/documentation
 
 Documentation and build info coming soon.
 
-## Downloads
-
-### Windows
-
-<table border="0">
-<tbody>
-<tr>
-<td align="center" valign="top"><a href="https://github.com/fosterbarnes/ghostwriterpp/releases/download/v2.1.6-2.1/ghostwriter++Installer_v2.1.6-2.1_win64.exe"><img src="https://raw.githubusercontent.com/fosterbarnes/musicApp/refs/heads/main/.resources/svg/download_x64.svg" width="180" height="auto" alt="x64 installer"/></a></td>
-<td align="center" valign="top"><a href="https://github.com/fosterbarnes/ghostwriterpp/releases/download/v2.1.6-2.1/ghostwriter++Portable_v2.1.6-2.1_win64.zip"><img src="https://raw.githubusercontent.com/fosterbarnes/musicApp/refs/heads/main/.resources/svg/download_portable.svg" width="180" height="auto" alt="x86 installer"/></a></td>
-</tr>
-</tbody>
-</table>
-
-### Linux
-
-Coming soon.
-
-### MacOS
-
-Coming soon.
 
 ## Licensing
 
