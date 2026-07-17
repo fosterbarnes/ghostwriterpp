@@ -106,7 +106,7 @@ DocumentTab::~DocumentTab()
     }
 
     // DocumentManager and DocumentStatistics must go away while the editor
-    // and document are still valid — their private state keeps raw pointers.
+    // and document are still valid - their private state keeps raw pointers.
     delete m_documentManager.data();
     delete m_documentStats.data();
 

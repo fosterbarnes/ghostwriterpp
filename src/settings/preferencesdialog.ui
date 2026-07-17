@@ -184,6 +184,23 @@
          </property>
          <layout class="QVBoxLayout" name="verticalLayout">
           <item>
+           <layout class="QHBoxLayout" name="activityBarLocationLayout">
+            <item>
+             <widget class="QLabel" name="activityBarLocationLabel">
+              <property name="text">
+               <string>Activity bar location</string>
+              </property>
+              <property name="buddy">
+               <cstring>activityBarLocationCombo</cstring>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="activityBarLocationCombo"/>
+            </item>
+           </layout>
+          </item>
+          <item>
            <widget class="QCheckBox" name="folderViewShowAllFilesCheckBox">
             <property name="text">
              <string>&amp;Show all files in folder view</string>

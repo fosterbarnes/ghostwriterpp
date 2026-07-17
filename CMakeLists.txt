@@ -6,6 +6,9 @@ cmake_minimum_required(VERSION 3.16)
 if (POLICY CMP0063)
     cmake_policy(SET CMP0063 NEW)
 endif()
+if (POLICY CMP0115)
+    cmake_policy(SET CMP0115 NEW)
+endif()
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING
@@ -30,7 +33,21 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
-# KDE Application Version, managed by release script
+# Fork app version (About dialog). Repo-root VERSION.txt is the single source of truth.
+# Named VERSION.txt (not Version) so Windows MSVC does not shadow C++20 <version>
+# when PROJECT_SOURCE_DIR is on the include path for 3rdparty/ headers.
+set(_gw_version_file "${CMAKE_CURRENT_SOURCE_DIR}/VERSION.txt")
+if(NOT EXISTS "${_gw_version_file}")
+    message(FATAL_ERROR "VERSION.txt missing: ${_gw_version_file}")
+endif()
+file(READ "${_gw_version_file}" GHOSTWRITERPP_APP_VERSION)
+string(STRIP "${GHOSTWRITERPP_APP_VERSION}" GHOSTWRITERPP_APP_VERSION)
+if(GHOSTWRITERPP_APP_VERSION STREQUAL "")
+    message(FATAL_ERROR "VERSION.txt is empty: ${_gw_version_file}")
+endif()
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${_gw_version_file}")
+
+# KDE Application Version for project()/ECM (numeric only; packaging metadata)
 set(RELEASE_SERVICE_VERSION_MAJOR "26")
 set(RELEASE_SERVICE_VERSION_MINOR "07")
 set(RELEASE_SERVICE_VERSION_MICRO "70")
@@ -58,10 +75,6 @@ include(ECMPoQmTools)
 include(KDEClangFormat)
 include(KDEGitCommitHooks)
 include(FeatureSummary)
-
-set(CMAKE_AUTOMOC ON)
-set(CMAKE_AUTORCC ON)
-set(CMAKE_AUTOUIC ON)
 
 if (IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/poqm")
     ecm_install_po_files_as_qm(poqm)
@@ -95,7 +108,16 @@ if(WIN32 AND NOT MSVC)
     set(CMARK_SHARED OFF CACHE BOOL "" FORCE)
     set(CMARK_STATIC ON CACHE BOOL "" FORCE)
 endif()
+# Pure-C cmark targets must not inherit Qt AUTOGEN. KDECMakeSettings already
+# set CMAKE_AUTOMOC/AUTORCC ON globally, so turn them off for this subdirectory
+# only, then restore for the app.
+set(CMAKE_AUTOMOC OFF)
+set(CMAKE_AUTORCC OFF)
+set(CMAKE_AUTOUIC OFF)
 add_subdirectory(3rdparty/cmark-gfm EXCLUDE_FROM_ALL)
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+set(CMAKE_AUTOUIC ON)
 add_subdirectory(src)
 
 if(KF${KF_MAJOR_VERSION}DocTools_FOUND)
@@ -116,8 +138,12 @@ set(ICON_FILES
     ${ICONS_FOLDER}/256-apps-ghostwriter.png
 )
 
-ecm_add_app_icon(ICONS_SOURCES ICONS ${ICON_FILES})
-target_sources(ghostwriterpp PRIVATE ${ICONS_SOURCES})
+if(WIN32)
+    target_sources(ghostwriterpp PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/resources/windows/ghostwriterpp.rc)
+elseif(APPLE)
+    ecm_add_app_icon(ghostwriterpp ICONS ${ICON_FILES} OUTFILE_BASENAME ghostwriterpp)
+endif()
 
 if(BUILD_TESTING)
    add_subdirectory(autotest)
@@ -138,9 +164,9 @@ if(APPLE)
     set(MACOSX_BUNDLE_GUI_IDENTIFIER "org.kde.ghostwriterpp")
     set(MACOSX_BUNDLE_BUNDLE_NAME "ghostwriter++")
     set(MACOSX_BUNDLE_INFO_STRING "ghostwriter++ - A Markdown Editor")
-    set(MACOSX_BUNDLE_LONG_VERSION_STRING "ghostwriter++ ${RELEASE_SERVICE_VERSION}")
+    set(MACOSX_BUNDLE_LONG_VERSION_STRING "ghostwriter++ ${GHOSTWRITERPP_APP_VERSION}")
     set(MACOSX_BUNDLE_SHORT_VERSION_STRING "${RELEASE_SERVICE_VERSION_MAJOR}.${RELEASE_SERVICE_VERSION_MINOR}")
-    set(MACOSX_BUNDLE_BUNDLE_VERSION "${RELEASE_SERVICE_VERSION}")
+    set(MACOSX_BUNDLE_BUNDLE_VERSION "${GHOSTWRITERPP_APP_VERSION}")
     set(MACOSX_BUNDLE_COPYRIGHT "2014-${CURRENT_YEAR} the ghostwriter++ authors")
 endif()
 

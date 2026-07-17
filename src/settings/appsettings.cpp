@@ -33,6 +33,7 @@ constexpr auto GW_FAVORITE_STATISTIC_KEY{"Session/favoriteStatistic"};
 constexpr auto GW_RESTORE_SESSION_KEY{"Session/restoreSession"};
 constexpr auto GW_REMEMBER_FILE_HISTORY_KEY{"Session/rememberFileHistory"};
 constexpr auto GW_REMEMBER_FOLDER_VIEW_SHOW_ALL_FILES_KEY{"Sidebar/rememberFolderViewShowAllFiles"};
+constexpr auto GW_ACTIVITY_BAR_LOCATION_KEY{"Sidebar/activityBarLocation"};
 constexpr auto GW_AUTOSAVE_KEY{"Save/autoSave"};
 constexpr auto GW_BACKUP_FILE_KEY{"Save/backupFile"};
 constexpr auto GW_EDITOR_FONT_KEY{"Style/editorFont"};
@@ -95,6 +96,7 @@ public:
     bool restoreSessionEnabled;
     bool fileHistoryEnabled;
     bool folderViewShowAllFilesEnabled;
+    ActivityBarLocation activityBarLocation;
     bool hideMenuBarInFullScreenEnabled;
     bool htmlPreviewVisible;
     FocusView focusView;
@@ -169,6 +171,7 @@ void AppSettings::store()
     appSettings.setValue(constants::GW_FAVORITE_STATISTIC_KEY, QVariant(d->favoriteStatistic));
     appSettings.setValue(constants::GW_REMEMBER_FILE_HISTORY_KEY, QVariant(d->fileHistoryEnabled));
     appSettings.setValue(constants::GW_REMEMBER_FOLDER_VIEW_SHOW_ALL_FILES_KEY, QVariant(d->folderViewShowAllFilesEnabled));
+    appSettings.setValue(constants::GW_ACTIVITY_BAR_LOCATION_KEY, QVariant((int)d->activityBarLocation));
     appSettings.setValue(constants::GW_SPACES_FOR_TABS_KEY, QVariant(d->insertSpacesForTabsEnabled));
     appSettings.setValue(constants::GW_TAB_WIDTH_KEY, QVariant(d->tabWidth));
     appSettings.setValue(constants::GW_THEME_KEY, QVariant(d->themeName));
@@ -507,6 +510,25 @@ void AppSettings::setFolderViewShowAllFilesEnabled(bool enabled)
 
     d->folderViewShowAllFilesEnabled = enabled;
     emit folderViewShowAllFilesChanged(enabled);
+}
+
+ActivityBarLocation AppSettings::activityBarLocation() const
+{
+    Q_D(const AppSettings);
+
+    return d->activityBarLocation;
+}
+
+void AppSettings::setActivityBarLocation(ActivityBarLocation location)
+{
+    Q_D(AppSettings);
+
+    if ((location >= ActivityBarLocationFirst)
+            && (location <= ActivityBarLocationLast)
+            && location != d->activityBarLocation) {
+        d->activityBarLocation = location;
+        emit activityBarLocationChanged(location);
+    }
 }
 
 bool AppSettings::displayTimeInFullScreenEnabled()
@@ -889,6 +911,15 @@ AppSettings::AppSettings()
     d->restoreSessionEnabled = appSettings.value(constants::GW_RESTORE_SESSION_KEY, QVariant(true)).toBool();
     d->fileHistoryEnabled = appSettings.value(constants::GW_REMEMBER_FILE_HISTORY_KEY, QVariant(true)).toBool();
     d->folderViewShowAllFilesEnabled = appSettings.value(constants::GW_REMEMBER_FOLDER_VIEW_SHOW_ALL_FILES_KEY, QVariant(false)).toBool();
+    d->activityBarLocation = (ActivityBarLocation)appSettings.value(
+        constants::GW_ACTIVITY_BAR_LOCATION_KEY,
+        QVariant(ActivityBarLocationTop)).toInt();
+
+    if ((d->activityBarLocation < ActivityBarLocationFirst)
+            || (d->activityBarLocation > ActivityBarLocationLast)) {
+        d->activityBarLocation = ActivityBarLocationTop;
+    }
+
     d->displayTimeInFullScreenEnabled = appSettings.value(constants::GW_DISPLAY_TIME_IN_FULL_SCREEN_KEY, QVariant(true)).toBool();
     d->themeName = appSettings.value(constants::GW_THEME_KEY, QVariant("Classic Light")).toString();
     d->darkModeEnabled = appSettings.value(constants::GW_DARK_MODE_KEY, QVariant(true)).toBool();

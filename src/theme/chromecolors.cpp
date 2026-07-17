@@ -244,11 +244,6 @@ static double luminance(const QColor &color)
 {
     double r, g, b;
 
-    // // Ensure color is non-zero.
-    // if (c == QColor(Qt::black)) {
-    //     c.setRgb(1, 1, 1);
-    // }
-
     r = channelLuminance(color.redF());
     g = channelLuminance(color.greenF());
     b = channelLuminance(color.blueF());

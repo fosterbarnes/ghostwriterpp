@@ -375,7 +375,7 @@ void HtmlPreview::updatePreview()
                 QtConcurrent::run
                 (
                     &HtmlPreviewPrivate::exportToHtml,
-                    d->document->toPlainText(),
+                    text,
                     d->exporter
                 );
             d->futureWatcher->setFuture(future);

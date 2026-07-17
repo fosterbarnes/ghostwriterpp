@@ -1,27 +1,25 @@
-# Release inputs (repo-relative; version from .scripts/version, e.g. ghostwriter++_v2.1.6-2.1_win64.zip):
+# Release inputs (repo-relative; version from Version, e.g. ghostwriter++_v2.1.6-2.3_win64.zip):
 #   - .installer/Output/ghostwriterpp-x64-installer.exe
 #   - build-release/ghostwriter++_v{version}_win64.zip
 
 $ErrorActionPreference = "Stop"
 $Host.UI.RawUI.WindowTitle = "Draft ghostwriterpp Release"
 
-. (Join-Path $PSScriptRoot "resolveRepoRoot.ps1")
-. (Join-Path $PSScriptRoot "scriptHelper.ps1")
+. "$PSScriptRoot\scriptHelper.ps1"
 
 $root = Get-CMakeProjectRoot -ScriptsDirectory $PSScriptRoot
 Set-Location -LiteralPath $root
 
-$versionContents = Read-VersionFileFromScriptsRoot -ScriptsDirectory $PSScriptRoot
 $buildDir = Join-Path $root (Get-BuildDirectoryNameForPreset -Preset release)
 $portableZipBuilt = Join-Path $buildDir "ghostwriter++_v${versionContents}_win64.zip"
 $installerBuilt = Join-Path $root ".installer\Output\ghostwriterpp-x64-installer.exe"
 
 if (-not (Test-Path -LiteralPath $portableZipBuilt)) {
-    Write-Host "Missing portable zip (build release first): $portableZipBuilt" -ForegroundColor Red
+    Write-Host "Missing portable zip (run .prePush.ps1 first): $portableZipBuilt" -ForegroundColor Red
     exit 1
 }
 if (-not (Test-Path -LiteralPath $installerBuilt)) {
-    Write-Host "Missing installer (run .buildRelease.ps1 or buildInstaller.ps1): $installerBuilt" -ForegroundColor Red
+    Write-Host "Missing installer (run .prePush.ps1 or buildInstaller.ps1): $installerBuilt" -ForegroundColor Red
     exit 1
 }
 
@@ -31,26 +29,27 @@ $null = Get-Command gh -ErrorAction Stop
 Write-Host "Portable zip: $portableZipBuilt"
 Write-Host "Installer:    $installerBuilt"
 Write-Host "Version:      $versionContents"
+if (Test-Path -LiteralPath $buildNotes) {
+    Write-Host "Release notes source: $buildNotes" -ForegroundColor Cyan
+}
 
 $v = $versionContents
 $tagName = "v$v"
 $defaultReleaseName = "ghostwriter++ v$v"
-$buildNotesTxt = Join-Path $root ".md\.buildNotes.txt"
 $releaseName = $defaultReleaseName
 $releaseNotes = ""
 
 $useBuildNotesTxt = $false
-if (Test-Path -LiteralPath $buildNotesTxt) {
-    $bnRaw = Get-Content -LiteralPath $buildNotesTxt -Raw -Encoding UTF8 -ErrorAction SilentlyContinue
-    if ($null -ne $bnRaw -and $bnRaw.Trim().Length -gt 0) { $useBuildNotesTxt = $true }
+if (Test-Path -LiteralPath $buildNotes) {
+    if (-not [string]::IsNullOrWhiteSpace($buildNotesContents)) { $useBuildNotesTxt = $true }
 }
 
 if ($useBuildNotesTxt) {
-    $bnLines = @(Get-Content -LiteralPath $buildNotesTxt -Encoding UTF8)
+    $bnLines = @(Get-Content -LiteralPath $buildNotes -Encoding UTF8)
     $releaseName = $bnLines[0].Trim()
     if ($bnLines.Count -le 1) { $releaseNotes = "" }
     else { $releaseNotes = ($bnLines[1..($bnLines.Count - 1)] -join "`n") }
-    Write-Host "`nUsing .md/.buildNotes.txt: first line = release title; remaining lines = notes (prompt skipped)." -ForegroundColor Cyan
+    Write-Host "`nUsing buildNotes.txt: first line = release title; remaining lines = notes (prompt skipped)." -ForegroundColor Cyan
 }
 else {
     Write-Host "`nEnter release notes:" -ForegroundColor Yellow
@@ -112,6 +111,6 @@ if (-not ($originUrl -match 'github\.com[:/](?<owner>[^/]+)/(?<repo>[^/.]+)(?:\.
     throw "Could not parse owner/repo from origin for gh (expected github.com HTTPS or SSH URL): $originUrl"
 }
 $ghRepo = '{0}/{1}' -f $Matches['owner'], $Matches['repo']
-& gh release create $tagName "$finalPortable" "$finalX64" --repo $ghRepo --title "$releaseName" --notes "$releaseNotes" --prerelease
+& gh release create $tagName "$finalPortable" "$finalX64" --repo $ghRepo --title "$releaseName" --notes "$releaseNotes" --latest
 
 Remove-Item -LiteralPath $finalPortable, $finalX64 -Force -ErrorAction SilentlyContinue

@@ -1,9 +1,0 @@
-{"data":{"canceled":false,"h":30,"inStack":true,"startupWarmup":true,"suspended":false,"visible":false,"w":256},"hypothesisId":"H1","location":"htmlpreview.cpp:onHtmlReady","message":"applying html","sessionId":"bba1a0","timestamp":1782756597226}
-{"data":{"h":30,"htmlLen":6651,"startupWarmup":true,"visible":false,"w":256},"hypothesisId":"H5","location":"htmlpreview.cpp:setHtmlContent","message":"emit html to webengine","sessionId":"bba1a0","timestamp":1782756597226}
-{"data":{"canceled":false,"h":1029,"inStack":true,"startupWarmup":false,"suspended":false,"visible":true,"w":430},"hypothesisId":"H1","location":"htmlpreview.cpp:onHtmlReady","message":"applying html","sessionId":"bba1a0","timestamp":1782756597973}
-{"data":{"h":1029,"htmlLen":6651,"startupWarmup":false,"visible":true,"w":430},"hypothesisId":"H5","location":"htmlpreview.cpp:setHtmlContent","message":"emit html to webengine","sessionId":"bba1a0","timestamp":1782756597974}
-{"data":{},"hypothesisId":"H9","location":"mainwindow.cpp:showPreviewFreezePane","message":"theme only","sessionId":"bba1a0","timestamp":1782756600131}
-{"data":{"hiddenCount":1,"stackCount":3},"hypothesisId":"H10","location":"mainwindow.cpp:beginLiveResize","message":"hidden in stack","sessionId":"bba1a0","timestamp":1782756600131}
-{"data":{"active":true,"inStack":true},"hypothesisId":"H10","location":"mainwindow.cpp:endLiveResize","message":"restore in stack","sessionId":"bba1a0","timestamp":1782756611684}
-{"data":{"flushActive":true},"hypothesisId":"H11","location":"mainwindow.cpp:endLiveResize","message":"complete","sessionId":"bba1a0","timestamp":1782756611685}
-{"data":{},"hypothesisId":"H11","location":"mainwindow.cpp:onResizeSettled","message":"complete","sessionId":"bba1a0","timestamp":1782756611685}

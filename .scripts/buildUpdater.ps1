@@ -1,16 +1,16 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Deploy Qt/deps into build-release/bin and zip the portable folder.
+# Assumes release exe already built (call from .prePush after build.ps1).
+
 param(
-    [Alias("c")][switch]$Clean,
-    [switch]$NoBuild,
     [string]$CraftRoot = "C:\CraftRoot",
-    [switch]$StrictExeIcon,
     [ValidateRange(0, 2)][int]$WinDeployVerbose = 0,
     [switch]$IncludeQtTranslations,
     [string]$RepoRoot = "",
     [Alias("cwd")][switch]$UseWorkingDirectory
 )
 $ErrorActionPreference = "Stop"
-. (Join-Path $PSScriptRoot "resolveRepoRoot.ps1")
-. (Join-Path $PSScriptRoot "scriptHelper.ps1")
+. "$PSScriptRoot\scriptHelper.ps1"
 
 function Get-QtInstallPrefix {
     foreach ($exe in @('qtpaths6.exe', 'qtpaths.exe')) {
@@ -118,8 +118,8 @@ function Test-IsSystemDllPath([string]$FullPath) {
     }
     $sys32 = [IO.Path]::GetFullPath((Join-Path $env:SystemRoot 'System32'))
     $sysWow = [IO.Path]::GetFullPath((Join-Path $env:SystemRoot 'SysWOW64'))
-    foreach ($root in @($sys32, $sysWow)) {
-        if ($full.StartsWith($root, [StringComparison]::OrdinalIgnoreCase)) { return $true }
+    foreach ($r in @($sys32, $sysWow)) {
+        if ($full.StartsWith($r, [StringComparison]::OrdinalIgnoreCase)) { return $true }
     }
     $false
 }
@@ -200,21 +200,16 @@ function Copy-PeDependencyClosure([Parameter(Mandatory)][string]$DumpBin, [Param
     }
 }
 
-# ghostwriter++.exe = CMake OUTPUT_NAME (ghostwriterpp, src/CMakeLists.txt).
 $ExeFileName = "ghostwriter++.exe"
 $repoRoot = Get-CMakeProjectRoot -ScriptsDirectory $PSScriptRoot -RepoRoot $RepoRoot -UseWorkingDirectory:$UseWorkingDirectory
 Write-Host "Repository root: $repoRoot"
 $buildDirPath = Join-Path $repoRoot (Get-BuildDirectoryNameForPreset -Preset release)
 $exePath = Join-Path $buildDirPath "bin/$ExeFileName"
 $binDir = Split-Path -Parent $exePath
-$buildScript = Join-Path $PSScriptRoot "build.ps1"
 
 Push-Location $repoRoot
 try {
-    if (-not $NoBuild) {
-        & $buildScript -Preset release -Clean:$Clean -CraftRoot $CraftRoot -StrictExeIcon:$StrictExeIcon -RepoRoot $repoRoot
-    }
-    if (-not (Test-Path -LiteralPath $exePath)) { throw "Executable not found: $exePath (build release first, or drop -NoBuild)" }
+    if (-not (Test-Path -LiteralPath $exePath)) { throw "Executable not found: $exePath (build release first)" }
 
     Ensure-QtRuntimeFromCraft -ProjectRoot $repoRoot -CraftRoot $CraftRoot -Strict
     Ensure-CraftRootQtResourcesForWinDeploy -CraftRoot $CraftRoot
@@ -245,9 +240,8 @@ try {
     Invoke-ReleaseFolderCleanup -BinDir $binDir -QtTranslationsKept:$IncludeQtTranslations
 
     Write-Host "Release folder ready: $binDir"
-    Write-Host "You can run $ExeFileName from Explorer or any shell without Craft on PATH."
 
-    $releaseVer = Read-VersionFileFromScriptsRoot -ScriptsDirectory $PSScriptRoot
+    $releaseVer = Read-VersionFile
     $zipOut = Join-Path $buildDirPath "ghostwriter++_v${releaseVer}_win64.zip"
     if (Test-Path -LiteralPath $zipOut) { Remove-Item -LiteralPath $zipOut -Force }
     Write-Host "Zipping portable folder -> $zipOut (7z) ..."
@@ -258,14 +252,6 @@ try {
     }
     finally { Pop-Location }
     Write-Host "Zip ready: $zipOut"
-
-    $installerScript = Join-Path $PSScriptRoot "buildInstaller.ps1"
-    Write-Host "Running: $installerScript"
-    & $installerScript
-
-    $syncReadmeScript = Join-Path $PSScriptRoot "syncReadme.ps1"
-    Write-Host "Running: $syncReadmeScript"
-    & $syncReadmeScript
 }
 finally {
     Pop-Location

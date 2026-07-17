@@ -1,5 +1,6 @@
 /*
  * SPDX-FileCopyrightText: 2020-2022 Megan Conkle <megan.conkle@kdemail.net>
+ * SPDX-FileCopyrightText: 2026 Nate Peterson
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
@@ -10,18 +11,20 @@
 #include <QFrame>
 #include <QHideEvent>
 #include <QPushButton>
+#include <QResizeEvent>
 #include <QScopedPointer>
 #include <QShowEvent>
+
+#include "settings/appsettings.h"
 
 namespace ghostwriterpp
 {
 /**
- * Sidebar similar to VS Code's activity bar/sidebar.  This widget presents
- * a vertical tab bar with checkable buttons for tabs.  At the bottom of the
- * tab bar is an area where action buttons can be added.  For styling with
- * style sheets, use QPushButton and its various pseudo-states.  For
- * convenience, an object of type Sidebar has an object name of "sidebar",
- * allowing the background area to be styled with #sidebar in the style sheet.
+ * Sidebar similar to VS Code's activity bar/sidebar.  Tab icons can sit in a
+ * vertical strip on the left or a horizontal row on top (see
+ * ActivityBarLocation).  At the trailing end of the activity bar are action
+ * buttons (e.g. Settings).  For styling with style sheets, use QPushButton
+ * and its various pseudo-states.  Object name is "sidebar".
  */
 class SidebarPrivate;
 class Sidebar : public QFrame
@@ -101,8 +104,8 @@ public:
 
     /**
      * Removes the action button at the given button index from the button
-     * area of the bottom of the sidebar.  Valid button index values are
-     * from zero to buttonCount() - 1.
+     * area of the bottom of the sidebar.  Valid button index values are from
+     * zero to buttonCount() - 1.
      */
     void removeButton(int index);
 
@@ -127,6 +130,21 @@ public:
      */
     bool autoHideEnabled() const;
 
+    /**
+     * Sets where the activity bar (tab icons) is placed.
+     */
+    void setActivityBarLocation(ActivityBarLocation location);
+
+    /**
+     * Returns where the activity bar (tab icons) is placed.
+     */
+    ActivityBarLocation activityBarLocation() const;
+
+    /**
+     * Sets the icon for the top-bar overflow ("more") button.
+     */
+    void setOverflowIcon(const QIcon &icon);
+
 signals:
     /**
      * Emitted when the sidebar's visibility has changed.
@@ -139,6 +157,7 @@ protected slots:
 protected:
     void hideEvent(QHideEvent *event) override;
     void showEvent(QShowEvent *event) override;
+    void resizeEvent(QResizeEvent *event) override;
 
 private:
     QScopedPointer<SidebarPrivate> d_ptr;

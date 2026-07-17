@@ -1,32 +1,19 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# README Windows download hrefs → match .scripts/version (same tag + filenames as .draftRelease.ps1 / gh release).
+# README Windows download hrefs match Version (same tag + filenames as .draftRelease.ps1 / gh release).
 
 $ErrorActionPreference = "Stop"
+. "$PSScriptRoot\scriptHelper.ps1"
 
-. (Join-Path $PSScriptRoot "resolveRepoRoot.ps1")
-. (Join-Path $PSScriptRoot "scriptHelper.ps1")
+$repoRoot = Get-CMakeProjectRoot -ScriptsDirectory $PSScriptRoot
+Set-Location -LiteralPath $repoRoot
 
-$root = Get-CMakeProjectRoot -ScriptsDirectory $PSScriptRoot
-Set-Location -LiteralPath $root
-
-$readme = Join-Path $root "README.md"
 if (-not (Test-Path -LiteralPath $readme)) { throw "README not found: $readme" }
 
-$versionContents = Read-VersionFileFromScriptsRoot -ScriptsDirectory $PSScriptRoot
 $tagName = "v$versionContents"
 
 $base = "https://github.com/fosterbarnes/ghostwriterpp/releases/download/$tagName"
 $installerHref = "$base/ghostwriter++Installer_${tagName}_win64.exe"
 $portableHref = "$base/ghostwriter++Portable_${tagName}_win64.zip"
-
-$Utf8NoBomEncoding = New-Object System.Text.UTF8Encoding $false
-function Write-RepoUtf8NoBomFile {
-    param(
-        [Parameter(Mandatory)][string]$LiteralPath,
-        [Parameter(Mandatory)][string]$Content
-    )
-    [System.IO.File]::WriteAllText($LiteralPath, $Content, $Utf8NoBomEncoding)
-}
 
 $text = Get-Content -LiteralPath $readme -Raw -Encoding UTF8
 

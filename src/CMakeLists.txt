@@ -9,7 +9,7 @@ set(UI_FILES settings/preferencesdialog.ui)
 
 add_executable(ghostwriterpp ../resources.qrc ../icons.qrc ${UI_FILES})
 
-target_compile_definitions(ghostwriterpp PRIVATE APPVERSION="${RELEASE_SERVICE_VERSION}")
+target_compile_definitions(ghostwriterpp PRIVATE APPVERSION="${GHOSTWRITERPP_APP_VERSION}")
 
 target_include_directories(ghostwriterpp PUBLIC
     "${PROJECT_BINARY_DIR}"
@@ -79,6 +79,8 @@ target_sources(ghostwriterpp PRIVATE
     sidebar.cpp
     timelabel.cpp
     windowframechrome.cpp
+    workspace.cpp
+    workspaceviewwidget.cpp
     ${ghostwriterpp_QM_LOADER}
 )
 

@@ -75,6 +75,7 @@ Makefile*
 
 # pp additions
 *.code-workspace
+*.ghpp-workspace
 *s.md
 ToDo.md
 /.installer/Output/

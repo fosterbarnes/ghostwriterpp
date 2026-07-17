@@ -50,6 +50,8 @@
 #include "outlinewidget.h"
 #include "sidebar.h"
 #include "timelabel.h"
+#include "workspace.h"
+#include "workspaceviewwidget.h"
 
 class QShowEvent;
 
@@ -69,6 +71,7 @@ public:
 protected:
     QSize sizeHint() const  override;
     void resizeEvent(QResizeEvent *event) override;
+    void moveEvent(QMoveEvent *event) override;
     void keyPressEvent(QKeyEvent *e) override;
     bool eventFilter(QObject *obj, QEvent *event) override;
     void closeEvent(QCloseEvent *event) override;
@@ -107,6 +110,8 @@ private slots:
     void toggleSidebarVisible(bool visible);
     void runSpellCheck();
     void onResizeSettled();
+    void openWorkspaceFromFile();
+    void saveWorkspaceAs();
 
 private:
     // Per-tab storage and chrome.
@@ -128,6 +133,8 @@ private:
     QLabel *statusIndicator;
     TimeLabel *timeIndicator;
     FolderViewWidget *folderViewWidget = nullptr;
+    WorkspaceViewWidget *workspaceViewWidget = nullptr;
+    Workspace *workspace = nullptr;
     OutlineWidget *outlineWidget;
     DocumentStatisticsWidget *documentStatsWidget;
     SessionStatistics *sessionStats;
@@ -155,6 +162,7 @@ private:
     QTimer *m_resizeSettleTimer = nullptr;
     bool m_liveResizeActive = false;
     int m_lastPreviewMaxWidth = -1;
+    int m_lastSplitterEditorWidth = -1;
     QPointer<HtmlPreview> m_activePreviewBeforeResize;
     QList<QPointer<HtmlPreview>> m_hiddenPreviewsDuringResize;
 
@@ -183,6 +191,16 @@ private:
 
     // Multi-tab session persistence.
     void persistOpenTabs();
+
+    // Workspace.
+    bool openWorkspaceAtPath(const QString &path, bool replaceTabs);
+    bool closeAllTabsForWorkspaceSwitch();
+    void maybeAddPathToWorkspace(const QString &filePath);
+    void addFilesToWorkspace();
+    void removeSelectedWorkspaceMembers();
+    QStringList currentSavedFilePaths() const;
+    void refreshWorkspaceView();
+    void updateWindowTitleForDocument(const QString &displayName);
 
     // Focus view.
     void applyFocusView(FocusView view);

@@ -1,0 +1,20 @@
+v2.1.6-2.4
+
+Workspaces
+- You can save and reopen a named workspace file (`.ghpp-workspace`) that remembers a list of markdown files, even if those files are not open as tabs
+- The sidebar has a Workspace tab to browse that list, add or remove files, and open a file into a tab
+- Opening or saving a file while a workspace is active adds it to the workspace; closing the tab does not remove it
+- File menu: Open Workspace from File… and Save Workspace As…
+- On launch, the app restores the last workspace when you had one, or your previous open tabs, or a blank window; opening a single file from the shell or Open With starts with just that file
+- Double-clicking or opening a `.ghpp-workspace` file loads that workspace
+
+Sidebar
+- Fix issues that caused sidebar to not show
+- Sidebar icons now sit across the top of the sidebar by default (like VS Code’s top activity bar)
+- New setting. Preferences → Sidebar → Activity bar location
+
+Build
+- Address CMake warnings
+
+Build scripts
+- Version bump flags now touch only the matching number in `2.1.6-2.3` style versions (other numbers stay put)

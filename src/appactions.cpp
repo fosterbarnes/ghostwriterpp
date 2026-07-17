@@ -92,6 +92,8 @@ AppActions::AppActions(KActionCollection *collection, SvgIconTheme *iconTheme, Q
     QObject::connect(action, &QAction::triggered, get(OpenMostRecent), &QAction::trigger);
 
     d->addAction(ClearRecentFilesList, "file_clear_recent_files", tr("Clear List"), "clear");
+    d->addAction(OpenWorkspace, "file_open_workspace", tr("Open Workspace from File..."), "open-file");
+    d->addAction(SaveWorkspaceAs, "file_save_workspace_as", tr("Save Workspace As..."), "save-as");
     d->addAction(Save, KStandardAction::Save, "save");
     d->addAction(SaveAs, KStandardAction::SaveAs, "save-as");
     d->addAction(RenameFile, KStandardAction::RenameFile, "rename-file");

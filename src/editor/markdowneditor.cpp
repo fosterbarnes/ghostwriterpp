@@ -773,9 +773,12 @@ void MarkdownEditor::setupPaperMargins()
     }
 
     int margin = 0;
+    // Use viewport + current side margins so applying margins does not change the basis.
+    const QMargins currentMargins = this->viewportMargins();
+    const int availableW = this->viewport()->width() + currentMargins.left() + currentMargins.right();
 
-    if (width <= this->viewport()->width()) {
-        margin = (this->viewport()->width() - width) / 2;
+    if (width <= availableW) {
+        margin = (availableW - width) / 2;
     }
 
     if (margin == d->cachedPaperMarginH) {

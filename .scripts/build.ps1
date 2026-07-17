@@ -1,14 +1,16 @@
 param(
     [ValidateSet("dev", "release", "asan", "unity", "profile", "clazy", "dev-disable-deprecated")][string]$Preset = "release",
     [Alias("c")][switch]$Clean,
+    # Accepted for muscle memory; Craft/Windows builds are x64-only.
+    [switch]$X64,
     [string]$CraftRoot = "C:\CraftRoot",
     [switch]$StrictExeIcon,
     [string]$RepoRoot = "",
     [Alias("cwd")][switch]$UseWorkingDirectory
 )
+if ($X64) { Write-Host "Architecture: x64" }
 $ErrorActionPreference = "Stop"
-. (Join-Path $PSScriptRoot "resolveRepoRoot.ps1")
-. (Join-Path $PSScriptRoot "scriptHelper.ps1")
+. "$PSScriptRoot\scriptHelper.ps1"
 
 function Remove-PathWithRetry([Parameter(Mandatory)][string]$Path, [switch]$Recurse, [int]$MaxAttempts = 15, [int]$DelayMs = 350) {
     if (-not (Test-Path -LiteralPath $Path)) { return }
@@ -71,7 +73,14 @@ function Initialize-BuildEnvironment([Parameter(Mandatory)][string]$ProjectRoot)
         throw "kernel32.lib not on LIB and craftenv.ps1 missing: $craftEnv`nUse VS Developer PowerShell or -CraftRoot."
     }
     Write-Host "Sourcing Craft environment: $craftEnv"
-    . $craftEnv
+    # craftenv.ps1 starts with `cls` / Clear-Host, which throws without a console buffer.
+    function Clear-Host { }
+    try {
+        . $craftEnv
+    }
+    finally {
+        Remove-Item -Path function:Clear-Host -ErrorAction SilentlyContinue
+    }
     if (-not (Test-HasWindowsSdkLib)) { throw "After craftenv.ps1, kernel32.lib still not on LIB." }
     Set-Location $ProjectRoot
 }
