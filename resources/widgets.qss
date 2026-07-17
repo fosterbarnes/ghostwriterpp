@@ -385,6 +385,17 @@ ghostwriterpp--Sidebar QPushButton[checkable="true"] {
     border-radius: 0px;
 }
 
+ghostwriterpp--Sidebar[activityBarLocation="top"] QPushButton[checkable="true"] {
+    icon-size: 16px;
+    min-width: 28px;
+    max-width: 28px;
+    min-height: 28px;
+    max-height: 28px;
+    height: 28px;
+    border-left-width: 0px;
+    border-bottom-width: 2px;
+}
+
 ghostwriterpp--Sidebar QPushButton:checked {
     border-color: $accent-color;
     color: $label-color;
@@ -414,6 +425,17 @@ ghostwriterpp--Sidebar QPushButton[checkable="false"] {
     height: 40px;
 }
 
+ghostwriterpp--Sidebar[activityBarLocation="top"] QPushButton[checkable="false"] {
+    icon-size: 16px;
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    max-width: 28px;
+    min-height: 28px;
+    max-height: 28px;
+    border-radius: 3px;
+}
+
 ghostwriterpp--Sidebar QPushButton[checkable="false"]:hover {
     color: $label-color;
     background-color: $tertiary-fill-color;
@@ -422,6 +444,10 @@ ghostwriterpp--Sidebar QPushButton[checkable="false"]:hover {
 ghostwriterpp--Sidebar QPushButton[checkable="false"]:pressed {
     color: $label-color;
     background-color: transparent;
+}
+
+ghostwriterpp--Sidebar QPushButton#sidebarOverflowButton {
+    icon-size: 12px;
 }
 
 /* Stacked widgets inside sidebar pane */

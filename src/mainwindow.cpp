@@ -25,6 +25,7 @@
 #include <QMenuBar>
 #include <QMimeDatabase>
 #include <QMimeType>
+#include <QMoveEvent>
 #include <QPalette>
 #include <QPushButton>
 #include <QHash>
@@ -72,6 +73,7 @@
 #define GW_SPLITTER_GEOMETRY_KEY "Window/splitterGeometry"
 #define GW_SESSION_OPEN_TABS_KEY "Session/openTabs"
 #define GW_SESSION_ACTIVE_TAB_KEY "Session/activeTab"
+#define GW_SESSION_WORKSPACE_PATH_KEY "Session/workspacePath"
 #define GW_SESSION_TAB_PATH_KEY "filePath"
 #define GW_SESSION_TAB_CURSOR_KEY "cursor"
 
@@ -107,6 +109,25 @@ int layoutScreenAvailableWidth()
         return s->availableSize().width();
     }
     return layoutScreenWidth();
+}
+
+void ensureSidebarSplitterSize(QSplitter *splitter, Sidebar *sidebar, int windowWidth)
+{
+    if (!splitter || !sidebar || !sidebar->isVisible()) {
+        return;
+    }
+
+    QList<int> sizes = splitter->sizes();
+    if (sizes.size() < 3 || sizes.at(0) > 0) {
+        return;
+    }
+
+    const int sidebarWidth = qMax(sidebar->minimumWidth(), windowWidth / 5);
+    int remaining = qMax(2, windowWidth - sidebarWidth);
+    sizes[0] = sidebarWidth;
+    sizes[1] = remaining / 2;
+    sizes[2] = remaining - sizes[1];
+    splitter->setSizes(sizes);
 }
 
 void ensureTopLevelVisibleOnScreen(QWidget *w)
@@ -217,6 +238,7 @@ static QString absoluteFileKey(const QString &path)
 enum SidebarTabIndex {
     FirstSidebarTab,
     FolderViewSidebarTab = FirstSidebarTab,
+    WorkspaceSidebarTab,
     OutlineSidebarTab,
     SessionStatsSidebarTab,
     DocumentStatsSidebarTab,
@@ -231,9 +253,15 @@ MainWindow::MainWindow(const QString &filePath, QWidget *parent)
       previewStack(nullptr),
       activeTabIndex(-1),
       newTabButton(nullptr),
+      findReplace(nullptr),
+      splitter(nullptr),
+      sidebar(nullptr),
       layoutActionGroup(nullptr)
 {
-    Bookmark fileToOpen(filePath);
+    const bool cliIsWorkspace = Workspace::isWorkspaceFile(filePath);
+    const bool hasCliWorkspace = !filePath.isEmpty() && cliIsWorkspace;
+    const bool hasCliDocument = !filePath.isEmpty() && !cliIsWorkspace;
+    Bookmark fileToOpen = hasCliDocument ? Bookmark(filePath) : Bookmark();
 
     setAttribute(Qt::WA_DontShowOnScreen, true);
 
@@ -242,10 +270,17 @@ MainWindow::MainWindow(const QString &filePath, QWidget *parent)
     sidebarHiddenForResize = false;
     appSettings = AppSettings::instance();
 
+    workspace = new Workspace(this);
+
     int savedActiveIndex = -1;
     BookmarkList persisted;
-    if (appSettings->restoreSessionEnabled()) {
+    QString restoreWorkspacePath;
+    const bool restoreSession = appSettings->restoreSessionEnabled()
+        && !hasCliDocument
+        && !hasCliWorkspace;
+    if (restoreSession) {
         persisted = loadPersistedTabsFromSettings(&savedActiveIndex);
+        restoreWorkspacePath = QSettings().value(GW_SESSION_WORKSPACE_PATH_KEY).toString();
     }
 
     loadTheme();
@@ -296,28 +331,64 @@ MainWindow::MainWindow(const QString &filePath, QWidget *parent)
         addDocumentTab(Bookmark(filePath));
     });
 
+    connect(workspace, &Workspace::membershipChanged, this, &MainWindow::refreshWorkspaceView);
+    connect(workspace, &Workspace::associationChanged, this, [this]() {
+        if (auto *doc = currentDocument()) {
+            updateWindowTitleForDocument(doc->displayName());
+        } else {
+            updateWindowTitleForDocument(QString());
+        }
+    });
+
+    if (workspaceViewWidget) {
+        workspaceViewWidget->setWorkspace(workspace);
+        connect(workspaceViewWidget, &WorkspaceViewWidget::fileSelected, this, [this](const QString &path) {
+            addDocumentTab(Bookmark(path));
+        });
+        connect(workspaceViewWidget, &WorkspaceViewWidget::addFilesRequested, this, &MainWindow::addFilesToWorkspace);
+        connect(workspaceViewWidget, &WorkspaceViewWidget::removeSelectedRequested, this, &MainWindow::removeSelectedWorkspaceMembers);
+        connect(workspaceViewWidget, &WorkspaceViewWidget::openWorkspaceRequested, this, &MainWindow::openWorkspaceFromFile);
+        connect(workspaceViewWidget, &WorkspaceViewWidget::saveWorkspaceAsRequested, this, &MainWindow::saveWorkspaceAs);
+    }
+
     qApp->installEventFilter(this);
 
     toggleHideMenuBarInFullScreen(appSettings->hideMenuBarInFullScreenEnabled());
     menuBarMenuActivated = false;
 
-    // Restore persisted multi-tab session (if enabled), then layer any CLI
-    // file on top. Always end up with at least one active tab.
-    for (const Bookmark &bm : std::as_const(persisted)) {
-        addDocumentTab(bm, /*activate=*/ false);
+    if (hasCliWorkspace) {
+        QString err;
+        if (!workspace->load(filePath, &err)) {
+            MessageBoxHelper::critical(this, tr("Could not open workspace"), err);
+            workspace->clear();
+        }
+    } else if (!restoreWorkspacePath.isEmpty()) {
+        QString err;
+        if (!workspace->load(restoreWorkspacePath, &err)) {
+            MessageBoxHelper::warning(this, tr("Could not restore workspace"), err);
+            workspace->clear();
+        }
     }
 
-    if (fileToOpen.isValid()) {
-        addDocumentTab(fileToOpen, /*activate=*/ true);
-    } else if (!tabs.isEmpty()) {
-        int idx = savedActiveIndex;
-        if (idx < 0 || idx >= tabs.size()) {
-            idx = 0;
+    if (hasCliDocument) {
+        if (fileToOpen.isValid()) {
+            addDocumentTab(fileToOpen, /*activate=*/ true);
         }
-        if (tabBar->currentIndex() != idx) {
-            tabBar->setCurrentIndex(idx);
-        } else {
-            activateTab(idx);
+    } else if (!hasCliWorkspace) {
+        for (const Bookmark &bm : std::as_const(persisted)) {
+            addDocumentTab(bm, /*activate=*/ false);
+        }
+
+        if (!tabs.isEmpty()) {
+            int idx = savedActiveIndex;
+            if (idx < 0 || idx >= tabs.size()) {
+                idx = 0;
+            }
+            if (tabBar->currentIndex() != idx) {
+                tabBar->setCurrentIndex(idx);
+            } else {
+                activateTab(idx);
+            }
         }
     }
 
@@ -376,6 +447,11 @@ MainWindow::MainWindow(const QString &filePath, QWidget *parent)
 
     setAttribute(Qt::WA_DontShowOnScreen, false);
     show();
+
+    // Geometry was applied under WA_DontShowOnScreen, so resize settle may never
+    // run. Apply the real width now so a restored "sidebar open" preference sticks.
+    updateSidebarForWindowWidth(width());
+    ensureSidebarSplitterSize(splitter, sidebar, width());
 }
 
 MainWindow::~MainWindow()
@@ -410,6 +486,17 @@ void MainWindow::resizeEvent(QResizeEvent *event)
         scheduleResizeSettle();
     }
     QMainWindow::resizeEvent(event);
+}
+
+void MainWindow::moveEvent(QMoveEvent *event)
+{
+    // Chromium compositing during window drag is expensive; reuse the same
+    // preview freeze + settle path as resize.
+    if (isVisible() && !testAttribute(Qt::WA_DontShowOnScreen)
+        && previewStack && previewStack->isVisible()) {
+        scheduleResizeSettle();
+    }
+    QMainWindow::moveEvent(event);
 }
 
 void MainWindow::keyPressEvent(QKeyEvent *e)
@@ -470,7 +557,7 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
-    // Save prompts only — do not call DocumentManager::close(), which clears
+    // Save prompts only - do not call DocumentManager::close(), which clears
     // each tab; persistOpenTabs() must still see file paths on quit.
     for (int i = tabs.size() - 1; i >= 0; --i) {
         if (!tabs[i]->documentManager()->prepareApplicationQuit()) {
@@ -738,17 +825,7 @@ void MainWindow::clearRecentFileHistory()
 
 void MainWindow::changeDocumentDisplayName(const QString &displayName)
 {
-    const QString appCaption = []()
-    {
-        const QString d = QGuiApplication::applicationDisplayName();
-        return d.isEmpty() ? QStringLiteral("ghostwriter++") : d;
-    }();
-
-    if (displayName.isEmpty()) {
-        setWindowTitle(appCaption);
-    } else {
-        setWindowTitle(displayName + QStringLiteral("[*] - ") + appCaption);
-    }
+    updateWindowTitleForDocument(displayName);
 
     auto *dm = currentDocumentManager();
     if (dm && dm->document()->isModified()) {
@@ -759,6 +836,30 @@ void MainWindow::changeDocumentDisplayName(const QString &displayName)
 
     if (activeTabIndex >= 0) {
         updateTabLabel(activeTabIndex);
+    }
+}
+
+void MainWindow::updateWindowTitleForDocument(const QString &displayName)
+{
+    const QString appCaption = []()
+    {
+        const QString d = QGuiApplication::applicationDisplayName();
+        return d.isEmpty() ? QStringLiteral("ghostwriter++") : d;
+    }();
+
+    const QString workspaceName = (workspace && workspace->isAssociated())
+        ? workspace->displayName()
+        : QString();
+
+    if (displayName.isEmpty() && workspaceName.isEmpty()) {
+        setWindowTitle(appCaption);
+    } else if (displayName.isEmpty()) {
+        setWindowTitle(workspaceName + QStringLiteral(" - ") + appCaption);
+    } else if (workspaceName.isEmpty()) {
+        setWindowTitle(displayName + QStringLiteral("[*] - ") + appCaption);
+    } else {
+        setWindowTitle(displayName + QStringLiteral("[*] - ") + workspaceName
+                       + QStringLiteral(" - ") + appCaption);
     }
 }
 
@@ -874,6 +975,11 @@ void MainWindow::toggleSidebarVisible(bool visible)
 {
     this->appSettings->setSidebarVisible(visible);
 
+    const int threshold = layoutScreenWidth() / 2;
+    if (visible && width() >= threshold - kSidebarResizeHysteresisPx) {
+        sidebarHiddenForResize = false;
+    }
+
     if (!this->sidebarHiddenForResize
             && !this->focusModeEnabled
             && this->appSettings->sidebarVisible()) {
@@ -884,6 +990,9 @@ void MainWindow::toggleSidebarVisible(bool visible)
     }
 
     this->sidebar->setVisible(visible);
+    if (visible) {
+        ensureSidebarSplitterSize(splitter, sidebar, width());
+    }
     this->sidebar->setFocus();
     adjustEditor();
 }
@@ -973,6 +1082,7 @@ DocumentTab *MainWindow::addDocumentTab(const Bookmark &location, bool activate)
             if (activate) {
                 tabBar->setCurrentIndex(i);
             }
+            maybeAddPathToWorkspace(absPath);
             return tabs[i];
         }
     }
@@ -1019,6 +1129,7 @@ DocumentTab *MainWindow::addDocumentTab(const Bookmark &location, bool activate)
 
     if (location.isValid()) {
         tab->documentManager()->openFileAt(location);
+        maybeAddPathToWorkspace(location.filePath());
     }
 
     if (isVisible()) {
@@ -1226,6 +1337,9 @@ void MainWindow::wireActiveTab()
         if (folderViewWidget && currentDocument()) {
             folderViewWidget->reloadFolderViewFromPath(currentDocument()->filePath(), appSettings->folderViewShowAllFilesEnabled());
         }
+        if (currentDocument() && !currentDocument()->isNew()) {
+            maybeAddPathToWorkspace(currentDocument()->filePath());
+        }
     });
 
     perTabConnections << connect(dm, &DocumentManager::documentClosed, this, [this]() {
@@ -1315,6 +1429,210 @@ void MainWindow::persistOpenTabs()
 
     s.endArray();
     s.setValue(GW_SESSION_ACTIVE_TAB_KEY, activeOut);
+
+    if (workspace && workspace->isAssociated()) {
+        s.setValue(GW_SESSION_WORKSPACE_PATH_KEY, workspace->filePath());
+    } else {
+        s.remove(GW_SESSION_WORKSPACE_PATH_KEY);
+    }
+}
+
+void MainWindow::openWorkspaceFromFile()
+{
+    QString startDir;
+    if (workspace && workspace->isAssociated()) {
+        startDir = QFileInfo(workspace->filePath()).absolutePath();
+    } else if (currentDocument() && !currentDocument()->filePath().isEmpty()) {
+        startDir = QFileInfo(currentDocument()->filePath()).absolutePath();
+    }
+
+    const QString path = QFileDialog::getOpenFileName(
+        this,
+        tr("Open Workspace from File"),
+        startDir,
+        Workspace::fileDialogFilter());
+
+    if (!path.isEmpty()) {
+        openWorkspaceAtPath(path, /*replaceTabs=*/ true);
+    }
+}
+
+void MainWindow::saveWorkspaceAs()
+{
+    if (!workspace) {
+        return;
+    }
+
+    const bool wasAssociated = workspace->isAssociated();
+    if (!wasAssociated) {
+        workspace->setMembers(currentSavedFilePaths());
+    }
+
+    QString startDir;
+    if (wasAssociated) {
+        startDir = QFileInfo(workspace->filePath()).absolutePath();
+    } else if (currentDocument() && !currentDocument()->filePath().isEmpty()) {
+        startDir = QFileInfo(currentDocument()->filePath()).absolutePath();
+    }
+
+    QString path = QFileDialog::getSaveFileName(
+        this,
+        tr("Save Workspace As"),
+        startDir,
+        Workspace::fileDialogFilter());
+
+    if (path.isEmpty()) {
+        if (!wasAssociated) {
+            workspace->clear();
+        }
+        return;
+    }
+
+    if (!Workspace::isWorkspaceFile(path)) {
+        path += QLatin1String(".ghpp-workspace");
+    }
+
+    QString err;
+    if (!workspace->saveAs(path, &err)) {
+        if (!wasAssociated) {
+            workspace->clear();
+        }
+        MessageBoxHelper::critical(this, tr("Could not save workspace"), err);
+        return;
+    }
+}
+
+bool MainWindow::openWorkspaceAtPath(const QString &path, bool replaceTabs)
+{
+    if (!workspace) {
+        return false;
+    }
+
+    Workspace probe;
+    QString err;
+    if (!probe.load(path, &err)) {
+        MessageBoxHelper::critical(this, tr("Could not open workspace"), err);
+        return false;
+    }
+
+    if (replaceTabs && !closeAllTabsForWorkspaceSwitch()) {
+        return false;
+    }
+
+    workspace->copyStateFrom(probe);
+    return true;
+}
+
+bool MainWindow::closeAllTabsForWorkspaceSwitch()
+{
+    for (DocumentTab *tab : std::as_const(tabs)) {
+        if (!tab || !tab->documentManager()) {
+            continue;
+        }
+        if (!tab->documentManager()->prepareApplicationQuit()) {
+            return false;
+        }
+    }
+
+    while (tabs.size() > 1) {
+        if (!closeTabAt(tabs.size() - 1)) {
+            return false;
+        }
+    }
+
+    if (!tabs.isEmpty()) {
+        if (!closeTabAt(0)) {
+            return false;
+        }
+    } else {
+        auto *seed = addDocumentTab(Bookmark(), /*activate=*/ true);
+        if (seed && seed->documentManager()) {
+            seed->documentManager()->createUntitled();
+        }
+    }
+
+    return true;
+}
+
+void MainWindow::maybeAddPathToWorkspace(const QString &filePath)
+{
+    if (!workspace || !workspace->isAssociated()) {
+        return;
+    }
+    if (filePath.isEmpty() || Workspace::isWorkspaceFile(filePath)) {
+        return;
+    }
+    if (workspace->contains(filePath)) {
+        return;
+    }
+
+    QString err;
+    if (!workspace->addMember(filePath, &err)) {
+        MessageBoxHelper::warning(this, tr("Could not update workspace"), err);
+    }
+}
+
+void MainWindow::addFilesToWorkspace()
+{
+    if (!workspace || !workspace->isAssociated()) {
+        return;
+    }
+
+    QString startDir = QFileInfo(workspace->filePath()).absolutePath();
+    const QStringList paths = QFileDialog::getOpenFileNames(
+        this,
+        tr("Add Files to Workspace"),
+        startDir,
+        tr("Markdown files (*.md *.markdown *.mdown *.mkd *.mkdn *.txt);;All files (*)"));
+
+    for (const QString &path : paths) {
+        maybeAddPathToWorkspace(path);
+    }
+}
+
+void MainWindow::removeSelectedWorkspaceMembers()
+{
+    if (!workspace || !workspaceViewWidget || !workspace->isAssociated()) {
+        return;
+    }
+
+    const QStringList selected = workspaceViewWidget->selectedMemberPaths();
+    for (const QString &path : selected) {
+        QString err;
+        if (!workspace->removeMember(path, &err)) {
+            MessageBoxHelper::warning(this, tr("Could not update workspace"), err);
+            break;
+        }
+    }
+}
+
+QStringList MainWindow::currentSavedFilePaths() const
+{
+    QStringList paths;
+    QSet<QString> seen;
+    for (DocumentTab *tab : tabs) {
+        if (!tab || !tab->document()) {
+            continue;
+        }
+        MarkdownDocument *doc = tab->document();
+        if (doc->isNew() || doc->filePath().isEmpty()) {
+            continue;
+        }
+        const QString abs = absoluteFileKey(doc->filePath());
+        if (seen.contains(abs)) {
+            continue;
+        }
+        seen.insert(abs);
+        paths.append(abs);
+    }
+    return paths;
+}
+
+void MainWindow::refreshWorkspaceView()
+{
+    if (workspaceViewWidget) {
+        workspaceViewWidget->refresh();
+    }
 }
 
 void MainWindow::updateTabLabel(int index)
@@ -1421,10 +1739,19 @@ void MainWindow::setupActions()
         QString filePath = QFileDialog::getOpenFileName(this, tr("Open File"), startDir,
             tr("Markdown files (*.md *.markdown *.mdown *.mkd *.mkdn *.txt);;All files (*)"));
 
-        if (!filePath.isEmpty()) {
+        if (filePath.isEmpty()) {
+            return;
+        }
+
+        if (Workspace::isWorkspaceFile(filePath)) {
+            openWorkspaceAtPath(filePath, /*replaceTabs=*/ true);
+        } else {
             addDocumentTab(Bookmark(filePath));
         }
     });
+
+    m_actions->connect(AppActions::OpenWorkspace, this, &MainWindow::openWorkspaceFromFile);
+    m_actions->connect(AppActions::SaveWorkspaceAs, this, &MainWindow::saveWorkspaceAs);
 
     auto reopenLastAction = appAction(AppActions::ReopenLastClosed);
 
@@ -1468,13 +1795,28 @@ void MainWindow::setupActions()
 
     m_actions->connect(AppActions::ClearRecentFilesList, this, &MainWindow::clearRecentFileHistory);
     m_actions->connect(AppActions::Save, this, [this]() {
-        if (auto *dm = currentDocumentManager()) dm->saveFile();
+        if (auto *dm = currentDocumentManager()) {
+            dm->saveFile();
+            if (currentDocument() && !currentDocument()->isNew()) {
+                maybeAddPathToWorkspace(currentDocument()->filePath());
+            }
+        }
     });
     m_actions->connect(AppActions::SaveAs, this, [this]() {
-        if (auto *dm = currentDocumentManager()) dm->saveAs();
+        if (auto *dm = currentDocumentManager()) {
+            dm->saveAs();
+            if (currentDocument() && !currentDocument()->isNew()) {
+                maybeAddPathToWorkspace(currentDocument()->filePath());
+            }
+        }
     });
     m_actions->connect(AppActions::RenameFile, this, [this]() {
-        if (auto *dm = currentDocumentManager()) dm->rename();
+        if (auto *dm = currentDocumentManager()) {
+            dm->rename();
+            if (currentDocument() && !currentDocument()->isNew()) {
+                maybeAddPathToWorkspace(currentDocument()->filePath());
+            }
+        }
     });
     m_actions->connect(AppActions::Reload, this, [this]() {
         if (auto *dm = currentDocumentManager()) dm->reload();
@@ -1665,10 +2007,12 @@ void MainWindow::setupGui()
     splitter->setStretchFactor(2, 1);
     splitter->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
-    connect(splitter, &QSplitter::splitterMoved, splitter, [this](int pos, int index) {
-        Q_UNUSED(pos)
-        Q_UNUSED(index)
-        adjustEditor();
+    connect(splitter, &QSplitter::splitterMoved, splitter, [this](int, int) {
+        adjustEditorLayout();
+        const int editorW = editorStack ? editorStack->width() : -1;
+        if (editorW != m_lastSplitterEditorWidth) {
+            adjustEditorContent();
+        }
     });
 
     // Wrap the splitter with a vertical container so the tab bar sits right
@@ -1811,6 +2155,10 @@ void MainWindow::setupMenuBar()
     submenu->addSeparator();
     submenu->addAction(appAction(AppActions::ClearRecentFilesList));
 
+    menu->addSeparator();
+    menu->addAction(appAction(AppActions::OpenWorkspace));
+    menu->addAction(appAction(AppActions::SaveWorkspaceAs));
+    menu->addSeparator();
     menu->addAction(appAction(AppActions::Save));
     menu->addAction(appAction(AppActions::SaveAs));
     menu->addAction(appAction(AppActions::RenameFile));
@@ -2118,6 +2466,10 @@ void MainWindow::setupSidebar()
 
     folderViewWidget = new FolderViewWidget(this);
     sidebar->addTab(primaryIconTheme->icon("open-file"), folderViewWidget, tr("Folder View"));
+
+    workspaceViewWidget = new WorkspaceViewWidget(this);
+    sidebar->addTab(primaryIconTheme->icon("documentation"), workspaceViewWidget, tr("Workspace"));
+
     sidebar->addTab(primaryIconTheme->icon("outline"), outlineWidget, tr("Outline"));
     sidebar->addTab(primaryIconTheme->icon("session-statistics"), sessionStatsWidget, tr("Session Statistics"));
     sidebar->addTab(primaryIconTheme->icon("document-statistics"), documentStatsWidget, tr("Document Statistics"));
@@ -2147,7 +2499,21 @@ void MainWindow::setupSidebar()
         popupMenu->popup(button->mapToGlobal(QPoint(button->width() / 2, -(button->height() / 2) - 10)));
     });
 
-    updateSidebarForWindowWidth(width());
+    sidebar->setActivityBarLocation(appSettings->activityBarLocation());
+    sidebar->setOverflowIcon(primaryIconTheme->icon(QStringLiteral("chevron-down")));
+    connect(appSettings, &AppSettings::activityBarLocationChanged,
+            sidebar, &Sidebar::setActivityBarLocation);
+
+    // Do not call updateSidebarForWindowWidth here: width() is still the
+    // default (~640) before geometry restore, which falsely treats a wide
+    // restored window as "narrow" and sticks sidebarHiddenForResize.
+    if (!sidebarHiddenForResize && !focusModeEnabled && appSettings->sidebarVisible()) {
+        sidebar->setAutoHideEnabled(false);
+        sidebar->setVisible(true);
+    } else {
+        sidebar->setAutoHideEnabled(true);
+        sidebar->setVisible(false);
+    }
 
     connect(sidebar, &Sidebar::visibilityChanged, this, &MainWindow::onSidebarVisibilityChanged);
 }
@@ -2180,6 +2546,10 @@ void MainWindow::adjustEditorLayout()
 
 void MainWindow::adjustEditorContent()
 {
+    if (editorStack) {
+        m_lastSplitterEditorWidth = editorStack->width();
+    }
+
     if (auto *ed = currentEditor()) {
         ed->setupPaperMargins();
         ed->centerCursor();
@@ -2209,6 +2579,7 @@ void MainWindow::updateSidebarForWindowWidth(int width)
     if (!focusModeEnabled && appSettings->sidebarVisible()) {
         sidebar->setAutoHideEnabled(false);
         sidebar->setVisible(true);
+        ensureSidebarSplitterSize(splitter, sidebar, width);
     } else {
         sidebar->setAutoHideEnabled(true);
         sidebar->setVisible(false);
@@ -2285,21 +2656,26 @@ void MainWindow::beginLiveResizeIfNeeded()
     }
 
     m_liveResizeActive = true;
-    m_activePreviewBeforeResize = currentHtmlPreview();
+    HtmlPreview *active = currentHtmlPreview();
+    m_activePreviewBeforeResize = active;
     m_hiddenPreviewsDuringResize.clear();
 
     setAllPreviewResizeSuspended(true);
 
+    // Suspend paint on every preview; only hide the active one (background tabs
+    // are already off-screen in the stack - hide/show on all N engines was costly).
     for (DocumentTab *tab : tabs) {
         HtmlPreview *preview = tab ? tab->htmlPreview() : nullptr;
-        if (!preview || !previewStack || previewStack->indexOf(preview) < 0) {
+        if (!preview || previewStack->indexOf(preview) < 0) {
             continue;
         }
 
-        m_hiddenPreviewsDuringResize.append(QPointer<HtmlPreview>(preview));
         preview->setAttribute(Qt::WA_DontShowOnScreen, true);
         preview->setUpdatesEnabled(false);
-        preview->hide();
+        if (preview == active) {
+            m_hiddenPreviewsDuringResize.append(QPointer<HtmlPreview>(preview));
+            preview->hide();
+        }
     }
 
     showPreviewFreezePane();
@@ -2308,6 +2684,8 @@ void MainWindow::beginLiveResizeIfNeeded()
 void MainWindow::scheduleResizeSettle()
 {
     beginLiveResizeIfNeeded();
+    // Hot path: preview max-width only; paper margins wait for settle.
+    adjustEditorLayout();
 
     if (m_resizeSettleTimer) {
         m_resizeSettleTimer->start();
@@ -2318,14 +2696,20 @@ void MainWindow::endLiveResize()
 {
     HtmlPreview *activePreview = m_activePreviewBeforeResize.data();
 
-    for (const QPointer<HtmlPreview> &previewPtr : std::as_const(m_hiddenPreviewsDuringResize)) {
-        HtmlPreview *preview = previewPtr.data();
+    for (DocumentTab *tab : tabs) {
+        HtmlPreview *preview = tab ? tab->htmlPreview() : nullptr;
         if (!preview) {
             continue;
         }
         preview->setAttribute(Qt::WA_DontShowOnScreen, false);
         preview->setUpdatesEnabled(true);
-        preview->show();
+    }
+
+    for (const QPointer<HtmlPreview> &previewPtr : std::as_const(m_hiddenPreviewsDuringResize)) {
+        HtmlPreview *preview = previewPtr.data();
+        if (preview) {
+            preview->show();
+        }
     }
 
     m_hiddenPreviewsDuringResize.clear();
@@ -2425,6 +2809,10 @@ void MainWindow::applyTheme()
     secondaryIconTheme->setColor(QIcon::Active, chromeColors.color(ChromeColors::SecondaryLabel, ChromeColors::ActiveState));
     secondaryIconTheme->setColor(QIcon::Selected, chromeColors.color(ChromeColors::SecondaryLabel, ChromeColors::PressedState));
     secondaryIconTheme->setColor(QIcon::Disabled, chromeColors.color(ChromeColors::SecondaryLabel, ChromeColors::DisabledState));
+
+    if (sidebar != nullptr) {
+        sidebar->setOverflowIcon(primaryIconTheme->icon(QStringLiteral("chevron-down")));
+    }
 
     StyleSheetBuilder styler(chromeColors,
                              secondaryIconTheme,

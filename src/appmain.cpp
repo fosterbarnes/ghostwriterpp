@@ -55,32 +55,8 @@ int main(int argc, char *argv[])
         QCoreApplication::setAttribute(Qt::AA_UseSoftwareOpenGL);
     }
 
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-    QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
-    QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
-#endif
-
-#if defined(Q_OS_WIN)
-    // For Qt 5, use ANGLE instead of OpenGL to bypass bug where full screen
-    // windows under Windows 10 and OpenGL will not show menus from the menu
-    // bar (or any other popup menus).  For Qt 6, this is option is no longer
-    // available, so allow the user to pass in the software OpenGL option if
-    // desired. (Note: Software rendering can be buggy, so leave it optional).
-    // Sadly, the full screen OpenGL workaround in Qt's documentation does not
-    // actually work.
-    //
-    // Thank you, Microsoft (and now Qt for removing ANGLE), you made my day.
-    //
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-    if (!disableGPU) {
-        QCoreApplication::setAttribute(Qt::AA_UseOpenGLES, true);
-    }
-#endif
-#endif
-
-    // Disable icons in menus for now, since matching their colors to the
-    // current theme is not supported yet.
-    // QCoreApplication::setAttribute(Qt::AA_DontShowIconsInMenus, true);
+    // --disable-gpu selects software OpenGL before QApplication is created
+    // (see preparse loop above). Qt 6 no longer offers ANGLE / AA_UseOpenGLES.
 
     QCoreApplication::setAttribute(Qt::AA_CompressHighFrequencyEvents);
     QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts);

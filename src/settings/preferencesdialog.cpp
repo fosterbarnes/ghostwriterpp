@@ -215,6 +215,16 @@ void PreferencesDialogPrivate::initializeGeneralTab()
 
     ui->folderViewShowAllFilesCheckBox->setChecked(appSettings->folderViewShowAllFilesEnabled());
     connect(ui->folderViewShowAllFilesCheckBox, &QCheckBox::toggled, appSettings, &AppSettings::setFolderViewShowAllFilesEnabled);
+
+    ui->activityBarLocationCombo->addItem(PreferencesDialog::tr("Top"), QVariant(ActivityBarLocationTop));
+    ui->activityBarLocationCombo->addItem(PreferencesDialog::tr("Left"), QVariant(ActivityBarLocationLeft));
+    ui->activityBarLocationCombo->setCurrentIndex(
+        ui->activityBarLocationCombo->findData(QVariant(appSettings->activityBarLocation())));
+
+    q->connect(ui->activityBarLocationCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), [this, ui](int index) {
+        appSettings->setActivityBarLocation(
+            static_cast<ActivityBarLocation>(ui->activityBarLocationCombo->itemData(index).toInt()));
+    });
 }
 
 void PreferencesDialogPrivate::initializeEditorTab()

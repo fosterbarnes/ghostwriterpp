@@ -30,6 +30,16 @@ enum FocusView {
 };
 
 /**
+ * Where the sidebar activity bar (tab icons) is placed.
+ */
+enum ActivityBarLocation {
+    ActivityBarLocationFirst,
+    ActivityBarLocationTop = ActivityBarLocationFirst,
+    ActivityBarLocationLeft,
+    ActivityBarLocationLast = ActivityBarLocationLeft
+};
+
+/**
  * Loads and stores application settings via QSettings, particularly for
  * those settings that need special range checking.  Be sure to call
  * instance on application start up to set up settings file paths before
@@ -127,6 +137,10 @@ public:
     bool folderViewShowAllFilesEnabled() const;
     Q_SLOT void setFolderViewShowAllFilesEnabled(bool enabled);
     Q_SIGNAL void folderViewShowAllFilesChanged(bool enabled);
+
+    ActivityBarLocation activityBarLocation() const;
+    void setActivityBarLocation(ActivityBarLocation location);
+    Q_SIGNAL void activityBarLocationChanged(ActivityBarLocation location);
 
     bool displayTimeInFullScreenEnabled();
     Q_SLOT void setDisplayTimeInFullScreenEnabled(bool enabled);

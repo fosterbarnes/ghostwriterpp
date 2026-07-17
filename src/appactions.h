@@ -54,6 +54,8 @@ public:
         OpenRecent010,
         OpenLeastRecent = OpenRecent010,
         ClearRecentFilesList,
+        OpenWorkspace,
+        SaveWorkspaceAs,
         Save,
         SaveAs,
         RenameFile,
