@@ -16,8 +16,8 @@
 <table border="0">
 <tbody>
 <tr>
-<td align="center" valign="top"><a href="https://github.com/fosterbarnes/ghostwriterpp/releases/download/v2.1.6-2.3/ghostwriter++Installer_v2.1.6-2.3_win64.exe"><img src="https://raw.githubusercontent.com/fosterbarnes/musicApp/refs/heads/main/.resources/svg/download_x64.svg" width="180" height="auto" alt="x64 installer"/></a></td>
-<td align="center" valign="top"><a href="https://github.com/fosterbarnes/ghostwriterpp/releases/download/v2.1.6-2.3/ghostwriter++Portable_v2.1.6-2.3_win64.zip"><img src="https://raw.githubusercontent.com/fosterbarnes/musicApp/refs/heads/main/.resources/svg/download_portable.svg" width="180" height="auto" alt="x86 installer"/></a></td>
+<td align="center" valign="top"><a href="https://github.com/fosterbarnes/ghostwriterpp/releases/download/v2.1.6-2.4/ghostwriter++Installer_v2.1.6-2.4_win64.exe"><img src="https://raw.githubusercontent.com/fosterbarnes/musicApp/refs/heads/main/.resources/svg/download_x64.svg" width="180" height="auto" alt="x64 installer"/></a></td>
+<td align="center" valign="top"><a href="https://github.com/fosterbarnes/ghostwriterpp/releases/download/v2.1.6-2.4/ghostwriter++Portable_v2.1.6-2.4_win64.zip"><img src="https://raw.githubusercontent.com/fosterbarnes/musicApp/refs/heads/main/.resources/svg/download_portable.svg" width="180" height="auto" alt="x86 installer"/></a></td>
 </tr>
 </tbody>
 </table>
