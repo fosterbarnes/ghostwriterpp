@@ -186,6 +186,7 @@ private:
     bool closeTabAt(int index);
     void wireActiveTab();
     void updateTabLabel(int index);
+    void autoSaveCurrentDocumentOnFocusChange();
     void detachActiveTab(bool wasActive);
     void removeTabWidgets(DocumentTab *tab, int index);
 

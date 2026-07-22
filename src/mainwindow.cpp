@@ -579,6 +579,9 @@ void MainWindow::showEvent(QShowEvent *event)
 void MainWindow::changeEvent(QEvent *event)
 {
     QMainWindow::changeEvent(event);
+    if (event->type() == QEvent::ActivationChange && !isActiveWindow()) {
+        autoSaveCurrentDocumentOnFocusChange();
+    }
     if (event->type() == QEvent::WindowStateChange) {
         applyDarkModeToWindowFrame(this, appSettings->darkModeEnabled());
     }
@@ -1154,6 +1157,7 @@ void MainWindow::activateTab(int index)
         return;
     }
 
+    autoSaveCurrentDocumentOnFocusChange();
     cancelLiveResize();
 
     activeTabIndex = index;
@@ -1652,6 +1656,19 @@ void MainWindow::updateTabLabel(int index)
     tabBar->setTabToolTip(index, tab->document()->filePath().isEmpty() ? name : tab->document()->filePath());
 }
 
+void MainWindow::autoSaveCurrentDocumentOnFocusChange()
+{
+    auto *manager = currentDocumentManager();
+    if (!manager || !manager->autoSaveEnabled()) {
+        return;
+    }
+
+    auto *document = manager->document();
+    if (!document->isNew() && !document->isReadOnly() && document->isModified()) {
+        manager->save();
+    }
+}
+
 void MainWindow::applyFocusView(FocusView view)
 {
     cancelLiveResize();
@@ -2102,6 +2119,19 @@ void MainWindow::setupTabBar()
 
     connect(newTabButton, &QToolButton::clicked, this, [this]() {
         addDocumentTab();
+    });
+
+    connect(qApp, &QApplication::focusChanged, this, [this](QWidget *old, QWidget *) {
+        if (!old) {
+            return;
+        }
+
+        auto *editor = currentEditor();
+        auto *preview = currentHtmlPreview();
+        if ((editor && (old == editor || editor->isAncestorOf(old)))
+            || (preview && (old == preview || preview->isAncestorOf(old)))) {
+            autoSaveCurrentDocumentOnFocusChange();
+        }
     });
 
     connect(tabBar, &QTabBar::currentChanged, this, [this](int index) {
