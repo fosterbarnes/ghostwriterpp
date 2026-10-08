@@ -200,7 +200,10 @@ QString AsyncTextWriterPrivate::writeToDisk(const QString &text,
     }
 
     // Commit changes (and close the file).  All done!
-    file.commit();
+    if (!file.commit()) {
+        return file.errorString();
+    }
+
     return QString();
 }
 

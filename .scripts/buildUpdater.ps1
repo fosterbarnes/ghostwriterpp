@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Deploy Qt/deps into build-release/bin and zip the portable folder.
-# Assumes release exe already built (call from .prePush after build.ps1).
+# Assumes release exe already built (call from prePush after build.ps1).
+#requires -Version 7.0
 
 param(
     [string]$CraftRoot = "C:\CraftRoot",
@@ -9,7 +10,7 @@ param(
     [string]$RepoRoot = "",
     [Alias("cwd")][switch]$UseWorkingDirectory
 )
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = 'Stop'
 . "$PSScriptRoot\scriptHelper.ps1"
 
 function Get-QtInstallPrefix {
@@ -241,7 +242,7 @@ try {
 
     Write-Host "Release folder ready: $binDir"
 
-    $releaseVer = Read-VersionFile
+    $releaseVer = (readVerFile)[0]
     $zipOut = Join-Path $buildDirPath "ghostwriter++_v${releaseVer}_win64.zip"
     if (Test-Path -LiteralPath $zipOut) { Remove-Item -LiteralPath $zipOut -Force }
     Write-Host "Zipping portable folder -> $zipOut (7z) ..."
@@ -256,3 +257,4 @@ try {
 finally {
     Pop-Location
 }
+closeOut 3

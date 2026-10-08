@@ -98,8 +98,8 @@ public slots:
     void setStyleSheet(const QString &css);
 
     /**
-     * Set preview CSS and page colors, then load the WebEngine shell.
-     * Must run before the preview is shown (startup or new tab).
+     * Set preview CSS and page colors before display.
+     * On Windows, shell loading is deferred until the preview is visible.
      */
     void prepareForDisplay(const QString &css,
                            const QColor &pageBackground,

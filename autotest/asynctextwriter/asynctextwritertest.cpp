@@ -12,6 +12,7 @@
 #include <QDir>
 #include <QTextStream>
 #include <QString>
+#include <QTemporaryDir>
 
 #include "../../src/editor/asynctextwriter.h"
 
@@ -50,6 +51,7 @@ private slots:
     void write();
     void writeToReadOnlyFile();
     void writeToReadOnlyDirectory();
+    void writeToMissingDirectory();
     void writeAlreadyInProgress();
 };
 
@@ -391,6 +393,14 @@ void AsyncTextWriterTest::writeToReadOnlyDirectory()
     dir.cdUp();
     dir.rmdir("readonly");
 #endif
+}
+
+void AsyncTextWriterTest::writeToMissingDirectory()
+{
+    QTemporaryDir temp;
+    QVERIFY(temp.isValid());
+
+    runWriteTest(temp.filePath("missing/file.txt"), Utf8Encoding, false);
 }
 
 /**

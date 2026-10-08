@@ -114,6 +114,11 @@ StyleSheetBuilder::StyleSheetBuilder(const ChromeColors &colors,
     addColor(colors, "$tertiary-fill-color", ChromeColors::TertiaryFill);
     addColor(colors, "$secondary-background-color", ChromeColors::SecondaryBackground);
 
+    // Preview CSS does not use the temporary widget icons.
+    if (!iconTheme) {
+        return;
+    }
+
     // Remove previous cache/temporary files.
     clearCache();
 

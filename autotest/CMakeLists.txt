@@ -10,4 +10,9 @@ add_subdirectory(asynctextwriter)
 add_subdirectory(bookmark)
 add_subdirectory(library)
 
+if(WIN32)
+    add_subdirectory(exporterfactory)
+    add_subdirectory(sessionrestore)
+endif()
+
 enable_testing(true)

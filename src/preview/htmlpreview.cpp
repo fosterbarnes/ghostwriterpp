@@ -25,6 +25,7 @@
 #include <QFuture>
 #include <QWebChannel>
 #include <QEventLoop>
+#include <QMutexLocker>
 #include <QTextCursor>
 #include <QTimer>
 
@@ -44,6 +45,22 @@
 
 namespace ghostwriterpp
 {
+namespace {
+void configureDefaultWebEngineProfile()
+{
+    static bool configured = false;
+    if (configured) {
+        return;
+    }
+
+    QWebEngineProfile *profile = QWebEngineProfile::defaultProfile();
+    profile->setHttpCacheType(QWebEngineProfile::NoCache);
+    profile->clearHttpCache();
+    profile->clearAllVisitedLinks();
+    configured = true;
+}
+} // namespace
+
 class HtmlPreviewPrivate
 {
     Q_DECLARE_PUBLIC(HtmlPreview)
@@ -87,6 +104,12 @@ public:
     bool startupWarmup = false;
     bool shellLoadFinished = false;
     bool resizeUpdatesSuspended = false;
+#ifdef Q_OS_WIN32
+    bool shellStarted = false;
+    bool shellStartQueued = false;
+    QString shellBaseUrl;
+    void scheduleShellLoad();
+#endif
     QColor pageBackground;
     QColor pageTextColor;
 
@@ -100,6 +123,7 @@ public:
      * This method is called whenever the file path changes.
      */
     void updateBaseDir();
+    void loadShell();
     /*
     * Sets the HTML contents to display, and creates a backup of the old
     * HTML for diffing to scroll to the first difference whenever
@@ -143,6 +167,7 @@ HtmlPreview::HtmlPreview
 
     d->baseUrl = "";
 
+    configureDefaultWebEngineProfile();
     this->setPage(new SandboxedWebPage(this));
     this->settings()->setDefaultTextEncoding("utf-8");
     this->settings()->setAttribute(
@@ -161,10 +186,6 @@ HtmlPreview::HtmlPreview
         ->setVisible(false);
     this->page()->action(QWebEnginePage::ViewSource)->setVisible(false);
     this->page()->action(QWebEnginePage::SavePage)->setVisible(false);
-    QWebEngineProfile::defaultProfile()
-        ->setHttpCacheType(QWebEngineProfile::NoCache);
-    QWebEngineProfile::defaultProfile()->clearHttpCache();
-    QWebEngineProfile::defaultProfile()->clearAllVisitedLinks();
 
     this->connect(
         this,
@@ -234,6 +255,10 @@ void HtmlPreview::shutdownBeforeDestroy()
     d->updateInProgress = false;
     d->updateAgain = false;
     d->pendingRefresh = false;
+
+#ifdef Q_OS_WIN32
+    d->pagePrepared = false;
+#endif
 
     if (d->futureWatcher->isRunning()) {
         d->futureWatcher->disconnect();
@@ -352,6 +377,16 @@ void HtmlPreview::updatePreview()
         d->pendingRefresh = true;
         return;
     }
+
+#ifdef Q_OS_WIN32
+    if (!d->pagePrepared || !d->shellStarted || d->shellBaseUrl != d->baseUrl
+        || testAttribute(Qt::WA_DontShowOnScreen)
+        || window()->testAttribute(Qt::WA_DontShowOnScreen)) {
+        d->pendingRefresh = true;
+        d->scheduleShellLoad();
+        return;
+    }
+#endif
 
     if (d->updateInProgress) {
         d->updateAgain = true;
@@ -518,8 +553,6 @@ void HtmlPreviewPrivate::onLoadFinished(bool ok)
 
 void HtmlPreviewPrivate::updateBaseDir()
 {
-    Q_Q(HtmlPreview);
-
     if (!pagePrepared) {
         return;
     }
@@ -536,6 +569,52 @@ void HtmlPreviewPrivate::updateBaseDir()
         this->baseUrl = "";
     }
 
+#ifdef Q_OS_WIN32
+    scheduleShellLoad();
+#else
+    loadShell();
+#endif
+}
+
+#ifdef Q_OS_WIN32
+void HtmlPreviewPrivate::scheduleShellLoad()
+{
+    Q_Q(HtmlPreview);
+
+    if (shellStarted && shellBaseUrl == baseUrl) {
+        return;
+    }
+
+    pendingRefresh = true;
+    if (shellStartQueued || !pagePrepared || !q->isVisible()
+        || q->testAttribute(Qt::WA_DontShowOnScreen)
+        || q->window()->testAttribute(Qt::WA_DontShowOnScreen)
+        || resizeUpdatesSuspended || previewEditSession.active) {
+        return;
+    }
+
+    shellStartQueued = true;
+    QTimer::singleShot(0, q, [this]() {
+        Q_Q(HtmlPreview);
+        shellStartQueued = false;
+        if (!pagePrepared || !q->isVisible() || resizeUpdatesSuspended
+            || previewEditSession.active || q->testAttribute(Qt::WA_DontShowOnScreen)
+            || q->window()->testAttribute(Qt::WA_DontShowOnScreen)
+            || (shellStarted && shellBaseUrl == baseUrl)) {
+            return;
+        }
+
+        shellStarted = true;
+        shellBaseUrl = baseUrl;
+        loadShell();
+    });
+}
+#endif
+
+void HtmlPreviewPrivate::loadShell()
+{
+    Q_Q(HtmlPreview);
+
     QString html = wrapperHtml;
     const QString inlineStyle = QStringLiteral(
         "<style id=\"ghostwriter_first_paint\">body{background-color:%1;color:%2;}</style>")
@@ -548,6 +627,7 @@ void HtmlPreviewPrivate::updateBaseDir()
         html.prepend(inlineStyle);
     }
 
+#ifndef Q_OS_WIN32
     const QString bodyOpen = QStringLiteral("<body>");
     const int bodyTag = html.indexOf(bodyOpen, 0, Qt::CaseInsensitive);
     if (bodyTag >= 0) {
@@ -555,8 +635,9 @@ void HtmlPreviewPrivate::updateBaseDir()
                      bodyOpen.size(),
                      QStringLiteral("<body style=\"background-color:%1;color:%2;\">")
                          .arg(pageBackground.name(QColor::HexRgb),
-                              pageTextColor.name(QColor::HexRgb)));
+                               pageTextColor.name(QColor::HexRgb)));
     }
+#endif
 
     shellLoadFinished = false;
     q->setHtml(html, QUrl(baseUrl));
@@ -576,6 +657,10 @@ void HtmlPreview::showEvent(QShowEvent *event)
 {
     QWebEngineView::showEvent(event);
     Q_D(HtmlPreview);
+
+#ifdef Q_OS_WIN32
+    d->scheduleShellLoad();
+#endif
 
     if (d->pendingRefresh && !d->previewEditSession.active) {
         updatePreview();
@@ -605,6 +690,7 @@ QString HtmlPreviewPrivate::exportToHtml
 )
 {
     QString html;
+    QMutexLocker locker(&exporter->operationMutex());
 
     // Enable smart typography for preview, if available for the exporter.
     bool smartTypographyEnabled = exporter->smartTypographyEnabled();

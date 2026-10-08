@@ -9,6 +9,7 @@
 #include <QFormLayout>
 #include <QComboBox>
 #include <QLineEdit>
+#include <QMutexLocker>
 
 #include "../export/exporterfactory.h"
 
@@ -91,11 +92,19 @@ PreviewOptionsDialog::PreviewOptionsDialog(QWidget *parent)
     layout->addWidget(buttonBox);
 
     d->paramsLineEdit = new QLineEdit();
-    d->paramsLineEdit->setText(d->appSettings->currentHtmlExporter()->options());
+    QString options;
+    {
+        QMutexLocker locker(&currentExporter->operationMutex());
+        options = currentExporter->options();
+    }
+    d->paramsLineEdit->setText(options);
     optionsLayout->addRow(tr("Command line options:"), d->paramsLineEdit);
     connect(d->paramsLineEdit, &QLineEdit::textChanged, [=](const QString& obj) {
         Exporter *exporter = d->appSettings->currentHtmlExporter();
-        exporter->setOptions(obj);
+        {
+            QMutexLocker locker(&exporter->operationMutex());
+            exporter->setOptions(obj);
+        }
         d->appSettings->setCurrentHtmlExporter(exporter);
     });
     d->paramsLineEdit->setDisabled(!d->appSettings->currentHtmlExporter()->supportsUserOptions());
@@ -112,7 +121,16 @@ void PreviewOptionsDialogPrivate::onExporterChanged(int index) const
 {
     QVariant exporterVariant = this->previewerComboBox->itemData(index);
     Exporter *exporter = (Exporter *) exporterVariant.value<void *>();
-    exporter->setOptions(this->appSettings->currentHtmlExporter()->options());
+    Exporter *currentExporter = this->appSettings->currentHtmlExporter();
+    QString options;
+    {
+        QMutexLocker locker(&currentExporter->operationMutex());
+        options = currentExporter->options();
+    }
+    {
+        QMutexLocker locker(&exporter->operationMutex());
+        exporter->setOptions(options);
+    }
     appSettings->setCurrentHtmlExporter(exporter);
 }
 

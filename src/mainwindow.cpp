@@ -25,6 +25,7 @@
 #include <QMenuBar>
 #include <QMimeDatabase>
 #include <QMimeType>
+#include <QMutexLocker>
 #include <QMoveEvent>
 #include <QPalette>
 #include <QPushButton>
@@ -67,6 +68,9 @@
 #include "mainwindow.h"
 #include "messageboxhelper.h"
 #include "windowframechrome.h"
+#ifdef Q_OS_WIN32
+#include "sessionrestore.h"
+#endif
 
 #define GW_MAIN_WINDOW_GEOMETRY_KEY "Window/mainWindowGeometry"
 #define GW_MAIN_WINDOW_STATE_KEY "Window/mainWindowState"
@@ -173,6 +177,7 @@ void ensureTopLevelVisibleOnScreen(QWidget *w)
     w->activateWindow();
 }
 
+#ifndef Q_OS_WIN32
 BookmarkList loadPersistedTabsFromSettings(int *activeOut)
 {
     BookmarkList result;
@@ -214,6 +219,7 @@ BookmarkList loadPersistedTabsFromSettings(int *activeOut)
 
     return result;
 }
+#endif
 
 void applyWidgetSurfacePalette(QWidget *w, const QColor &background, const QColor &foreground)
 {
@@ -272,14 +278,23 @@ MainWindow::MainWindow(const QString &filePath, QWidget *parent)
 
     workspace = new Workspace(this);
 
+#ifdef Q_OS_WIN32
+    QString savedActivePath;
+#else
     int savedActiveIndex = -1;
+#endif
     BookmarkList persisted;
     QString restoreWorkspacePath;
     const bool restoreSession = appSettings->restoreSessionEnabled()
         && !hasCliDocument
         && !hasCliWorkspace;
     if (restoreSession) {
+#ifdef Q_OS_WIN32
+        QSettings settings;
+        persisted = loadPersistedTabs(settings, savedActivePath);
+#else
         persisted = loadPersistedTabsFromSettings(&savedActiveIndex);
+#endif
         restoreWorkspacePath = QSettings().value(GW_SESSION_WORKSPACE_PATH_KEY).toString();
     }
 
@@ -380,10 +395,21 @@ MainWindow::MainWindow(const QString &filePath, QWidget *parent)
         }
 
         if (!tabs.isEmpty()) {
+#ifdef Q_OS_WIN32
+            int idx = 0;
+            for (int i = 0; i < tabs.size(); ++i) {
+                if (!savedActivePath.isEmpty()
+                    && tabs[i]->document()->filePath() == savedActivePath) {
+                    idx = i;
+                    break;
+                }
+            }
+#else
             int idx = savedActiveIndex;
             if (idx < 0 || idx >= tabs.size()) {
                 idx = 0;
             }
+#endif
             if (tabBar->currentIndex() != idx) {
                 tabBar->setCurrentIndex(idx);
             } else {
@@ -403,6 +429,9 @@ MainWindow::MainWindow(const QString &filePath, QWidget *parent)
     syncFocusViewActions(appSettings->focusView());
 
     const ColorScheme colorScheme = currentColorScheme();
+#ifndef Q_OS_WIN32
+    HtmlPreview *activePreview = currentHtmlPreview();
+#endif
 
     QString previewSheet = htmlPreviewStyleSheetForCurrentTheme();
     if (previewSheet.isNull()) {
@@ -416,13 +445,19 @@ MainWindow::MainWindow(const QString &filePath, QWidget *parent)
             preview->prepareForDisplay(previewSheet,
                                        colorScheme.background,
                                        colorScheme.foreground);
-            preview->warmUpWhileHidden();
+#ifndef Q_OS_WIN32
+            if (preview == activePreview) {
+                preview->warmUpWhileHidden();
+            }
+#endif
         }
     }
 
     ensureTopLevelVisibleOnScreen(this);
 
+#ifndef Q_OS_WIN32
     applyTheme();
+#endif
     adjustEditor();
     adjustTabBarHeight();
 
@@ -443,7 +478,9 @@ MainWindow::MainWindow(const QString &filePath, QWidget *parent)
     createWinId();
     applyDarkModeToWindowFrame(this, appSettings->darkModeEnabled());
 
+#ifndef Q_OS_WIN32
     qApp->processEvents();
+#endif
 
     setAttribute(Qt::WA_DontShowOnScreen, false);
     show();
@@ -927,7 +964,10 @@ void MainWindow::copyHtml()
             markdownText = editor->toPlainText();
         }
 
-        htmlExporter->exportToHtml(markdownText, html);
+        {
+            QMutexLocker locker(&htmlExporter->operationMutex());
+            htmlExporter->exportToHtml(markdownText, html);
+        }
 
         QClipboard *clipboard = QApplication::clipboard();
         clipboard->setText(html);
@@ -1091,6 +1131,9 @@ DocumentTab *MainWindow::addDocumentTab(const Bookmark &location, bool activate)
     }
 
     auto *tab = new DocumentTab(currentColorScheme(), this, this);
+#ifdef Q_OS_WIN32
+    tab->spelling()->setErrorColor(currentColorScheme().error);
+#endif
     tabs.append(tab);
 
     cancelLiveResize();
@@ -1772,13 +1815,19 @@ void MainWindow::setupActions()
 
     auto reopenLastAction = appAction(AppActions::ReopenLastClosed);
 
+#ifdef Q_OS_WIN32
+    const BookmarkList recentFiles = Library().recentFiles();
+#endif
+
     for (int i = AppActions::OpenMostRecent; i <= AppActions::OpenLeastRecent; i++) {
         int index = i - AppActions::OpenMostRecent;
         bool enableReopenLast = false;
         auto action = appAction((AppActions::ActionType)i);
 
+#ifndef Q_OS_WIN32
         Library library;
         BookmarkList recentFiles = library.recentFiles();
+#endif
 
         if (recentFiles.length() > index) {
             auto filePath = recentFiles.at(index).filePath();
@@ -2798,7 +2847,11 @@ QString MainWindow::htmlPreviewStyleSheetForCurrentTheme() const
 {
     ChromeColors chromeColors(currentColorScheme());
     StyleSheetBuilder styler(chromeColors,
+#ifdef Q_OS_WIN32
+                             nullptr,
+#else
                              secondaryIconTheme,
+#endif
                              (InterfaceStyleRounded == appSettings->interfaceStyle()),
                              appSettings->editorFont(),
                              appSettings->previewTextFont(),
@@ -2814,9 +2867,16 @@ void MainWindow::applyHtmlPreviewStyleSheetToAllTabs(const QString &css)
         return;
     }
 
+#ifdef Q_OS_WIN32
+    const ColorScheme colors = currentColorScheme();
+#endif
     for (auto *tab : tabs) {
         if (tab->htmlPreview()) {
+#ifdef Q_OS_WIN32
+            tab->htmlPreview()->prepareForDisplay(css, colors.background, colors.foreground);
+#else
             tab->htmlPreview()->setStyleSheet(css);
+#endif
         }
     }
 }
@@ -2871,12 +2931,17 @@ void MainWindow::applyTheme()
         qApp->style()->polish(this);
     }
 
-    QString previewSheet = styler.htmlPreviewStyleSheet();
+#ifdef Q_OS_WIN32
+    if (!tabs.isEmpty())
+#endif
+    {
+        QString previewSheet = styler.htmlPreviewStyleSheet();
 
-    if (previewSheet.isNull()) {
-        qCritical() << "Invalid HTML preview style sheet provided.";
-    } else {
-        applyHtmlPreviewStyleSheetToAllTabs(previewSheet);
+        if (previewSheet.isNull()) {
+            qCritical() << "Invalid HTML preview style sheet provided.";
+        } else {
+            applyHtmlPreviewStyleSheetToAllTabs(previewSheet);
+        }
     }
 
     adjustTabBarHeight();

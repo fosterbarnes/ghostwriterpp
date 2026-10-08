@@ -36,6 +36,11 @@ void Exporter::setOptions(const QString &options)
     m_options = options;
 }
 
+QMutex &Exporter::operationMutex() const
+{
+    return m_operationMutex;
+}
+
 QList<const ExportFormat *> Exporter::supportedFormats() const
 {
     return m_supportedFormats;
@@ -70,4 +75,3 @@ void Exporter::exportToHtml(const QString &text, QString &html)
            QString("</b></center>)");
 }
 } // namespace ghostwriterpp
-

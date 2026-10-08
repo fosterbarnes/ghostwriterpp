@@ -33,17 +33,21 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
-# Fork app version (About dialog). Repo-root VERSION.txt is the single source of truth.
-# Named VERSION.txt (not Version) so Windows MSVC does not shadow C++20 <version>
+# Fork app version (About dialog). .version/version line 1 is the single source of truth.
+# Kept under .version/ (not a repo-root Version file) so Windows MSVC does not shadow C++20 <version>
 # when PROJECT_SOURCE_DIR is on the include path for 3rdparty/ headers.
-set(_gw_version_file "${CMAKE_CURRENT_SOURCE_DIR}/VERSION.txt")
+set(_gw_version_file "${CMAKE_CURRENT_SOURCE_DIR}/.version/version")
 if(NOT EXISTS "${_gw_version_file}")
-    message(FATAL_ERROR "VERSION.txt missing: ${_gw_version_file}")
+    message(FATAL_ERROR ".version/version missing: ${_gw_version_file}")
 endif()
-file(READ "${_gw_version_file}" GHOSTWRITERPP_APP_VERSION)
+file(READ "${_gw_version_file}" _gw_version_raw)
+string(REPLACE "\r\n" "\n" _gw_version_raw "${_gw_version_raw}")
+string(REPLACE "\n" ";" _gw_version_lines "${_gw_version_raw}")
+list(GET _gw_version_lines 0 GHOSTWRITERPP_APP_VERSION)
 string(STRIP "${GHOSTWRITERPP_APP_VERSION}" GHOSTWRITERPP_APP_VERSION)
 if(GHOSTWRITERPP_APP_VERSION STREQUAL "")
-    message(FATAL_ERROR "VERSION.txt is empty: ${_gw_version_file}")
+    message(FATAL_ERROR ".version/version line 1 is empty: ${_gw_version_file}")
+
 endif()
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${_gw_version_file}")
 

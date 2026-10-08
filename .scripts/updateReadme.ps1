@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# README Windows download hrefs match Version (same tag + filenames as .draftRelease.ps1 / gh release).
-
-$ErrorActionPreference = "Stop"
+# README Windows download hrefs match .version/version (same tag + filenames as pushRelease.ps1 / gh release).
+#requires -Version 7.0
+$ErrorActionPreference = 'Stop'
 . "$PSScriptRoot\scriptHelper.ps1"
 
 $repoRoot = Get-CMakeProjectRoot -ScriptsDirectory $PSScriptRoot
@@ -25,18 +25,19 @@ $nPortable = ([regex]::Matches($text, $portablePattern)).Count
 
 if ($nInstaller -eq 0 -and $nPortable -eq 0) {
     Write-Warning "No matching ghostwriter++ release download URLs found in README.md (patterns unchanged)."
-    exit 0
 }
+else {
+    $updated = $text
+    if ($nInstaller -gt 0) {
+        $updated = [regex]::Replace($updated, $installerPattern, $installerHref)
+        Write-Host "Installer href ($nInstaller): $installerHref" -ForegroundColor Yellow
+    }
+    if ($nPortable -gt 0) {
+        $updated = [regex]::Replace($updated, $portablePattern, $portableHref)
+        Write-Host "Portable href ($nPortable): $portableHref" -ForegroundColor Yellow
+    }
 
-$updated = $text
-if ($nInstaller -gt 0) {
-    $updated = [regex]::Replace($updated, $installerPattern, $installerHref)
-    Write-Host "Installer href ($nInstaller): $installerHref" -ForegroundColor Yellow
+    $updated = $updated.TrimEnd()
+    Write-RepoUtf8NoBomFile -LiteralPath $readme -Content $updated
 }
-if ($nPortable -gt 0) {
-    $updated = [regex]::Replace($updated, $portablePattern, $portableHref)
-    Write-Host "Portable href ($nPortable): $portableHref" -ForegroundColor Yellow
-}
-
-$updated = $updated.TrimEnd()
-Write-RepoUtf8NoBomFile -LiteralPath $readme -Content $updated
+closeOut 3

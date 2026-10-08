@@ -2,6 +2,8 @@
 
 *ghostwriter* is a Windows and Linux text editor for Markdown, which is a plain text markup format created by John Gruber. *ghostwriter++* is a fork of the main project that aims to add features like tabs, and in-preview editing. For a tour of the original app's features, please visit the [*ghostwriter* project site](https://ghostwriter.kde.org).
 
+Build and release automation lives in `.scripts/`; agent and style rules are in `AGENTS.md`, `SCRIPTS.md`, and `STYLE.md`.
+
 ## Added Features
 
 *These additions are a work in progress. Issues are expected with in-preview edits*
@@ -16,8 +18,8 @@
 <table border="0">
 <tbody>
 <tr>
-<td align="center" valign="top"><a href="https://github.com/fosterbarnes/ghostwriterpp/releases/download/v2.1.6-2.5/ghostwriter++Installer_v2.1.6-2.5_win64.exe"><img src="https://raw.githubusercontent.com/fosterbarnes/musicApp/refs/heads/main/.resources/svg/download_x64.svg" width="180" height="auto" alt="x64 installer"/></a></td>
-<td align="center" valign="top"><a href="https://github.com/fosterbarnes/ghostwriterpp/releases/download/v2.1.6-2.5/ghostwriter++Portable_v2.1.6-2.5_win64.zip"><img src="https://raw.githubusercontent.com/fosterbarnes/musicApp/refs/heads/main/.resources/svg/download_portable.svg" width="180" height="auto" alt="x86 installer"/></a></td>
+<td align="center" valign="top"><a href="https://github.com/fosterbarnes/ghostwriterpp/releases/download/v2.1.6-2.6/ghostwriter++Installer_v2.1.6-2.6_win64.exe"><img src="https://raw.githubusercontent.com/fosterbarnes/musicApp/refs/heads/main/.resources/svg/download_x64.svg" width="180" height="auto" alt="x64 installer"/></a></td>
+<td align="center" valign="top"><a href="https://github.com/fosterbarnes/ghostwriterpp/releases/download/v2.1.6-2.6/ghostwriter++Portable_v2.1.6-2.6_win64.zip"><img src="https://raw.githubusercontent.com/fosterbarnes/musicApp/refs/heads/main/.resources/svg/download_portable.svg" width="180" height="auto" alt="x86 installer"/></a></td>
 </tr>
 </tbody>
 </table>

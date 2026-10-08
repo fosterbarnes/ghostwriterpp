@@ -1,3 +1,4 @@
+#requires -Version 7.0
 param(
     [ValidateSet("dev", "release", "asan", "unity", "profile", "clazy", "dev-disable-deprecated")][string]$Preset = "release",
     [Alias("c")][switch]$Clean,
@@ -9,8 +10,9 @@ param(
     [Alias("cwd")][switch]$UseWorkingDirectory
 )
 if ($X64) { Write-Host "Architecture: x64" }
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = 'Stop'
 . "$PSScriptRoot\scriptHelper.ps1"
+Write-Host "=== building $projectName... ==="
 
 function Remove-PathWithRetry([Parameter(Mandatory)][string]$Path, [switch]$Recurse, [int]$MaxAttempts = 15, [int]$DelayMs = 350) {
     if (-not (Test-Path -LiteralPath $Path)) { return }
@@ -139,8 +141,9 @@ try {
         }
     }
 
-    Write-Host "Build complete."
+    Write-Host 'Build complete.'
 }
 finally {
     Pop-Location
 }
+closeOut 3

@@ -73,6 +73,7 @@ public:
     * See code for onFileChangedExternally() for details.
     */
     bool saveInProgress;
+    bool saveFailed;
 
     /*
     * This timer's timeout signal is connected to the autoSaveFile() slot,
@@ -91,7 +92,7 @@ public:
     /*
     * Begins asynchronous save operation.  Called by save() and saveAs().
     */
-    void saveFile();
+    bool saveFile();
 
     /*
     * Handles the event where a file as been modified externally on disk.
@@ -182,6 +183,7 @@ DocumentManager::DocumentManager
     d->fileHistoryEnabled = true;
     d->createBackupOnSave = true;
     d->saveInProgress = false;
+    d->saveFailed = false;
     d->autoSaveEnabled = false;
     d->documentModifiedNotifVisible = false;
 
@@ -203,6 +205,7 @@ DocumentManager::DocumentManager
 
     connect(d->writer, &AsyncTextWriter::writeComplete, [d]() {
         d->saveInProgress = false;
+        d->saveFailed = false;
         d->document->setTimestamp(QDateTime::currentDateTime());
 
         if (!d->fileWatcher->files().contains(d->writer->fileName())) {
@@ -211,11 +214,14 @@ DocumentManager::DocumentManager
     });
 
     connect(d->writer, &AsyncTextWriter::writeError, [d](const QString &err) {
+        d->saveInProgress = false;
+        d->saveFailed = true;
+        d->document->setModified(true);
+        emit d->q_ptr->documentModifiedChanged(true);
+
         if (!err.isNull() && !err.isEmpty()) {
             MessageBoxHelper::critical(d->editor, DocumentManager::tr("Error saving %1").arg(d->document->filePath()), err);
         }
-
-        d->saveInProgress = false;
     });
 
     // Set up auto-save timer to save the file once every minute.
@@ -517,8 +523,7 @@ bool DocumentManager::save()
     if (d->document->isNew() || !d->checkPermissionsBeforeSave()) {
         return saveAs();
     } else {
-        d->saveFile();
-        return true;
+        return d->saveFile();
     }
 }
 
@@ -548,7 +553,9 @@ bool DocumentManager::saveAs()
         }
 
         d->setFilePath(filePath);
-        d->saveFile();
+        if (!d->saveFile()) {
+            return false;
+        }
 
         if (d->restoreSessionEnabled) {
             Library().updateLastOpened(Bookmark(filePath, d->editor->textCursor().position()));
@@ -566,12 +573,17 @@ bool DocumentManager::confirmTabRemoval(bool updateLastOpenedBookmark)
 {
     Q_D(DocumentManager);
 
+    d->saveFailed = false;
     if (!d->checkSaveChanges()) {
         return false;
     }
 
     if (d->writer->writeInProgress()) {
         d->writer->waitForFinished();
+    }
+
+    if (d->saveFailed) {
+        return false;
     }
 
     if (updateLastOpenedBookmark && d->restoreSessionEnabled && !d->document->isNew()) {
@@ -587,6 +599,7 @@ bool DocumentManager::prepareApplicationQuit()
 {
     Q_D(DocumentManager);
 
+    d->saveFailed = false;
     if (!d->checkSaveChanges()) {
         return false;
     }
@@ -595,16 +608,21 @@ bool DocumentManager::prepareApplicationQuit()
         d->writer->waitForFinished();
     }
 
-    return true;
+    return !d->saveFailed;
 }
 
 bool DocumentManager::close()
 {
     Q_D(DocumentManager);
-    
+
+    d->saveFailed = false;
     if (d->checkSaveChanges()) {
         if (d->writer->writeInProgress()) {
             d->writer->waitForFinished();
+        }
+
+        if (d->saveFailed) {
+            return false;
         }
 
         if (d->restoreSessionEnabled && !d->document->isNew()) {
@@ -715,9 +733,11 @@ void DocumentManagerPrivate::onFileChangedExternally(const QString &path)
     }
 }
 
-void DocumentManagerPrivate::saveFile()
+bool DocumentManagerPrivate::saveFile()
 {
     Q_Q(DocumentManager);
+
+    saveFailed = false;
 
     if (restoreSessionEnabled) {
         Bookmark location(document->filePath(), editor->textCursor().position());
@@ -730,7 +750,6 @@ void DocumentManagerPrivate::saveFile()
 
     document->setModified(false);
     emit q->documentModifiedChanged(false);
-    document->setTimestamp(QDateTime::currentDateTime());
     saveInProgress = true;
 
     // If backup is enabled, back up the file first.
@@ -748,7 +767,12 @@ void DocumentManagerPrivate::saveFile()
         );
 
         saveInProgress = false;
+        saveFailed = true;
+        document->setModified(true);
+        return false;
     }
+
+    return true;
 }
 
 bool DocumentManagerPrivate::loadFile(const Bookmark &location)

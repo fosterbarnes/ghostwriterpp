@@ -1,5 +1,7 @@
+#requires -Version 7.0
 param(
     [ValidateSet("dev", "release", "asan", "unity", "profile", "clazy", "dev-disable-deprecated")][string]$Preset = "release",
+    [Alias('h')][switch]$Help,
     [Alias("c")][switch]$Clean,
     [switch]$NoBuild,
     [switch]$Log,
@@ -12,10 +14,18 @@ param(
     [Alias("cwd")][switch]$UseWorkingDirectory,
     [Parameter(ValueFromRemainingArguments = $true)][string[]]$AppArgs
 )
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = 'Stop'
+if ($Help) {
+    Write-Host '.run.ps1 [-Preset release|dev|...] [-Clean] [-NoBuild] [-Log] [-DebugLog] [-- app args...]'
+    return
+}
 . "$PSScriptRoot\scriptHelper.ps1"
 
-# Strip platform flags from AppArgs so they never reach QCommandLineParser (exit 1).
+# ghostwriter++.exe = CMake OUTPUT_NAME (ghostwriterpp, src/CMakeLists.txt).
+$ExeFileName = "ghostwriter++.exe"
+$repoRoot = Get-CMakeProjectRoot -ScriptsDirectory $PSScriptRoot -RepoRoot $RepoRoot -UseWorkingDirectory:$UseWorkingDirectory
+Set-Location -LiteralPath $repoRoot
+Write-Host "Repository root: $repoRoot"
 $appArgList = [System.Collections.Generic.List[string]]::new()
 foreach ($a in @($AppArgs)) {
     if ($null -eq $a -or [string]::IsNullOrWhiteSpace([string]$a)) { continue }
@@ -45,10 +55,6 @@ function Stop-GhostwriterApp {
     Get-Process -Name "ghostwriter++" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
 }
 
-# ghostwriter++.exe = CMake OUTPUT_NAME (ghostwriterpp, src/CMakeLists.txt).
-$ExeFileName = "ghostwriter++.exe"
-$repoRoot = Get-CMakeProjectRoot -ScriptsDirectory $PSScriptRoot -RepoRoot $RepoRoot -UseWorkingDirectory:$UseWorkingDirectory
-Write-Host "Repository root: $repoRoot"
 $d = Get-BuildDirectoryNameForPreset -Preset $Preset
 $exePath = Join-Path $repoRoot "$d/bin/$ExeFileName"
 $buildScript = Join-Path $PSScriptRoot "build.ps1"
@@ -60,7 +66,6 @@ Push-Location $repoRoot
 try {
     $keepRunning = $true
     $isFirstLaunch = $true
-    $quitRequested = $false
 
     while ($keepRunning) {
         if (-not $NoBuild) {
@@ -124,7 +129,6 @@ try {
                 if ($userInput -in @('q', 'quit', 'exit')) {
                     Write-Host 'Stopping ghostwriter++ and exiting script...'
                     Stop-GhostwriterApp
-                    $quitRequested = $true
                     $keepRunning = $false
                     break
                 }
@@ -186,7 +190,7 @@ try {
         if (-not $keepRunning -or -not $restartRequested) { break }
     }
 
-    if ($quitRequested) { exit 0 }
     if ($null -ne $exit -and $exit -ne 0) { exit $exit }
 }
 finally { Pop-Location }
+closeOut 0

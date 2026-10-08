@@ -9,6 +9,7 @@
 
 #include <QString>
 #include <QList>
+#include <QMutex>
 
 #include "exportformat.h"
 
@@ -48,6 +49,8 @@ public:
      * Set the parameters for the exporter.
      */
     void setOptions(const QString &options);
+
+    QMutex &operationMutex() const;
 
     /**
      * Sets the name of the exporter.  The name should be unique among
@@ -144,6 +147,7 @@ protected:
 
 private:
     QString m_name;
+    mutable QMutex m_operationMutex;
 };
 } // namespace ghostwriterpp
 

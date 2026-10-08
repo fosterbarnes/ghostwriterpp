@@ -15,6 +15,19 @@
 
 namespace ghostwriterpp
 {
+namespace {
+constexpr struct {
+    const char *name;
+    const char *inputFormat;
+} pandocFormats[] = {
+    {"Pandoc", "markdown"},
+    {"Pandoc CommonMark", "commonmark"},
+    {"Pandoc GitHub-flavored Markdown", "markdown_github-hard_line_breaks"},
+    {"Pandoc PHP Markdown Extra", "markdown_phpextra"},
+    {"Pandoc MultiMarkdown", "markdown_mmd"},
+    {"Pandoc Strict", "markdown_strict"}
+};
+} // namespace
 
 class ExporterFactoryPrivate
 {
@@ -30,8 +43,19 @@ public:
     }
 
     static ExporterFactory *instance;
-    QList<Exporter *> fileExporters;
-    QList<Exporter *> htmlExporters;
+    Exporter *builtInExporter = nullptr;
+    QList<Exporter *> pandocExporters;
+    Exporter *multiMarkdownExporter = nullptr;
+    Exporter *cmarkExporter = nullptr;
+    bool pandocDiscovered = false;
+    bool multiMarkdownDiscovered = false;
+    bool cmarkDiscovered = false;
+
+    void discoverPandoc();
+    void discoverMultiMarkdown();
+    void discoverCmark();
+    void discoverAll();
+    QList<Exporter *> exporters() const;
 
     /*
     * Executes the given terminal command to see if the executable is
@@ -85,40 +109,47 @@ QList<Exporter *> ExporterFactory::fileExporters()
 {
     Q_D(ExporterFactory);
     
-    return d->fileExporters;
+    d->discoverAll();
+    return d->exporters();
 }
 
 QList<Exporter *> ExporterFactory::htmlExporters()
 {
     Q_D(ExporterFactory);
     
-    return d->htmlExporters;
+    d->discoverAll();
+    return d->exporters();
 }
 
 Exporter *ExporterFactory::exporterByName(const QString &name)
 {
     Q_D(ExporterFactory);
     
-    // Search in HTML exporter list first.
-    for (Exporter *exporter : d->htmlExporters) {
+    if (name == d->builtInExporter->name()) {
+        return d->builtInExporter;
+    }
+
+#ifdef Q_OS_WIN32
+    if (name == QLatin1String("MultiMarkdown")) {
+        d->discoverMultiMarkdown();
+    } else if (name == QLatin1String("cmark")) {
+        d->discoverCmark();
+    } else {
+        for (const auto &format : pandocFormats) {
+            if (name == QLatin1String(format.name)) {
+                d->discoverPandoc();
+                break;
+            }
+        }
+    }
+#endif
+
+    for (Exporter *exporter : d->exporters()) {
         if (exporter->name() == name) {
-            // Found a match!
             return exporter;
         }
     }
 
-    // If HTML exporter list does not contain an exporter
-    // with the desired name, search in the file exporter
-    // list next.
-    //
-    for (Exporter *exporter : d->fileExporters) {
-        if (exporter->name() == name) {
-            // Found a match!
-            return exporter;
-        }
-    }
-
-    // No match found.
     return nullptr;
 }
 
@@ -127,14 +158,39 @@ ExporterFactory::ExporterFactory()
 {
     Q_D(ExporterFactory);
     
-    CommandLineExporter *exporter = nullptr;
-    QVersionNumber pandocVersion = d->isCommandAvailable("pandoc", QStringList("--version"));
-    QVersionNumber mmdVersion = d->isCommandAvailable("multimarkdown", QStringList("--version"));
-    QVersionNumber cmarkVersion = d->isCommandAvailable("cmark", QStringList("--version"));
+    d->builtInExporter = new CmarkGfmExporter();
+#ifndef Q_OS_WIN32
+    d->discoverAll();
+#endif
+}
 
-    CmarkGfmExporter *cmarkGfmExporter = new CmarkGfmExporter();
-    d->fileExporters.append(cmarkGfmExporter);
-    d->htmlExporters.append(cmarkGfmExporter);
+QList<Exporter *> ExporterFactoryPrivate::exporters() const
+{
+    QList<Exporter *> result{builtInExporter};
+    result.append(pandocExporters);
+    if (multiMarkdownExporter) {
+        result.append(multiMarkdownExporter);
+    }
+    if (cmarkExporter) {
+        result.append(cmarkExporter);
+    }
+    return result;
+}
+
+void ExporterFactoryPrivate::discoverAll()
+{
+    discoverPandoc();
+    discoverMultiMarkdown();
+    discoverCmark();
+}
+
+void ExporterFactoryPrivate::discoverPandoc()
+{
+    if (pandocDiscovered) {
+        return;
+    }
+    pandocDiscovered = true;
+    const QVersionNumber pandocVersion = isCommandAvailable("pandoc", QStringList("--version"));
 
     if (!pandocVersion.isNull()) {
         int majorVersion = pandocVersion.majorVersion();
@@ -142,27 +198,28 @@ ExporterFactory::ExporterFactory()
 
         // Check version of Pandoc. Drop support for version 1.
         if (majorVersion >= 2) {
-            d->addPandocExporter("Pandoc", "markdown",  majorVersion, minorVersion);
-
-            if ((majorVersion > 1) ||
-                ((1 == majorVersion) && (minorVersion >= 14))) {
-                d->addPandocExporter("Pandoc CommonMark", "commonmark",  majorVersion, minorVersion);
+            for (const auto &format : pandocFormats) {
+                addPandocExporter(format.name, format.inputFormat, majorVersion, minorVersion);
             }
-
-            d->addPandocExporter("Pandoc GitHub-flavored Markdown", "markdown_github-hard_line_breaks",  majorVersion, minorVersion);
-            d->addPandocExporter("Pandoc PHP Markdown Extra", "markdown_phpextra",  majorVersion, minorVersion);
-            d->addPandocExporter("Pandoc MultiMarkdown", "markdown_mmd", majorVersion, minorVersion);
-            d->addPandocExporter("Pandoc Strict", "markdown_strict",  majorVersion, minorVersion);
         }
         else {
             qWarning() << "Version" << pandocVersion << "of pandoc is unsupported.";
         }
     }
+}
+
+void ExporterFactoryPrivate::discoverMultiMarkdown()
+{
+    if (multiMarkdownDiscovered) {
+        return;
+    }
+    multiMarkdownDiscovered = true;
+    const QVersionNumber mmdVersion = isCommandAvailable("multimarkdown", QStringList("--version"));
 
     if (!mmdVersion.isNull()) {
         int majorVersion = mmdVersion.majorVersion();
 
-        exporter = new CommandLineExporter("MultiMarkdown");
+        auto *exporter = new CommandLineExporter("MultiMarkdown");
 
         // Smart typography option (--smart) is only available in version 5 and below.
         // The option is was removed and enabled by default in version 6 and above.
@@ -241,12 +298,20 @@ ExporterFactory::ExporterFactory()
             .arg(CommandLineExporter::SMART_TYPOGRAPHY_ARG)
             .arg(CommandLineExporter::OUTPUT_FILE_PATH_VAR)
         );
-        d->fileExporters.append(exporter);
-        d->htmlExporters.append(exporter);
+        multiMarkdownExporter = exporter;
     }
+}
+
+void ExporterFactoryPrivate::discoverCmark()
+{
+    if (cmarkDiscovered) {
+        return;
+    }
+    cmarkDiscovered = true;
+    const QVersionNumber cmarkVersion = isCommandAvailable("cmark", QStringList("--version"));
 
     if (!cmarkVersion.isNull()) {
-        exporter = new CommandLineExporter("cmark");
+        auto *exporter = new CommandLineExporter("cmark");
         exporter->setSmartTypographyOnArgument("--smart");
         exporter->setHtmlRenderCommand(QString("cmark -t html --smart %1")
                                        .arg(CommandLineExporter::SMART_TYPOGRAPHY_ARG));
@@ -268,8 +333,7 @@ ExporterFactory::ExporterFactory()
             QString("cmark -t man %1")
             .arg(CommandLineExporter::SMART_TYPOGRAPHY_ARG)
         );
-        d->fileExporters.append(exporter);
-        d->htmlExporters.append(exporter);
+        cmarkExporter = exporter;
     }
 }
 
@@ -429,8 +493,7 @@ void ExporterFactoryPrivate::addPandocExporter
         ExportFormat::GROFFMAN,
         standardExportStr.arg("man")
     );
-    fileExporters.append(exporter);
-    htmlExporters.append(exporter);
+    pandocExporters.append(exporter);
 }
 
 } // namespace ghostwriterpp

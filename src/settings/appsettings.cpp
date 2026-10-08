@@ -14,6 +14,7 @@
 #include <QDir>
 #include <QFontDatabase>
 #include <QFontInfo>
+#include <QMutexLocker>
 #include <QLocale>
 #include <QSettings>
 #include <QStandardPaths>
@@ -163,8 +164,11 @@ void AppSettings::store()
     appSettings.setValue(constants::GW_SIDEBAR_OPEN_KEY, QVariant(d->sidebarVisible));
     appSettings.setValue(constants::GW_HTML_PREVIEW_OPEN_KEY, QVariant(d->htmlPreviewVisible));
     appSettings.setValue(constants::GW_FOCUS_VIEW_KEY, QVariant((int)d->focusView));
-    appSettings.setValue(constants::GW_LAST_USED_EXPORTER_KEY, QVariant(d->currentHtmlExporter->name()));
-    appSettings.setValue(constants::GW_LAST_USED_EXPORTER_PARAMS_KEY, QVariant(d->currentHtmlExporter->options()));
+    {
+        QMutexLocker locker(&d->currentHtmlExporter->operationMutex());
+        appSettings.setValue(constants::GW_LAST_USED_EXPORTER_KEY, QVariant(d->currentHtmlExporter->name()));
+        appSettings.setValue(constants::GW_LAST_USED_EXPORTER_PARAMS_KEY, QVariant(d->currentHtmlExporter->options()));
+    }
     appSettings.setValue(constants::GW_LIVE_SPELL_CHECK_KEY, QVariant(d->liveSpellCheckEnabled));
     appSettings.setValue(constants::GW_LOCALE_KEY, QVariant(d->locale));
     appSettings.setValue(constants::GW_RESTORE_SESSION_KEY, QVariant(d->restoreSessionEnabled));
@@ -961,13 +965,18 @@ AppSettings::AppSettings()
             auto lastExportOptions = appSettings.value(constants::GW_LAST_USED_EXPORTER_PARAMS_KEY).toString();
 
             if (!lastExportOptions.isEmpty()) {
+                QMutexLocker locker(&d->currentHtmlExporter->operationMutex());
                 d->currentHtmlExporter->setOptions(lastExportOptions);
             }
         }
     }
 
     if (!d->currentHtmlExporter) {
+#ifdef Q_OS_WIN32
+        d->currentHtmlExporter = ExporterFactory::instance()->exporterByName(QStringLiteral("cmark-gfm"));
+#else
         d->currentHtmlExporter = ExporterFactory::instance()->htmlExporters().first();
+#endif
     }
 }
 

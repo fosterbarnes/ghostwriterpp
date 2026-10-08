@@ -22,6 +22,7 @@
 #include <QUrl>
 #include <QVBoxLayout>
 #include <QLineEdit>
+#include <QMutexLocker>
 
 
 #include "exportdialog.h"
@@ -183,16 +184,19 @@ void ExportDialog::accept()
     QApplication::setOverrideCursor(Qt::WaitCursor);
     emit exportStarted(tr("exporting to %1").arg(fileName));
 
-    exporter->setSmartTypographyEnabled(smartTypographyCheckBox->isChecked());
-    exporter->setOptions(paramsLineEdit->text());
-    exporter->exportToFile
-    (
-        format,
-        this->document->filePath(),
-        document->toPlainText(),
-        fileName,
-        err
-    );    
+    {
+        QMutexLocker locker(&exporter->operationMutex());
+        exporter->setSmartTypographyEnabled(smartTypographyCheckBox->isChecked());
+        exporter->setOptions(paramsLineEdit->text());
+        exporter->exportToFile
+        (
+            format,
+            this->document->filePath(),
+            document->toPlainText(),
+            fileName,
+            err
+        );
+    }
     
     emit exportComplete();
     QApplication::restoreOverrideCursor();

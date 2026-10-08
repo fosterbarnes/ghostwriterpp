@@ -76,6 +76,7 @@ Makefile*
 # pp additions
 *.code-workspace
 *.ghpp-workspace
-*.md
-ToDo.md
+/publish/
 /.installer/Output/
+*.md
+!README.md

@@ -1,24 +1,18 @@
-# Inno Setup (ISCC.exe) on PATH. `.prePush.ps1` runs this after buildUpdater; or run standalone after `build-release\bin` is ready.
-$ErrorActionPreference = "Stop"
+#requires -Version 7.0
+param([Alias('h')][switch]$Help, [string]$Architecture)
+$ErrorActionPreference = 'Stop'
+if ($Help) { Write-Host 'buildInstaller.ps1 [-x86|-x64|-arm64]'; return }
 . "$PSScriptRoot\scriptHelper.ps1"
-$repoRoot = Get-CMakeProjectRoot -ScriptsDirectory $PSScriptRoot
-Push-Location -LiteralPath $repoRoot
-try {
-    $ver = Read-VersionFile
-
-    $out = Join-Path $repoRoot ".installer\Output"
-    if (Test-Path -LiteralPath $out) {
-        Write-Host "Cleaning $out"
-        Remove-Item -LiteralPath $out -Recurse -Force
-    }
-    New-Item -ItemType Directory -Path $out -Force | Out-Null
-
-    $iss = Join-Path $repoRoot ".installer\ghostwriterpp.x64.installer.iss"
-    Write-Host "Building x64 installer (AppVersion=$ver)"
-    $iscc = Get-Command ISCC.exe -ErrorAction Stop
-    Invoke-NativeCommand -What "ISCC" -FilePath $iscc.Source -ArgumentList @("/DAppVersion=$ver", $iss)
-    Write-Host "Done. Output: $out"
-}
-finally {
-    Pop-Location
-}
+Write-Host "--- building $projectName installer... ---"
+Set-Location -LiteralPath $repoRoot
+$null = getArchitecture @($Architecture)
+$exePath = Join-Path $repoRoot 'build-release\bin\ghostwriter++.exe'
+if (-not (Test-Path -LiteralPath $exePath)) { throw "Missing publish output: $exePath" }
+$iscc = (Get-Command ISCC.exe -ErrorAction SilentlyContinue)?.Source
+if (-not $iscc) { $iscc = 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe' }
+if (-not (Test-Path -LiteralPath $iscc)) { throw "Inno Setup compiler not found: $iscc" }
+deleteDir $installerOutput
+New-Item -ItemType Directory -Path $installerOutput -Force | Out-Null
+$iss = "$repoRoot\.installer\ghostwriterpp.x64.installer.iss"
+runNativeCommand $iscc @("/DAppVersion=$versionContents", $iss) 'ISCC x64'
+closeOut 3

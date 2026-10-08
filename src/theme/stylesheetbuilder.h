@@ -146,6 +146,7 @@ class StyleSheetBuilder
 public:
     /**
      * Constructor.
+     * Pass nullptr for iconTheme when generating preview CSS only.
      */
     StyleSheetBuilder(const ChromeColors &colors,
                       const SvgIconTheme *iconTheme,
